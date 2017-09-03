@@ -2,7 +2,6 @@
 % meters away.
 function Solution_Connor(robot_id, targ_dist)
     %% SETUP ROBOT
-    close all
     clear robot
     rob = raspbot(robot_id, [0; 0; pi/2])
     
@@ -39,21 +38,18 @@ function Solution_Connor(robot_id, targ_dist)
     while (avg_dist(rob) <= targ_dist)
         vel = PEAK_VELOCITY;
         if(avg_dist(rob) > targ_dist/2)
-            vel = (PEAK_VELOCITY-MIN_VELOCITY) * 2*(targ_dist - avg_dist(rob))/targ_dist ...
+            vel = (PEAK_VELOCITY-MIN_VELOCITY) * (targ_dist - avg_dist(rob))/(targ_dist/2) ...
                 + MIN_VELOCITY;
         end
         
-        x = [avg_dist(rob) targ_dist vel]
-        rob.sendVelocity(vel,vel);
-        %runStraight(rob, vel,vel,L2R_FACTOR);
+        xrunStraight(rob, vel,vel,L2R_FACTOR);
         
         pause(0.05)
         %debug_EncoderPosition(rob);
     end %while(ad<td)
-    rob.stop()
+    
     %% DEINITIALIZE
     rob.stop();
-    rob.shutdown();
     clear_persistent();
 end % #Solution_Connor
 
