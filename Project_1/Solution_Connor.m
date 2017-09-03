@@ -24,8 +24,8 @@ function Solution_Connor(robot_id, targ_dist)
     global DEBUG
     DEBUG = 1;
     
-    PEAK_VELOCITY = 0.020; %m/s
-    MIN_VELOCITY = 0.09; %m/s (minimum sustainable velocity)
+    PEAK_VELOCITY = 0.02; %m/s
+    MIN_VELOCITY = 0.009; %m/s (minimum sustainable velocity)
     L2R_FACTOR = 1; %Ratio of Left-to-Right Wheel Running Speeds (Curvature Correction)
     
 %     debug_EncoderPosition(rob);
@@ -41,7 +41,9 @@ function Solution_Connor(robot_id, targ_dist)
         if(avg_dist(rob) > targ_dist/2)
             vel = (PEAK_VELOCITY-MIN_VELOCITY) * 2*(targ_dist - avg_dist(rob))/targ_dist ...
                 + MIN_VELOCITY;
-        end
+        elseif(avg_dist(rob) > targ_dist)
+            vel = 0;
+        end % if ad>td/2, ad>td
         
         x = [avg_dist(rob) targ_dist vel]
         rob.sendVelocity(vel,vel);
@@ -50,7 +52,7 @@ function Solution_Connor(robot_id, targ_dist)
         pause(0.05)
         %debug_EncoderPosition(rob);
     end %while(ad<td)
-    rob.stop()
+    
     %% DEINITIALIZE
     rob.stop();
     rob.shutdown();
