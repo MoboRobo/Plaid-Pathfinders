@@ -50,25 +50,22 @@ end % #runStraight
 function debug_EncoderPosition(rob)
  global DEBUG
  
-    persistent fig plot ts ds
+    persistent fig ts ds
     if isempty(fig) %Initialize Plots and Data (only once on first call)
         ts = zeros(1);
         ds = zeros(1);
         
         fig = figure();
-        plot = plot(ts, ds);
             axis([0 60 0 50]);
-            set(plot, 'XData', ts)
-            set(plot, 'YData', ds)
+            set(fig, 'XData', ts)
+            set(fig, 'YData', ds)
             refreshdata
             drawnow
     end
     
     if DEBUG
         ts = [ts(1:end) enc_time(rob)]; % Time Data
-        ds = [ds(1:end) avg_dist(rob)]; % Distance Data     
-        set(plot, 'XData', ts)
-        set(plot, 'YData', ds)
+        ds = [ds(1:end) avg_dist(rob)] % Distance Data
         refreshdata
         drawnow limitrate
     end % DEBUG
