@@ -11,6 +11,13 @@ function Solution_Connor(rob, targ_dist)
     rob.forksDown();
     
     debug_EncoderPosition(rob);
+    i=0;
+    while(i<1000)
+        rob.sendVelocity(0.1,0.1);
+        debug_EncoderPosition(rob);
+        i = i+1;
+    end
+    
     
     while (avg_dist(rob) <= targ_dist)
         vel = PEAK_VELOCITY;
@@ -23,6 +30,7 @@ function Solution_Connor(rob, targ_dist)
      pause(0.005)
     end
     rob.stop();
+    clear_persistent();
 end % #Solution_Connor
 
 %Helper Function
@@ -50,16 +58,16 @@ end % #runStraight
 function debug_EncoderPosition(rob)
  global DEBUG
  
-    persistent fig plot ts ds
+    persistent fig pl ts ds
     if isempty(fig) %Initialize Plots and Data (only once on first call)
         ts = zeros(1);
         ds = zeros(1);
         
         fig = figure();
-        plot = plot(ts, ds);
+        pl = plot(ts, ds);
             axis([0 60 0 50]);
-            set(plot, 'XData', ts)
-            set(plot, 'YData', ds)
+            set(pl, 'XData', ts)
+            set(pl, 'YData', ds)
             refreshdata
             drawnow
     end
@@ -67,9 +75,15 @@ function debug_EncoderPosition(rob)
     if DEBUG
         ts = [ts(1:end) enc_time(rob)]; % Time Data
         ds = [ds(1:end) avg_dist(rob)]; % Distance Data     
-        set(plot, 'XData', ts)
-        set(plot, 'YData', ds)
+        set(pl, 'XData', ts)
+        set(pl, 'YData', ds)
         refreshdata
         drawnow limitrate
     end % DEBUG
 end % #debug_EncoderPosition
+
+%Debugging Function
+%Clears Persistent Variables from Debug Functions
+function clear_persistent()
+    clear debug_EncoderPosition
+end
