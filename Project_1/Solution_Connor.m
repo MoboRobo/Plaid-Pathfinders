@@ -27,8 +27,8 @@ function Solution_Connor(robot_id, targ_dist)
     global DEBUG PEAK_SPEED MIN_SPEED L2R_FACTOR
     DEBUG = 1;
     
-    PEAK_SPEED = 0.02; %m/s
-    MIN_SPEED = 0.009; %m/s (minimum sustainable velocity)
+    PEAK_SPEED = 0.05; %m/s
+    MIN_SPEED = 0.02; %m/s (minimum sustainable velocity)
     L2R_FACTOR = 1; %Ratio of Left-to-Right Wheel Running Speeds (Curvature Correction)
     
     %% PROCEDURE
@@ -49,63 +49,42 @@ end % #Solution_Connor
 function go_to(rob, pos)
     global init_l init_r
     global PEAK_SPEED MIN_SPEED L2R_FACTOR
-    %Determine Direction of Motion
     
-    if(avg_dist(rob, init_l,init_r) < pos) %increase position
-        while (avg_dist(rob, init_l,init_r) <= pos)
-            spd = PEAK_SPEED;
-            ad = avg_dist(rob, init_l,init_r);
-            
-            if(ad > pos/2 && ad < pos)
-                spd = (PEAK_SPEED-MIN_SPEED) ... 
-                    * 2*(pos - avg_dist(rob, init_l,init_r))/pos ...
-                    + MIN_SPEED;
-            else
-                spd = 0;
-            end % if ad>td/2 && ad<td
+    strt = avg_dist(rob, init_l,init_r); %starting position
+    D_TS = pos - avg_dist(rob, init_l,init_r); %delta btwn starting and target position
+    abs_dts = abs(D_TS);
 
+    D_TC = pos - avg_dist(rob, init_l,init_r); %delta btwn Current and Target position
+    abs_dtc = abs(D_TC);
+    
+    spd = PEAK_SPEED;
+    while (spd ~= 0)
+        ad = avg_dist(rob, init_l,init_r);
+
+        D_CS = ad -strt; %delta btwn Start and Current Position
+        abs_dcs = abs(D_CS);
+
+        D_TC = pos - ad; %delta btwn Current and Target position
+        abs_dtc = abs(D_TC);
+
+        if(abs_dcs > abs_dts/2) %if past half-way
+            spd = (PEAK_SPEED-MIN_SPEED) * abs_dtc/(abs_dts/2) + MIN_SPEED;
+        end% if |DCS|>|DTS|/2
+        if(abs_dcs > abs_dts) %if done.
+            spd = 0;
+        end % if |DCS|>|DTS|
+
+        if(D_TS < 0) %Go Backwards
+            [avg_dist(rob, init_l,init_r) pos -spd]
+            runStraight(rob, -spd,-spd,L2R_FACTOR);
+        else %Go Forward
             [avg_dist(rob, init_l,init_r) pos spd]
             runStraight(rob, spd,spd,L2R_FACTOR);
+        end % D_TS<0
 
-            pause(0.05)
-            debug_EncoderPosition(rob);
-        end %while(ad<td)
-    elseif(avg_dist(rob, init_l,init_r) > pos) %decrease position
-        strt = avg_dist(rob, init_l,init_r); %starting position
-        D_TS = pos - avg_dist(rob, init_l,init_r); %delta btwn starting and target position
-        abs_dts = abs(D_TS);
-        
-        D_TC = pos - avg_dist(rob, init_l,init_r); %delta btwn Current and Target position
-        abs_dtc = abs(D_TC);
-        
-        
-        spd = PEAK_SPEED;
-        while (spd ~= 0)
-            ad = avg_dist(rob, init_l,init_r);
-            
-            D_CS = ad -strt; %delta btwn Start and Current Position
-            abs_dcs = abs(D_CS);
-            
-            D_TC = pos - ad; %delta btwn Current and Target position
-            abs_dtc = abs(D_TC);
-            
-            if(abs_dcs > abs_dts/2 && abs_dcs < abs_dts) %if past half-way (but not done)
-                spd = (PEAK_SPEED-MIN_SPEED) * abs_dtc/(abs_dts/2) + MIN_SPEED;
-            else
-                spd = 0;
-            end % if |DCS|>|DTS|/2 && |DCS|<|DTS|
-
-            if(D_TS < 0) %Go Backwards
-                [avg_dist(rob, init_l,init_r) pos -spd]
-                runStraight(rob, -spd,-spd,L2R_FACTOR);
-            else %Go Forward
-                [avg_dist(rob, init_l,init_r) pos spd]
-                runStraight(rob, spd,spd,L2R_FACTOR);
-            end % D_TS<0
-
-            pause(0.05)
-            debug_EncoderPosition(rob);
-        end %while(spd~=0)
+        pause(0.05)
+        debug_EncoderPosition(rob);
+    end %while(spd~=0)
 end % #go_to
 
 
@@ -142,7 +121,7 @@ function debug_EncoderPosition(rob)
         
         fig = figure();
         pl = plot(ts, ds);
-            axis([0 60 0 0.5])
+            axis([0 30 0 0.5])
             xlabel('Time Elapsed [s]')
             ylabel('Position, y [m]')
             set(pl, 'XData', ts)
