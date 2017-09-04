@@ -2,8 +2,12 @@
 % meters away.
 function Solution_Connor(robot_id, targ_dist)
     %% SETUP ROBOT
+    close all
     clear robot
     rob = raspbot(robot_id, [0; 0; pi/2])
+    global init_l init_r
+    init_l = rob.encoders.LatestMessage.Vector.X;
+    init_r = rob.encoders.LatestMessage.Vector.Y;
     
     %% SETUP MAP
     % where robot starts at [0;0; -90]
@@ -20,52 +24,94 @@ function Solution_Connor(robot_id, targ_dist)
     rob.genMap(map.objects);
     
     %% TASK PARAMETERS
-    global DEBUG
+    global DEBUG PEAK_SPEED MIN_SPEED L2R_FACTOR
     DEBUG = 1;
     
-    PEAK_VELOCITY = 0.020; %m/s
-    MIN_VELOCITY = 0.09; %m/s (minimum sustainable velocity)
+    PEAK_SPEED = 0.02; %m/s
+    MIN_SPEED = 0.009; %m/s (minimum sustainable velocity)
     L2R_FACTOR = 1; %Ratio of Left-to-Right Wheel Running Speeds (Curvature Correction)
     
-%     debug_EncoderPosition(rob);
-%     rob.sendVelocity(0.1,0.1)
-%     rob.encoders.LatestMessage.Vector.X
-%     rob.encoders.LatestMessage.Vector.Y
-%     avg_dist(rob)
-%     targ_dist
-
-    %% ALGORITHM
-    while (avg_dist(rob) <= targ_dist)
-        vel = PEAK_VELOCITY;
-        if(avg_dist(rob) > targ_dist/2)
-            vel = (PEAK_VELOCITY-MIN_VELOCITY) * (targ_dist - avg_dist(rob))/(targ_dist/2) ...
-                + MIN_VELOCITY;
-        end
-        
-        xrunStraight(rob, vel,vel,L2R_FACTOR);
-        
-        pause(0.05)
-        %debug_EncoderPosition(rob);
-    end %while(ad<td)
+    %% PROCEDURE
+    go_to(rob, targ_dist)
+    pause(1)
+    go_to(rob, 0)
     
     %% DEINITIALIZE
     rob.stop();
+    rob.shutdown();
     clear_persistent();
 end % #Solution_Connor
 
+
+%% GOTO FUNCTION
+%Motion Function
+%Go to Specified One-Dimensional Position (with velocity curve)
+function go_to(rob, pos)
+    global init_l init_r
+    global PEAK_SPEED MIN_SPEED L2R_FACTOR
+    %Determine Direction of Motion
+    
+    if(avg_dist(rob, init_l,init_r) < pos) %increase position
+        while (avg_dist(rob, init_l,init_r) <= pos)
+            spd = PEAK_SPEED;
+            ad = avg_dist(rob, init_l,init_r);
+            
+            if(ad > pos/2 && ad < pos)
+                spd = (PEAK_SPEED-MIN_SPEED) ... 
+                    * 2*(pos - avg_dist(rob, init_l,init_r))/pos ...
+                    + MIN_SPEED;
+            else
+                spd = 0;
+            end % if ad>td/2 && ad<td
+
+            [avg_dist(rob, init_l,init_r) pos spd]
+            runStraight(rob, spd,spd,L2R_FACTOR);
+
+            pause(0.05)
+            debug_EncoderPosition(rob);
+        end %while(ad<td)
+    elseif(avg_dist(rob, init_l,init_r) > pos) %decrease position
+        strt = avg_dist(rob, init_l,init_r); %starting position
+        D_TS = pos - avg_dist(rob, init_l,init_r); %delta btwn starting and target position
+        abs_dts = abs(D_TS);
+        
+        while (avg_dist(rob, init_l,init_r) >= pos)
+            spd = PEAK_SPEED;
+            
+            D_CS = avg_dist(rob, init_l,init_r) -strt; %delta btwn Start and Current Position
+            abs_dcs = abs(D_CS);
+            
+            D_TC = pos - avg_dist(rob, init_l,init_r); %delta btwn Current and Target position
+            abs_dtc = abs(D_TC);
+            
+            if(abs_dcs > abs_dts/2 && abs_dcs < abs_dts) %if pas
+                spd = (PEAK_SPEED-MIN_SPEED) * abs_dtc/(abs_dts/2) + MIN_SPEED;
+            else
+                spd = 0;
+            end % if |DCS|>|DTS|/2 && |DCS|<|DTS|
+
+            if(D_ST < 0)
+            [avg_dist(rob, init_l,init_r) pos -spd]
+            runStraight(rob, -spd,-spd,L2R_FACTOR);
+
+            pause(0.05)
+            debug_EncoderPosition(rob);
+        end %while(ad<td)
+    end %ad<pos, ad>pos
+end % #go_to
+
+
+%% AVG-DISTANCE
 %Helper Function
-%Compute Average Distance Traversed (by L&R encoders)
-function ad = avg_dist(rob)
-    ad = (rob.encoders.LatestMessage.Vector.X+rob.encoders.LatestMessage.Vector.Y)/2;
+%Compute Average Elapsed Distance Traversed (by L&R encoders, subtracting
+%initial left and right encoder positions: l_0, r_0 respectively)
+function ad = avg_dist(rob, l_0,r_0)
+    ad = (rob.encoders.LatestMessage.Vector.X-l_0 ...
+        + rob.encoders.LatestMessage.Vector.Y-r_0)/2;
 end % #avg_dist()
 
-%Helper Function
-%Calculate the Last Encoder Time Stamp for the Robot
-function t = enc_time(rob)
-    t = double(rob.encoders.LatestMessage.Header.Stamp.Sec) ...
-        + double(rob.encoders.LatestMessage.Header.Stamp.Nsec)/1e9;
-end % #enc_time
 
+%% CURVATURE CORRECTION
 %Run Robot Straight with relative wheel velocities v_l, v_r, correcting for
 %curvature defined by L2R_Factor (Ratio of Left-to-Right Wheel Running
 %Speeds)
@@ -73,19 +119,24 @@ function runStraight(rob, v_l, v_r, l2r)
     rob.sendVelocity(v_l/l2r,v_r)
 end % #runStraight
 
+
+%% PLOTTING
 %Debugging Function
 %Continuously Plot the Average Encoder Position
 function debug_EncoderPosition(rob)
- global DEBUG
+ global DEBUG init_l init_r
  
     persistent fig pl ts ds
     if isempty(fig) %Initialize Plots and Data (only once on first call)
+        tic
         ts = zeros(1);
         ds = zeros(1);
         
         fig = figure();
         pl = plot(ts, ds);
-            axis([0 60 0 50]);
+            axis([0 60 0 0.5])
+            xlabel('Time Elapsed [s]')
+            ylabel('Position, y [m]')
             set(pl, 'XData', ts)
             set(pl, 'YData', ds)
             refreshdata
@@ -93,12 +144,12 @@ function debug_EncoderPosition(rob)
     end
     
     if DEBUG
-        ts = [ts(1:end) enc_time(rob)]; % Time Data
-        ds = [ds(1:end) avg_dist(rob)]; % Distance Data     
+        ts = [ts(1:end) toc]; % Time Data
+        ds = [ds(1:end) avg_dist(rob, init_l, init_r)]; % Distance Data     
         set(pl, 'XData', ts)
         set(pl, 'YData', ds)
         refreshdata
-        drawnow limitrate
+        drawnow
     end % DEBUG
 end % #debug_EncoderPosition
 
