@@ -113,28 +113,44 @@ end % #runStraight
 function debug_EncoderPosition(rob)
  global DEBUG init_l init_r
  
-    persistent fig pl ts ds
+    persistent fig pl_avg pl_left pl_right ts ds ls rs
     if isempty(fig) %Initialize Plots and Data (only once on first call)
         tic
         ts = zeros(1);
-        ds = zeros(1);
+        ds = zeros(1); % avg
+        ls = zeros(1); % left enc
+        rs = zeros(1); % right enc
         
         fig = figure();
-        pl = plot(ts, ds);
-            axis([0 30 0 0.5])
+        hold on
+        pl_avg = plot(ds, '-k');
+        pl_left = plot(ls, 'b');
+        pl_right = plot(rs, 'r');
+            ylim([0 0.4]) % <-MAX Y-VALUE
+            legend('Average Reading', 'Left Encoder', 'Right Encoder')
             xlabel('Time Elapsed [s]')
             ylabel('Position, y [m]')
-            set(pl, 'XData', ts)
-            set(pl, 'YData', ds)
-            refreshdata
-            drawnow
+            set(pl_avg, 'YData', ds)
+            set(pl_left, 'YData', ls)
+            set(pl_right, 'YData', rs)
+        hold off
+        refreshdata
+        drawnow
     end
     
     if DEBUG
         ts = [ts(1:end) toc]; % Time Data
-        ds = [ds(1:end) avg_dist(rob, init_l, init_r)]; % Distance Data     
-        set(pl, 'XData', ts)
-        set(pl, 'YData', ds)
+        ds = [ds(1:end) avg_dist(rob, init_l, init_r)]; % Distance Data
+        ls = [ls(1:end) (rob.encoders.LatestMessage.Vector.X-init_l)];
+        rs = [rs(1:end) (rob.encoders.LatestMessage.Vector.Y-init_r)];
+        hold on
+        set(pl_avg, 'XData', ts)
+        set(pl_left, 'XData', ts)
+        set(pl_right, 'XData', ts)
+        set(pl_avg, 'YData', ds)
+        set(pl_left, 'YData', ls)
+        set(pl_right, 'YData', rs)
+        hold off
         refreshdata
         drawnow
     end % DEBUG
