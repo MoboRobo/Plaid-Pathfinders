@@ -1,4 +1,4 @@
-robot = raspbot("Raspbot-4")
+robot = raspbot("Raspbot-17")
 robot.stop()
 
 timeArray = zeros(1,1)
@@ -13,12 +13,10 @@ iterations = 1
 totalTimeElapsed = 0
 tic
 while (avgDist < 30.48) %30.48 cm = 1 in
-    pause(.05)
     robot.sendVelocity(.05, .05)
     pause(.05)
     iterations = iterations+1;
     elapsedTime = toc
-    pause(.05)
     leftDist = (robot.encoders.LatestMessage.Vector.X - leftStart) * 100.0
     pause(.05)
     rightDist = (robot.encoders.LatestMessage.Vector.Y - rightStart) * 100.0
@@ -27,7 +25,13 @@ while (avgDist < 30.48) %30.48 cm = 1 in
     leftArray(iterations) = leftDist
     rightArray(iterations) = rightDist
     plot(timeArray, leftArray, timeArray, rightArray)
+    xlabel("Time Elapsed (secs)")
+    ylabel("Position (cm)")
+    legend("left encoder", "right encoder")
 end
+target = avgDist - 30.48
+newLStart = robot.encoders.LatestMessage.Vector.X
+newRStart = robot.encoders.LatestMessage.Vector.Y
 offset = toc
 robot.stop()
 pauseTime = 1
@@ -35,7 +39,7 @@ while (toc - offset < pauseTime)
     robot.sendVelocity(0, 0)
     pause(.05)
 end
-while (avgDist >= 0)
+while (avgDist > target)
     robot.sendVelocity(-.05, -.05)
     pause(.05)
     iterations = iterations+1
@@ -48,6 +52,9 @@ while (avgDist >= 0)
     leftArray(iterations) = leftDist
     rightArray(iterations) = rightDist
     plot(timeArray, leftArray, timeArray, rightArray)
+    xlabel("Time Elapsed (secs)")
+    ylabel("Position (cm)")
+    legend("left encoder", "right encoder")
 end
 
 robot.stop()
