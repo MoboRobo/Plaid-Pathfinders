@@ -1,5 +1,5 @@
 % Creates a Persistent Map of the Robot in its World
-classdef WorldMap
+classdef WorldMap < handle
     %% PROPERTIES
     properties (GetAccess=public, SetAccess=private)
         robot;       % Robot that Exists in this World
@@ -35,7 +35,7 @@ classdef WorldMap
             obj.flags = [lineObject()];
              obj.flags(1).lines = [0 0]; %Must be instantiated with contents
             
-            obj.createMap();
+            %obj.createMap();
         end % #WorldMap Constructor
         
         %% Create Map
@@ -51,18 +51,23 @@ classdef WorldMap
                           % keep objects from being plotted in another
                           % figure.
                 obj.robot.core.genMap(obj.map.objects);
-            close(f);
+            if ishandle(f)
+                close(f);
+            end
         end % #createMap
         
         %% Add Flag
         % As a Non-Colliding Flag to the WorldMap and Updates the Plot
         % f - Point-Outline of the Flag given as a Vector of Points. Ex:
         %     [0 0; 0 1; 1 1; 1 0; 0 0] is a 1m. square touching the origin
-        function addFlag(obj, f)
+        % Returns: the lineObject representing the flag (the pose of this
+        % object can be updated to move it across the world).
+        function out = addFlag(obj, f)
             obj.flags(end + 1) = lineObject();
             obj.flags(end).lines = f;%(nb: new end)
+            out = obj.flags(end);
             
-            obj.createMap(); %Update display but creating new map, replacing current
+            %obj.createMap(); %Update display by creating new map, replacing current
         end % #addFlag
         
         %% Add Flags
@@ -75,18 +80,21 @@ classdef WorldMap
                 obj.flags(end).lines = f;%(nb: new end)
             end %f in fs
             
-            obj.createMap(); %Update display but creating new map, replacing current
+            %obj.createMap(); %Update display by creating new map, replacing current
         end % #addFlags
         
         %% Add Obstacle
         % As a Colliding Obstacle to the WorldMap and Updates the Plot
         % o - Point-Outline of the Obstacle given as a Vector of Points. Ex:
         %     [0 0; 0 1; 1 1; 1 0; 0 0] is a 1m. square touching the origin
-        function addObstacle(obj, o)
-            obj.flags(end + 1) = lineObject();
-            obj.flags(end).lines = o;%(nb: new end)
+        % Returns: the lineObject representing the flag (the pose of this
+        % object can be updated to move it across the world).
+        function out = addObstacle(obj, o)
+            obj.obstacles(end + 1) = lineObject();
+            obj.obstacles(end).lines = o;%(nb: new end)
+            out = obj.obstacles(end);
             
-            obj.createMap(); %Update display but creating new map, replacing current
+            %obj.createMap(); %Update display by creating new map, replacing current
         end % #addObstacle
         
         %% Add Obstacles
@@ -95,11 +103,11 @@ classdef WorldMap
         %     [0 0; 0 1; 1 1; 1 0; 0 0] is a 1m. square touching the origin
         function addObstacles(obj, os)
             for o = os
-                obj.flags(end + 1) = lineObject();
-                obj.flags(end).lines = o;%(nb: new end)
+                obj.obstacles(end + 1) = lineObject();
+                obj.obstacles(end).lines = o;%(nb: new end)
             end %f in fs
             
-            obj.createMap(); %Update display but creating new map, replacing current
+            %obj.createMap(); %Update display by creating new map, replacing current
         end % #addObstacles
         
     end % Debugger->methods

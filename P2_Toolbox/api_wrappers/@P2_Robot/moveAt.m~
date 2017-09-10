@@ -1,0 +1,6 @@
+% Moves the Robot with a Speed, V (as measured from robot center) and
+% Rotational Velocity, omega.
+% Assumes si
+function moveAt(obj, V, omega, sim)
+    
+end % #moveAt

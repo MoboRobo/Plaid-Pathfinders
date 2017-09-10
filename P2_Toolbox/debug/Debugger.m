@@ -1,5 +1,5 @@
 % Class Managing Robot Debugging 
-classdef Debugger
+classdef Debugger < handle
     %% PROPERTIES
     properties (GetAccess=public, SetAccess=private)
         ON = 0;      % Is Debugging On or Off. Default off. (1->ON, 0->OFF)
