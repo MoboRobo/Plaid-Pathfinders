@@ -49,7 +49,7 @@ classdef RangeImage
         % Cleans the Image data by tossing out values above max_rng and 
         % below min_rng. All invalid data is zeroed.
         function r_clean = cleanImage(r_in, min_rng,max_rng)
-            r_clean = zeros(length(r_in));
+            r_clean = zeros(1,length(r_in));
             for i = (1:length(r_in))
                 r_clean(i) = (r_in(i)<max_rng && r_in(i)>min_rng)*r_in(i);
             end 
@@ -80,7 +80,17 @@ classdef RangeImage
         %% Plot Range Image
         % Cleans and Processes Range Data to Plot what the Robot Sees.
         % Returns the handle of the figure the plot is held in.
-        function f = plot_rangeData(ranges)
+        %
+        % ranges - a list of the distance readings collected from the
+        % laser range finder starting from RangeImage.INDEX_OFFSET degrees,
+        % which evenly spaced by RangeImage.INDEX_SIZE degrees.
+        
+        % colorize - [bool] if true, a z-axis will be plotted for each
+        % point representing it's distance from the robot which can be
+        % used for plotting range with color.
+        function f = plot_rangeData(ranges, colorize)
+        % TODO: Plot (x,y,r) where r is distance for ZData to serve as
+        % color.
             persistent fig pl
 
             rs = RangeImage.cleanImage(ranges, 0.06, 1.5);
@@ -97,17 +107,26 @@ classdef RangeImage
             % Environment Plotting
             if isempty(fig) %Instantiate plot on first call
                 fig = figure();
-                pl = scatter(-ys, xs);
+                if(colorize)
+                    pl = scatter(-ys, xs, 36, rs);
+                else
+                    pl = scatter(-ys, xs);
+                end % colorize?
                     axis([-1.5 1.5 -1.5 1.5])
                     title('LIDAR Data')
                     xlabel('Negative Y-Position [m]')
                     ylabel('X-Position [m]')
                     set(pl, 'XData', -ys)
                     set(pl, 'YData', xs)
+                    if colorize; set(pl, 'ZData', rs); end
                 refreshdata
                 drawnow
             end
-            set(pl, 'XData', -ys, 'YData', xs) %Update
+            if(colorize)
+                set(pl, 'XData', -ys, 'YData', xs, 'ZData', rs) %Update
+            else
+                set(pl, 'XData', -ys, 'YData', xs) %Update
+            end % colorize?
             refreshdata
             drawnow limitrate
             

@@ -60,7 +60,7 @@ classdef P2_Robot < handle
         
         %% Destructor
         function delete(obj)
-            obj.core.delete(); %Destruct Core Robot
+%             obj.core.delete(); %Destruct Core Robot
         end % #delete
         
         %% ODOMETRY

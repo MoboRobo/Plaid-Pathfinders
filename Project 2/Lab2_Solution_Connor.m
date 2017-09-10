@@ -51,7 +51,7 @@ function Lab2_Solution_Connor(robot_id)
         if( (isempty(last_plot) || toc(last_plot)>1/hz) && laser_data_avail)
             last_plot = tic;
             
-            fig = RangeImage.plot_rangeData(rob.core.laser.LatestMessage.Ranges); % Plot Range Data
+            fig = RangeImage.plot_rangeData(rob.core.laser.LatestMessage.Ranges, 1); % Plot Range Data
             %Plot nearest point on top of range data:
             figure(fig);
             set(0,'CurrentFigure',fig)
@@ -100,16 +100,26 @@ end %
 % Callback Function on New Laser Range Data
 %%DEPRECATED%%
 function new_rangeData(~, event)
-    global laser_data_avail
-    persistent last_time
+    global person laser_data_avail
+    persistent last_time last_call person_initPos
+    if isempty(last_call)
+        last_call = tic; % time of last call to this function
+    end
     
     laser_data_avail = 1; % Flag new Laser Data as Available
     
-    % Move Person Up and Down
+    % Move Person Up and Down from init a Maximum of dp Distance at speed vp
+    dp = 1; vp = 0.06;
+    if isempty(person_initPos); person_initPos = person.pose; end
+    if (person.pose(2) > person_initPos(2)+dp || person.pose(2) < person_initPos(2)-dp)
+        vp = -vp; % turn around if out of bounds
+    end % if out of bounds
+    person.pose = person.pose + [0 vp*toc(last_call) 0]; % Move
     
 %     hz = 5; % [Hz] Maximum Number of Times to Update LIDAR Display per Second.
 %     if(isempty(last_time) || toc(last_time)>1/hz )
 %         last_time = tic;
 %         plot_rangeData(event.Ranges);
 %     end % last_time > 1/hz?
+    last_call = tic;
 end % #new_rangeData
