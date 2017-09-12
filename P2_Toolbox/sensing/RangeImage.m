@@ -61,6 +61,9 @@ classdef RangeImage
         % returns: th - [deg] bearing in degrees.
         function th = index2bearing(i)
             th = RangeImage.INDEX_OFFSET() + (i-1)*RangeImage.INDEX_SIZE();
+            th = mod(th,360);
+            th = (th > 180)*(th-360) + (abs(th) <= 180)*th ...
+               + (th < -180)*(th+360); %Ensure output ranges from -180 to 180deg.
         end % #index2bearing
         
         %% IR to XY
@@ -70,9 +73,6 @@ classdef RangeImage
         % th - [rad] bearing of point (i,r) in robot's reference frame.
         function [x, y, th] = irToXy(i,r)
             th = RangeImage.index2bearing(i);
-            th = mod(th,360);
-            th = (th > 180)*(th-360) + (abs(th) <= 180)*th ...
-               + (th < -180)*(th+360); %Ensure output ranges from -180 to 180deg.
             th = deg2rad(th);
             
             x = r*cos(th);

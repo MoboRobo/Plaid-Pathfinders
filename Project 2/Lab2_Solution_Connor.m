@@ -7,10 +7,11 @@ function Lab2_Solution_Connor(robot_id)
     if(~strcmp(robot_id,'sim'))
         rob_type = 'raspbot';
         rob.core.togglePlot(); %Turn on map plotting for non-simulated robots
+        RangeImage.INDEX_OFFSET(5);
     end
 
     %% SETUP MAPPING
-    bounds = 3.5*[0.5 0; 0.5 1; -0.5 1; -0.5 0]; % Inverted U-Shaped Container
+    bounds = [0 0];%3.5*[0.5 0; 0.5 1; -0.5 1; -0.5 0]; % Inverted U-Shaped Container
     person_lines = ShapeGen.rect(0.1,0.05);
     wm = WorldMap(rob, bounds);
         person = wm.addObstacle(person_lines); % Person to Follow.
@@ -27,17 +28,20 @@ function Lab2_Solution_Connor(robot_id)
     rob.core.laser.NewMessageFcn=@new_rangeData; % Setup Callback to Process New Data
     laser_data_avail = 0; % Flag for New Unprocessed Laser Data 
     
-    %% MAIN LOOP    
+    pause(3); % Wait for everything to initialize
+    
+    %% MAIN LOOP
     last_plot = tic; % Time of last plotting of laser data.
     hz = 3; % [Hz] Maximum Number of Times to Update LIDAR Display per Second.
-    sct_overlay = 0; % Scatter Plot of Nearest Object for Overlay onto the LIDAR Data. 
+    sct_overlay = 0; % Scatter Plot of Nearest Object for Overlay onto the LIDAR Data.
+    dir_nearest = 1;
     OOR_LOOP = 0; % The Main Loop Should be performing Out Of Range Updating Tasks
     done = 0;
     while(~done)
         
         %% ALGORITHM
         rs = rob.core.laser.LatestMessage.Ranges; % Store so all functions use same data set (lest there be an interim interrupt update)
-        rs = RangeImage.cleanImage(rs, 0.06, 1.5);
+        rs = RangeImage.cleanImage(rs, 0.07, 1.0);
         
         [l_near, i_near, ~] = dist2nearestObject(rs, -pi/2, pi/2);
         [x_near, y_near, th_near] = RangeImage.irToXy(i_near, l_near);
@@ -49,6 +53,8 @@ function Lab2_Solution_Connor(robot_id)
             rob.trajectory_goTo(V, (l_near-FOLLOWING_DIST), th_near);
         else
             OOR_LOOP = 1;
+            [~, ~, th_n] = dist2nearestObject(rs); % Nearest Object to Robot
+            dir_nearest = sign(th_n); % Identify direction of nearest object
         end
         
         if OOR_LOOP
@@ -57,15 +63,14 @@ function Lab2_Solution_Connor(robot_id)
         % to nearest object; this solves the "step-over" problem):
             rs = rob.core.laser.LatestMessage.Ranges;
             rs = RangeImage.cleanImage(rs, 0.06, 1.5);
-            [l_n, ~, th_n] = dist2nearestObject(rs); % Nearest Distance
+            [l_n, ~, ~] = dist2nearestObject(rs); % Nearest Distance
             [l_nir, ~, ~] = dist2nearestObject(rs, -pi/2, pi/2); % Nearest In Range
-
+            
             if(l_nir > l_n)
             % If nearest object in range is farther than the nearest object
             % or the nearest point is not within the center of the
             % field of view
-                dir = sign(th_n); % Spin direction of nearest object
-                rob.moveAt(0, dir*(pi/6)); %spin into the direction of nearest object
+                rob.moveAt(0, dir_nearest*(pi/6)); %spin into the direction of nearest object
             else
                 OOR_LOOP = 0; %done
             end % l_nir > l_n?
@@ -75,7 +80,7 @@ function Lab2_Solution_Connor(robot_id)
         if( (isempty(last_plot) || toc(last_plot)>1/hz) && laser_data_avail)
             last_plot = tic;
             
-            fig = RangeImage.plot_rangeData(rob.core.laser.LatestMessage.Ranges, 0); % Plot Range Data
+            fig = RangeImage.plot_rangeData(rs, 0); % Plot Range Data
             %Plot nearest point on top of range data:
             figure(fig);
             set(0,'CurrentFigure',fig)
