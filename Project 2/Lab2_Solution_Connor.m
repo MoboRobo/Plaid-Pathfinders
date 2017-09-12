@@ -10,6 +10,7 @@ function Lab2_Solution_Connor(robot_id)
         RangeImage.INDEX_OFFSET(5);
     end
 
+    rob.core.forksDown(); % Prevent Brown-out
     %% SETUP MAPPING
     bounds = [0 0];%3.5*[0.5 0; 0.5 1; -0.5 1; -0.5 0]; % Inverted U-Shaped Container
     person_lines = ShapeGen.rect(0.1,0.05);
@@ -21,7 +22,7 @@ function Lab2_Solution_Connor(robot_id)
     
     %% TASK PARAMETERS
     FOLLOWING_DIST = 0.5;   % m, Distance to stay away from target.
-    PROP_GAIN = 0.8;          % Proportional gain for positioning
+    PROP_GAIN = 5*0.15/0.5;          % Proportional gain for positioning
     
     %% SETUP SENSING
     rob.core.startLaser();
@@ -41,7 +42,7 @@ function Lab2_Solution_Connor(robot_id)
         
         %% ALGORITHM
         rs = rob.core.laser.LatestMessage.Ranges; % Store so all functions use same data set (lest there be an interim interrupt update)
-        rs = RangeImage.cleanImage(rs, 0.07, 1.0);
+        rs = RangeImage.cleanImage(rs, 0.07, 1.5);
         
         [l_near, i_near, ~] = dist2nearestObject(rs, -pi/2, pi/2);
         [x_near, y_near, th_near] = RangeImage.irToXy(i_near, l_near);
@@ -52,9 +53,11 @@ function Lab2_Solution_Connor(robot_id)
         if (l_near ~= Inf && ~OOR_LOOP) % Is there a valid point?
             rob.trajectory_goTo(V, (l_near-FOLLOWING_DIST), th_near);
         else
+            if(~OOR_LOOP) %set direction of spin on first call
+                [~, ~, th_n] = dist2nearestObject(rs); % Nearest Object to Robot
+                dir_nearest = sign(th_n); % Identify direction of nearest object
+            end
             OOR_LOOP = 1;
-            [~, ~, th_n] = dist2nearestObject(rs); % Nearest Object to Robot
-            dir_nearest = sign(th_n); % Identify direction of nearest object
         end
         
         if OOR_LOOP
@@ -70,7 +73,7 @@ function Lab2_Solution_Connor(robot_id)
             % If nearest object in range is farther than the nearest object
             % or the nearest point is not within the center of the
             % field of view
-                rob.moveAt(0, dir_nearest*(pi/6)); %spin into the direction of nearest object
+                rob.moveAt(0, dir_nearest*(pi/2)); %spin into the direction of nearest object
             else
                 OOR_LOOP = 0; %done
             end % l_nir > l_n?
