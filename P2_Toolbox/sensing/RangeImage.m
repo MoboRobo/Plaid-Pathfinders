@@ -58,6 +58,7 @@ classdef RangeImage
         %% Index to Bearing
         % Converts a given Range Point Index to a Bearing in the Robot's
         % Reference Frame.
+        % returns: th - [deg] bearing in degrees.
         function th = index2bearing(i)
             th = RangeImage.INDEX_OFFSET() + (i-1)*RangeImage.INDEX_SIZE();
         end % #index2bearing
@@ -78,7 +79,7 @@ classdef RangeImage
         end % #irToXy
         
         %% Plot Range Image
-        % Cleans and Processes Range Data to Plot what the Robot Sees.
+        % Processes Range Data to Plot what the Robot Sees.
         % Returns the handle of the figure the plot is held in.
         %
         % ranges - a list of the distance readings collected from the
@@ -88,12 +89,10 @@ classdef RangeImage
         % colorize - [bool] if true, a z-axis will be plotted for each
         % point representing it's distance from the robot which can be
         % used for plotting range with color.
-        function f = plot_rangeData(ranges, colorize)
+        function f = plot_rangeData(rs, colorize)
         % TODO: Plot (x,y,r) where r is distance for ZData to serve as
         % color.
             persistent fig pl
-
-            rs = RangeImage.cleanImage(ranges, 0.06, 1.5);
 
             % Data Processing
             n = length(rs);
@@ -112,7 +111,7 @@ classdef RangeImage
                 else
                     pl = scatter(-ys, xs);
                 end % colorize?
-                    axis([-1.5 1.5 -1.5 1.5])
+                    axis(2*[-1 1 -1 1])
                     title('LIDAR Data')
                     xlabel('Negative Y-Position [m]')
                     ylabel('X-Position [m]')

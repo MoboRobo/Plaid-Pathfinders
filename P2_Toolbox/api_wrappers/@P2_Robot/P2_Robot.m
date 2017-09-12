@@ -20,6 +20,10 @@ classdef P2_Robot < handle
         core;           % RaspBot Core Class (manages ROS communication, et al)
         on_time;        % Time (tic) that the debugger started
         
+        %Motion:
+        curr_V = 0;     % m/s, Most Recently Commanded Body Velocity
+        curr_omega = 0; % rad/s, Most Recently Commanded Rotational Velocity
+        
         %Odometry:
         trip_startTime; % Time Most Recent Trip Started (odometry)
         init_enc_l;     % Left Encoder Reading from Start of Trip

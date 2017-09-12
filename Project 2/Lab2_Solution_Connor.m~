@@ -19,7 +19,7 @@ function Lab2_Solution_Connor(robot_id)
     pause(1) % Wait for World to Initialize
     
     %% TASK PARAMETERS
-    FOLLOWING_DIST = 0.5;   % m, Distance to stay away from target.
+    FOLLOWING_DIST = 0.;   % m, Distance to stay away from target.
     PROP_GAIN = 1;          % Proportional gain for positioning
     
     %% SETUP SENSING
@@ -66,10 +66,7 @@ function Lab2_Solution_Connor(robot_id)
                 [l_n, ~, th_n] = dist2nearestObject(rs); % Nearest Distance
                 [l_nir, ~, ~] = dist2nearestObject(rs, -pi/2, pi/2); % Nearest In Range
                 
-                if(l_nir > l_n || th_n < pi/3 && th_n > -pi/3)
-                % If nearest object in range is farther than the nearest object
-                % or the nearest point is not within the center of the
-                % field of view
+                if(l_nir > l_n) % If nearest object in range is farther than the nearest object
                     dir = -sign(th_n); % Spin direction of nearest object
                     rob.moveAt( 0, dir*(pi/2) ); %spin into the direction of nearest object
                 else
