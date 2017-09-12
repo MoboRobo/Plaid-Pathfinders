@@ -71,7 +71,8 @@ classdef RangeImage
         function [x, y, th] = irToXy(i,r)
             th = RangeImage.index2bearing(i);
             th = mod(th,360);
-            th = (th > 180)*(th-360) + (th <= 180)*th; %Ensure output ranges from -180 to 180deg.
+            th = (th > 180)*(th-360) + (abs(th) <= 180)*th ...
+               + (th < -180)*(th+360); %Ensure output ranges from -180 to 180deg.
             th = deg2rad(th);
             
             x = r*cos(th);
