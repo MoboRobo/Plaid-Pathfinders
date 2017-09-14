@@ -27,19 +27,16 @@ classdef P2_Robot < handle
         %Raspbot Data Logs:
         hist_enc_l=[];  % m, History of Left Encoder Data
         hist_enc_r=[];  % m, History of Right Encoder Data
-        hist_enc_t=[];  % s, History of Encoder Call Times
-        
         hist_laser=[];  % m, History of LIDAR data
-        hist_laser_t=[];  % s, History of Encoder Call Times
         
         %Odometry Data Logs:
         % (store lots of calculated values as storage is a prevalent and
         % CPU time is highly valueable)
-        hist_bodyV=[0];  % m/s, History of Rigid Body Velocity at Center
-        hist_bodyOmega=[0];% rad/s, History of Rigid Body Rotation Velocity
-        hist_x=[0];  % m, History of X Position in the World-Frame
-        hist_y=[0];  % m, History of Y Position in the World-Frame
-        hist_th=[0];  % m, History of Heading, th, in the World-Frame
+        hist_bodyV=[];  % m/s, History of Rigid Body Velocity at Center
+        hist_bodyOmega=[];% rad/s, History of Rigid Body Rotation Velocity
+        hist_x=[];  % m, History of X Position in the World-Frame
+        hist_y=[];  % m, History of Y Position
+        hist_y=[];  % m, History of Y Position
         
         %Odometry:
         trip_startTime; % Time Most Recent Trip Started (odometry)
@@ -73,7 +70,7 @@ classdef P2_Robot < handle
             end % nargin>0?
             
             % Establish Data-Logging and Odometry Callback Functions
-            %obj.core.encoders.NewMessageFcn = @processNewEncoderData;
+            obj.core.encoders.NewMessageFcn = @processNewEncoderData;
             
             obj.on_time = tic;
             obj.trip_startTime = tic;
@@ -136,28 +133,18 @@ classdef P2_Robot < handle
         % standards].
         trajectory_goTo(obj, V, x, y, th);
         
-%         % Process New Encoder Data Sent from the RaspBot by logging it and
-%         % calculating the odometry parameters from it.
-%         function processNewEncoderData(obj, handle, event)
-%             sl = event.Vector.X;
-%             sr = event.Vector.Y;
-%             obj.hist_enc_l(end+1) = sl;
-%             obj.hist_enc_r(end+1) = sr;
-%             
-%             vl = (sl - 
-%             
-%             obj.hist_bodyV(end+1) = 
-%             obj.hist_bodyOmega(end+1) =
-%             
-%             obj.hist_th(end+1) = 
-%             
-%             ds = 
-%             dth = 
-%             dV = 
-%             dOmega = 
-% 
-%             
-%         end % #processNewEncoderData
+        % Process New Encoder Data Sent from the RaspBot by logging it and
+        % calculating the odometry parameters from it.
+        function processNewEncoderData(obj, handle, event)
+            sl = event.Vector.X;
+            sr = event.Vector.Y;
+            obj.hist_enc_l(end+1) = sl;
+            obj.hist_enc_r(end+1) = sr;
+
+            
+            obj.hist_bodyV(end+1) = 
+            obj.hist_bodyOmega(end+1) =
+        end % #processNewEncoderData
     end % P2_Robot->methods
     
 end % P2_Robot
