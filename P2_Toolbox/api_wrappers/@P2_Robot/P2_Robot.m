@@ -18,28 +18,29 @@ classdef P2_Robot < handle
     %% PROPERTIES
     properties (GetAccess=public, SetAccess=private)
         core;           % RaspBot Core Class (manages ROS communication, et al)
-        on_time;        % Time (tic) that the debugger started
+        on_time;        % Time (tic) that the robot started
         
         %Motion:
         curr_V = 0;     % m/s, Most Recently Commanded Body Velocity
         curr_omega = 0; % rad/s, Most Recently Commanded Rotational Velocity
         
         %Raspbot Data Logs:
-        hist_enc_l=[];  % m, History of Left Encoder Data
-        hist_enc_r=[];  % m, History of Right Encoder Data
-        hist_enc_t=[];  % s, History of Encoder Call Times
         
-        hist_laser=[];  % m, History of LIDAR data
-        hist_laser_t=[];  % s, History of Encoder Call Times
+        % History of Encoder Readings [m]
+        % Formatted as: [[sl_0,sr_0, t_0]; ... ]:
+        hist_enc = [struct('s_l',0, 's_r',0, 't',0)];
+        % History of Robot Positions determined from Sensor Readings.
+        % Formatted as: [[x_0,y_0,th_0]; ... ]
+        hist_estPose = [struct('X',0, 'Y',0, 'th',0)];
         
-        %Odometry Data Logs:
-        % (store lots of calculated values as storage is a prevalent and
-        % CPU time is highly valueable)
-        hist_bodyV=[0];  % m/s, History of Rigid Body Velocity at Center
-        hist_bodyOmega=[0];% rad/s, History of Rigid Body Rotation Velocity
-        hist_x=[0];  % m, History of X Position in the World-Frame
-        hist_y=[0];  % m, History of Y Position in the World-Frame
-        hist_th=[0];  % m, History of Heading, th, in the World-Frame
+        % History of Velocity Commands Issued to the Robot:
+        % Formatted as: [[vl_0,vr_0,t_0]; ... ]
+        hist_commVel = [struct('v_l',0, 'v_r',0, 't',0)];
+        % History of Robot Positions Determined from Input Commands.
+        % Formatted as: [[x_0,y_0,th_0]; ... ]
+        hist_commPose = [struct('X',0, 'Y',0, 'th',0)];
+        
+        hist_laser = [[0]]; % m, History of LIDAR Range Reading Vectors
         
         %Odometry:
         trip_startTime; % Time Most Recent Trip Started (odometry)
@@ -87,6 +88,18 @@ classdef P2_Robot < handle
 %             obj.core.delete(); %Destruct Core Robot
         end % #delete
         
+        %% KINEMATICS
+        % Transforming between sensor readings, robot commands, and the
+        % world using WMR kinematics.
+        
+        % Calculates the Rigid Body Rotational Velocity and Body-Center
+        % Velocity of the Robot from its Left and Right Wheel Speeds.
+        % (This method can also be fed a vector of v_l and of v_r.
+        function [V, om] = computeIK(obj, v_l, v_r)
+            V = (v_l+v_r) ./ 2; 
+            om = (v_r-v_l) ./ obj.WHEEL_TREAD;
+        end % #computeIK
+        
         %% ODOMETRY
         % Basic position tracking (time and encoder deltas, etc.)
         
@@ -116,13 +129,11 @@ classdef P2_Robot < handle
         %% MOTION
         % Methods for going places
         
-        %Run Robot with relative wheel velocities v_l, v_r, correcting for
-        %curvature defined by L2R_Factor (Ratio of Left-to-Right Wheel Running
-        %Speeds under natural conditions due to mechanical and
-        %environmental factors such as axel friction and tire deformation).
-        function run_correct(obj, v_l, v_r)
-            obj.core.sendVelocity(v_l/obj.L2R_RATIO,v_r)
-        end % #runStraight
+        % Move the Robot with Left and Right Wheel Speeds v_l and v_r,
+        % Logs the Commands into the Command History hist_commVel, and
+        % Computes and Logs the Commanded Pose into hist_commPose.
+        % (wrapper for the RaspBot setVelocity Command.
+        sendVelocity(obj, v_l, v_r);
         
         % Moves the Robot with a Speed, V (as measured from robot center) and
         % Rotational Velocity, omega.
@@ -136,28 +147,6 @@ classdef P2_Robot < handle
         % standards].
         trajectory_goTo(obj, V, x, y, th);
         
-%         % Process New Encoder Data Sent from the RaspBot by logging it and
-%         % calculating the odometry parameters from it.
-%         function processNewEncoderData(obj, handle, event)
-%             sl = event.Vector.X;
-%             sr = event.Vector.Y;
-%             obj.hist_enc_l(end+1) = sl;
-%             obj.hist_enc_r(end+1) = sr;
-%             
-%             vl = (sl - 
-%             
-%             obj.hist_bodyV(end+1) = 
-%             obj.hist_bodyOmega(end+1) =
-%             
-%             obj.hist_th(end+1) = 
-%             
-%             ds = 
-%             dth = 
-%             dV = 
-%             dOmega = 
-% 
-%             
-%         end % #processNewEncoderData
     end % P2_Robot->methods
     
 end % P2_Robot
