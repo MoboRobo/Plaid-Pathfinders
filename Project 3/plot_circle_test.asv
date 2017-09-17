@@ -24,8 +24,8 @@ function plot_circle_test(robot_id)
     p = plot(-rob.hist_y,rob.hist_x);
     
     while(1)
-        rob.moveAt(0.01, 0.01/0.1);
-        set(p, 'xdata', [get(p,'xdata') -rob.hist_y(end)], 'ydata', [get(p,'ydata') rob.hist_x(end)]);
+        rob.moveAt(0.1, 0.1/0.1);
+        set(p, 'xdata', [get(p,'xdata') rob.hist_x(end)], 'ydata', [get(p,'ydata') rob.hist_y(end)]);
         refreshdata
         pause(0.05);
     end

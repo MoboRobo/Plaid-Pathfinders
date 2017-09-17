@@ -28,6 +28,7 @@ classdef P2_Robot < handle
         hist_enc_l=[];  % m, History of Left Encoder Data
         hist_enc_r=[];  % m, History of Right Encoder Data
         hist_enc_t=[];  % s, History of Encoder Call Times
+        hist_enc_currFrame = 1;
         
         hist_laser=[];  % m, History of LIDAR data
         hist_laser_t=[];  % s, History of Encoder Call Times
@@ -40,6 +41,7 @@ classdef P2_Robot < handle
         hist_x=[0];  % m, History of X Position in the World-Frame
         hist_y=[0];  % m, History of Y Position in the World-Frame
         hist_th=[0];  % m, History of Heading, th, in the World-Frame
+        hist_currFrame = 2;
         
         %Odometry:
         trip_startTime; % Time Most Recent Trip Started (odometry)
@@ -158,6 +160,49 @@ classdef P2_Robot < handle
 % 
 %             
 %         end % #processNewEncoderData
+         function encoderEventListener(obj,handle,event)
+             encoderXMessage = event.Vector.X;
+             encoderYMessage = event.Vector.Y;
+             encoderDataTimestamp = double(event.Header.Stamp.Sec) + double(event.Header.Stamp.Nsec)/1000000000.0;
+             
+             obj.hist_enc_l(obj.hist_enc_currFrame) = encoderXMessage;
+             obj.hist_enc_r(obj.hist_enc_currFrame) = encoderYMessage;
+          
+             if(obj.hist_enc_currFrame > 1)
+                obj.hist_enc_t(obj.hist_enc_currFrame) = encoderDataTimestamp+obj.hist_enc_t(obj.hist_enc_currFrame-1);
+             else
+                obj.hist_enc_t(obj.hist_enc_currFrame) = encoderDataTimestamp; 
+             end
+             
+             dt = encoderDataTimestamp; %dt in seconds
+             vr = 0;
+             vl = 0;
+             if(obj.hist_enc_currFrame > 1)
+                vr = obj.hist_enc_r(obj.hist_enc_currFrame) - obj.hist_enc_r(obj.hist_enc_currFrame-1);
+                vl = obj.hist_enc_l(obj.hist_enc_currFrame) - obj.hist_enc_l(obj.hist_enc_currFrame-1);
+             else
+                vr = 0;
+                vl = 0;
+             end
+             
+             obj.hist_bodyV(obj.hist_currFrame) = (vr+vl)/2;
+             obj.hist_bodyOmega(obj.hist_currFrame) = (vr-vl)/(obj.WHEEL_TREAD);
+             
+             obj.hist_th(obj.hist_currFrame) = obj.hist_th(obj.hist_currFrame-1)+(obj.hist_bodyOmega(obj.hist_currFrame)*dt);
+             
+             obj.hist_x(obj.hist_currFrame)=obj.hist_x(obj.hist_currFrame-1)+(obj.hist_bodyV(obj.hist_currFrame)*dt)*cos(obj.hist_th(obj.hist_currFrame));
+             obj.hist_y(obj.hist_currFrame)=obj.hist_y(obj.hist_currFrame-1)+(obj.hist_bodyV(obj.hist_currFrame)*dt)*sin(obj.hist_th(obj.hist_currFrame));
+             
+             obj.hist_th(obj.hist_currFrame)
+             obj.hist_enc_currFrame = obj.hist_enc_currFrame + 1;
+             obj.hist_currFrame = obj.hist_currFrame + 1;
+         end 
+             
+             
+         function logEncoders(obj)
+            obj.core.encoders.NewMessageFcn = @obj.encoderEventListener;
+            
+         end
     end % P2_Robot->methods
     
 end % P2_Robot
