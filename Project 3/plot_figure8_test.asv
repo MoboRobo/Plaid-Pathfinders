@@ -1,4 +1,4 @@
-function plot_circle_test(robot_id)
+function plot_figure8_test(robot_id)
 %% SETUP ROBOT
     rasp = raspbot(robot_id, [0; 0; pi/2])
     rob = P2_Robot(rasp);
@@ -23,8 +23,13 @@ function plot_circle_test(robot_id)
     figure;
     p = plot(-rob.hist_y,rob.hist_x);
     t0 = tic
-    while(toc(t0) < sqrt(32*pi))
-        rob.moveAt(0.1, toc(t0)/8);
+    v = 0.2;
+    kk = 15.1084;
+    ks = 3;
+    sf = 1;
+    while(toc(T0) < sqrt(32*pi))
+        t = toc(T0)/ks
+        rob.moveAt(v, v*(kk/ks)*sin(2*pi*v*t/sf));
         set(p, 'xdata', [get(p,'xdata') -rob.hist_y(end)], 'ydata', [get(p,'ydata') rob.hist_x(end)]);
         refreshdata
         pause(0.05);

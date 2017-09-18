@@ -178,8 +178,8 @@ classdef P2_Robot < handle
              vr = 0;
              vl = 0;
              if(obj.hist_enc_currFrame > 1)
-                vr = obj.hist_enc_r(obj.hist_enc_currFrame) - obj.hist_enc_r(obj.hist_enc_currFrame-1);
-                vl = obj.hist_enc_l(obj.hist_enc_currFrame) - obj.hist_enc_l(obj.hist_enc_currFrame-1);
+                vr = (obj.hist_enc_r(obj.hist_enc_currFrame) - obj.hist_enc_r(obj.hist_enc_currFrame-1))/dt;
+                vl = (obj.hist_enc_l(obj.hist_enc_currFrame) - obj.hist_enc_l(obj.hist_enc_currFrame-1))/dt;
              else
                 vr = 0;
                 vl = 0;
