@@ -74,7 +74,7 @@ classdef P2_Robot < handle
             end % nargin>0?
             
             % Establish Data-Logging and Odometry Callback Functions
-            %obj.core.encoders.NewMessageFcn = @processNewEncoderData;
+            obj.core.encoders.NewMessageFcn = @obj.processNewEncoderData;
             
             obj.on_time = tic;
             obj.trip_startTime = tic;
@@ -96,12 +96,43 @@ classdef P2_Robot < handle
         % Velocity of the Robot from its Left and Right Wheel Speeds.
         % (This method can also be fed a vector of v_l and of v_r.
         function [V, om] = computeIK(obj, v_l, v_r)
-            V = (v_l+v_r) ./ 2; 
+            V = (v_r+v_l) ./ 2; 
             om = (v_r-v_l) ./ obj.WHEEL_TREAD;
         end % #computeIK
         
         %% ODOMETRY
         % Basic position tracking (time and encoder deltas, etc.)
+        
+        % Processes New Encoder Data by Storing it and Computing Velocity
+        % and Dead-Reckiong a Body Position.
+        function processNewEncoderData(obj, handle, event)
+            %Immediately Capture Event Data:
+            s_l = event.Vector.X;
+            s_r = event.Vector.Y;
+            t = event.Header.Stamp.Sec + event.Header.Stamp.Nsec/1e9;
+            
+            %Compute Amount of Time Elapsed since Previous Measurement
+            dt = t - obj.hist_enc(end).t;
+
+            %Compute Translational Velocity of the Robot's since the last
+            %Measurement:
+            v_l = (s_l - obj.hist_enc(end).s_l) / dt;
+            v_r = (s_r - obj.hist_enc(end).s_r) / dt;
+            
+            %Now that Previous Command is Done (a new command has been issued),
+            %compute IK and robot pose based on how long it was active for.
+            [V, omega] = obj.computeIK(v_l, v_r);
+
+            %Update Commanded Odometry (Mid-Point Algorithm):
+            new_th = obj.hist_estPose(end).th + omega*dt/2;
+            new_x = obj.hist_estPose(end).X + V*cos(new_th);
+            new_y = obj.hist_estPose(end).Y + V*sin(new_th);
+            new_th = new_th + omega*dt/2;
+
+            obj.hist_enc(end+1) = struct('s_l',s_l, 's_r',s_r, 't',t);
+            obj.hist_estPose(end+1) = struct('X',new_x, 'Y',new_y, 'th',new_th);
+            
+        end % #processNewEncoderData
         
         % Sets/Saves a new Robot State from which Odometry is Collected (overwrites 
         % previous).

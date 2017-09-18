@@ -32,7 +32,7 @@ classdef ShapeGen
         function out = translatePts(in, xx,yy)
             out = zeros(size(in));
             for(i = 1:length(in))
-                out(i,:) = [in(i,1)+xx in(i,1)+yy];
+                out(i,:) = [in(i,1)+xx, in(i,2)+yy];
             end % for i = 1:len(n)
         end % #translatePts
         

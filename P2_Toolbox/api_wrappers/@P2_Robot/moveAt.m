@@ -7,20 +7,5 @@ function moveAt(obj, V, omega)
     obj.sendVelocity(v_l,v_r);
     
     obj.curr_V = V;
-    obj.curr_omega =
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    omega;
+    obj.curr_omega = omega;
 end % #moveAt
