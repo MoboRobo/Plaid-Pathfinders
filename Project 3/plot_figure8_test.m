@@ -28,12 +28,14 @@ function plot_figure8_test(robot_id)
     ks = 3;
     sf = 1;
     
-    while(toc(T0) <= 10*ks*sf/v)
+    fudge = -0.17;
+    while(toc(T0) <= (ks*sf/v)+fudge)
         t = toc(T0)/ks;
         rob.moveAt(v, v*(kk/ks)*sin(2*pi*v*t/sf));
         set(p, 'xdata', [get(p,'xdata') -rob.hist_y(end)], 'ydata', [get(p,'ydata') rob.hist_x(end)]);
         refreshdata
         pause(0.05);
     end
-    rob.moveAt(0,0)
+    rob.moveAt(0,0);
+    rob.core.stop();
 end
