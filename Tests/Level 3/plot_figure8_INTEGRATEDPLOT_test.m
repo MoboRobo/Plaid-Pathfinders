@@ -29,7 +29,7 @@ function plot_circle_test(robot_id)
     T_f = k_s*t_f;
     
     %% ALGORITHM
-    rob.enablePositionPlotting();
+    %rob.enablePositionPlotting();
     
     rob.waitForReady();
     
