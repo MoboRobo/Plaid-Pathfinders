@@ -19,34 +19,47 @@ function plot_circle_test(robot_id)
     
     %% PLOT
     V = 0.05; % m/s, Velocity
-    rho = 0.1; % m, Radius of Curvature
+    k_w = 1/8;
+    T_f = sqrt(32*pi);
+    
     fig = figure();
     hold on
         pl_comm = plot(0, 0, 'k'); % Plot of Commanded Dead-Reckoning Positions ( int dX.(X,u) )
         pl_est = plot(0, 0, 'b');  % Plot of Measured/Estimated Dead-Reckoning Positions ( int dX.(X,z) )
     hold off
-    axis([-2.5*rho 0.5*rho -1.5*rho 1.5*rho]);
+    axis([-2*0.125 0.5*0.125 -0.5*0.125 2*0.125]);
     legend('Position Reckoned from Commands', 'Position Estimated from Readings');
     
-    %st = tic;
+    st = tic;
     
-    while(1)
-        rob.moveAt(V, V/rho);
+    while(~is_done(toc(st)))
+        pause(0.03); % CPU Relief
         
-        % Commanded Position:
-        cx = rob.hist_commPose(end).X;
-        cy = rob.hist_commPose(end).Y;
+        rob.moveAt(V, k_w*toc(st));
         
-        ex = rob.hist_estPose(end).X;
-        ey = rob.hist_estPose(end).Y;
-
         figure(fig);
         hold on
-            set(pl_comm, 'xdata',[get(pl_comm, 'xdata'), -cy], 'ydata',[get(pl_comm, 'ydata'), cx]);
-            set(pl_est, 'xdata',[get(pl_est, 'xdata'), -ey], 'ydata',[get(pl_est, 'ydata'), ex]);
+            set(pl_comm, 'xdata',-[rob.hist_commPose(:).Y], 'ydata',[rob.hist_commPose(:).X]);
+            set(pl_est, 'xdata',-[rob.hist_estPose(:).Y], 'ydata',[rob.hist_estPose(:).X]);
         hold off
         refreshdata
         
-        pause(0.05);
+        if(is_done(toc(st)))
+            rob.moveAt(0,0);
+        end
+    end
+    rob.moveAt(0,0);
+    
+    figure(fig);
+    hold on
+        set(pl_comm, 'xdata',-[rob.hist_commPose(:).Y], 'ydata',[rob.hist_commPose(:).X]);
+        set(pl_est, 'xdata',-[rob.hist_estPose(:).Y], 'ydata',[rob.hist_estPose(:).X]);
+    hold off
+    refreshdata
+    
+    % Determines whether the motion is done based on the given starting
+    % time.s
+    function isdn = is_done(start_time)
+        isdn = (start_time > T_f);
     end
 end

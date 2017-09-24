@@ -28,7 +28,7 @@ function trajectory_goTo(obj, V, l, th)
     end
     
     k = 2 * sin(th_targ/2) / l_go; % radius of curvature = l/crd(th). K = 1/R
-    omega = -k*V_go;
+    omega = k*V_go;
 %     
 %     if(l < 0) % if distance to object is -ve, back up.
 %     % turn a negative distance problem into a negative velocity problem

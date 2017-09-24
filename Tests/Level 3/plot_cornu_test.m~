@@ -19,7 +19,7 @@ function plot_circle_test(robot_id)
     
     %% PLOT
     V = 0.05; % m/s, Velocity
-    rho = 0.1; % m, Radius of Curvature
+    k_w = 1/8;
     fig = figure();
     hold on
         pl_comm = plot(0, 0, 'k'); % Plot of Commanded Dead-Reckoning Positions ( int dX.(X,u) )
@@ -28,10 +28,10 @@ function plot_circle_test(robot_id)
     axis([-2.5*rho 0.5*rho -1.5*rho 1.5*rho]);
     legend('Position Reckoned from Commands', 'Position Estimated from Readings');
     
-    %st = tic;
+    st = tic;
     
     while(1)
-        rob.moveAt(V, V/rho);
+        rob.moveAt(V, k_w*to);
         
         % Commanded Position:
         cx = rob.hist_commPose(end).X;
