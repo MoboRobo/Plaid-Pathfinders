@@ -58,7 +58,6 @@ classdef P2_Robot < handle
         init_enc_r;     % Left Encoder Reading from Start of Trip
         
         %Plotting
-        
         position_plotting_on = 0;   % bool, Whether Position Plotting is Enabled
         position_plotting_listener; % Handle for the Last Listener to the Position Plotting Event.
         %Resources for the Position Plot:
@@ -88,12 +87,6 @@ classdef P2_Robot < handle
                            % friction and rpm/torque curve)
     end % P2_Robot->properties(public,public)
     
-    %% EVENTS
-    % Events to Listen For
-    events
-        P2_PLOTING_POSITION
-    end
-    
     methods
         %% Constructor
         % rb - RaspBot/Neato Robot Class which manages ROS Communication
@@ -110,6 +103,8 @@ classdef P2_Robot < handle
             
             % Establish Data-Logging and Odometry Callback Functions
             obj.logEncoders();
+            % Establish Position Plotting
+            obj.enablePositionPlotting();
             
             obj.on_time = tic;
             obj.trip_startTime = tic;
@@ -126,21 +121,13 @@ classdef P2_Robot < handle
         %% INITIALIZATION
         % Methods relating to the setup process of the robot.
         
-        % Waits for the Robot to Properly Initialize
-        function waitForReady(obj)
-            while(~obj.ready); end
-            pause(1.5); % Extra Assurance. Sometimes the motion timing acts
-                        % inconsistently when plot have been initialized
-                        % and there isn't a wait of at least 1 sec.
-                        % afterwards.
-        end % #waitForReady
+        wait
         
-        % Returns Whether the Robot has Completed all Initialization
-        % Procedures and is Ready to Run.
+        % Returns Whether the Robot has Completed all Initialization.
         function r = ready(obj)
             r = 1;
             r = r & obj.plotsReady();
-        end % #ready
+        end % 
         
         
         %% KINEMATICS
@@ -194,8 +181,6 @@ classdef P2_Robot < handle
                 obj.hist_estTime(end+1) = t;
                 obj.hist_estPose(end+1) = struct('X',new_x, 'Y',new_y, 'th',new_th);
                 obj.hist_estVel(end+1) = struct('v_l',v_l, 'v_r',v_r, 'V',V, 'om',omega);
-                
-                obj.triggerPositionPlot();
             end % dt>0?
             
         end % #processNewEncoderData
@@ -255,7 +240,7 @@ classdef P2_Robot < handle
         end % #triggerPlot
         % Registers a Listener for the PositionPlotting Event
         function lh = addPositionPlotListener(obj, listener)
-             lh = addlistener(obj,'P2_PLOTING_POSITION', listener);
+             lh = addListener(obj,'P2_PLOTING_POSITION', listener);
         end % #addPositionPlotListener
         
         % Enables Position Plotting for the Robot
@@ -275,9 +260,6 @@ classdef P2_Robot < handle
         
         %Setup the Position Plot
         function setupPositionPlot(obj)
-            if strcmp(obj.core.name, 'sim')
-                while(~obj.core.sim_robot.started); end
-            end % core.name == 'sim'?
             obj.position_plot_resources.fig = figure();
             hold on
                 obj.position_plot_resources.Comm_Plot = plot(0, 0, 'k-'); % Plot of Commanded Dead-Reckoning Positions ( int dX.(X,u) )
@@ -287,19 +269,14 @@ classdef P2_Robot < handle
             legend('Position Reckoned from Commands', 'Position Estimated from Readings');
             title(obj.position_plot_properties.title);
             drawnow
-            while(~strcmp(obj.position_plot_resources.fig.CurrentAxes.Title.String,obj.position_plot_properties.title)); end % Ensure Updatesare Finished
-            
-            obj.position_plot_resources.setup = 1; %Setup Complete
-        end % #setupPositionPlot
+            while(obj.position_plot_resources.fig ~= obj.position_plot_properties.title); end % Ensure Updates are Finished
+        end % #setupPositioPlot
         %Plot the Position of the Data of the Robot
-        function plotPosition(obj, ~)
+        function plotPosition(obj)
             tt = toc(obj.on_time);
             Dt = tt - obj.position_plot_properties.T_last;
             
-            if(obj.position_plotting_on ...
-            && obj.position_plot_resources.setup ...
-            && Dt > obj.position_plot_properties.period)
-        
+            if(obj.position_plotting_on && Dt > obj.position_plot_properties.period)
                 figure(obj.position_plot_resources.fig);
                 hold on
                     set(obj.position_plot_resources.Comm_Plot, ...
@@ -312,8 +289,7 @@ classdef P2_Robot < handle
                     );
                 hold off
                 obj.position_plot_properties.T_last = tt;
-                
-            end % if
+            end
         end % #plotPosition
         
         
@@ -321,7 +297,7 @@ classdef P2_Robot < handle
         function r = plotsReady(obj)
             r = 1;
             if(obj.position_plotting_on)
-                r = r & strcmp(obj.position_plot_resources.fig.CurrentAxes.Title.String,obj.position_plot_properties.title);
+                r = r & (obj.position_plot_resources.fig == obj.position_plot_properties.title);
             end % position_plotting_on?
         end % #plotsReady
     end % P2_Robot->methods
