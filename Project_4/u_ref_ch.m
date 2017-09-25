@@ -22,7 +22,9 @@ function u = u_ref_ch(t, a_max, v_max, dist, ~)
     
     u = 0;
     % Determine Control Signal from Position in Velocity Trajectory:
-    if(t <= t_ramp)
+    if(t < 0)
+        u = 0;
+    elseif(t <= t_ramp)
         u = a_max.*t;
     elseif( (t_f-t) <= t_ramp && (t_f-t) > 0)
         u = a_max.*(t_f-t);

@@ -24,12 +24,15 @@ function Lab4_Challenge(robot_id, type)
     a_max = 3*0.25;     % m/s^2, peak acceleration of ffwd ref trajectory
     targ_dist = 1;      % m, target distance of the ffwd ref. trajectory
     
+    delay = (3.239-2.862); % s, time delay between command signal and robot motion
+    
     d_range = 0.01;     % m, distance away from target to be considered within range.
     t_over = 1;         % s, time for algorithm to run after reaching target
     
     %% PLOT SETUP
     fig = figure();
     axis equal
+    legend('Reference Velocity', 'Reference Distance', 'Delayed Velocity', 'Delayed Distance', 'Measured Distance');
     %% ALGORITHM
     %rob.enablePositionPlotting();
     rob.waitForReady();
@@ -41,6 +44,9 @@ function Lab4_Challenge(robot_id, type)
     ts = [0]; % CPU time of each Reference Calculation
     us = [0]; % Reference Velocities
     ss = [0]; % Reference Distances
+    u_delays = [0]; % Reference Velocities
+    s_delays = [0]; % Reference Distances
+    ds = [0]; % Robot Distance Measurements
     
     done = 0;
     t0 = tic;
@@ -48,16 +54,19 @@ function Lab4_Challenge(robot_id, type)
         ts(end+1) = toc(t0);
         us(end+1) = usig(ts(end));
         ss(end+1) = ss(end) + (us(end)+us(end-1))*(ts(end)-ts(end-1))/2;
+        u_delays(end+1) = usig(ts(end)-delay);
+        s_delays(end+1) = s_delays(end) + (u_delays(end)+u_delays(end-1))*(ts(end)-ts(end-1))/2;
+        ds(end+1) = rob.hist_estPose(end).X;
         
         rob.moveAt(us(end), 0);
         
         figure(fig);
         clf(fig);
         hold on
-            plot(ts,us,'r', ts,ss,'g');
+            plot(ts,us,'r', ts,ss,'g', ts,u_delays,'y', ts,s_delays,'b', ts,ds,'k');
         hold off
         
-        if within(ss(end), d_range, targ_dist)
+        if within(s_delays(end), d_range, targ_dist)
             done = 1;
             rob.moveAt(0,0);
         end
