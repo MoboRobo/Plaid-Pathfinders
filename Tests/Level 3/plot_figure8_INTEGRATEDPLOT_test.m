@@ -1,4 +1,4 @@
-function plot_circle_test(robot_id)
+function plot_figure8_INTEGRATEDPLOT_test(robot_id)
     %% SETUP ROBOT
     rasp = raspbot(robot_id, [0; 0; pi/2])
     rob = P2_Robot(rasp);
@@ -29,7 +29,7 @@ function plot_circle_test(robot_id)
     T_f = k_s*t_f;
     
     %% ALGORITHM
-    %rob.enablePositionPlotting();
+    rob.enablePositionPlotting();
     
     rob.waitForReady();
     
