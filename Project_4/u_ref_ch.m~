@@ -1,0 +1,26 @@
+% Implementation of Lab 4's reference velocity trajectory curve for use in 
+% the challenge task where:
+% t is the time in the trajectory for which the control signal, u, is to be
+% evaluated, such that 0<=t<=t_f
+% v_max is the maximum velocity of the trajectory
+% a_max is the maximum acceleration of the trajectory
+% dist is the target distance of to be traversed during the trajectory.
+% sgn is the sign of the velocity control signal,u
+function u = u_ref_ch(t, v_max, a_max, dist, sgn)
+    %Duration of the constant acceleration, a_max, ramp up/down:
+    t_ramp = v_max / a_max;
+    if(t_ramp > t_f/2) % not enough time to reach v_max and come back down
+        t_ramp = t_f/2;
+    end
+    
+    u = 0;
+    % Determine Control Signal from Position in Velocity Trajectory:
+    if(t <= t_ramp)
+        u = a_max*t;
+    elseif( (t_f-t) <= t_ramp )
+        u = a_max*(t_f-t);
+    elseif(t_ramp<t && t<(t_f-t_ramp))
+        u = v_max;
+    end
+    
+end % #u_ref_ch
