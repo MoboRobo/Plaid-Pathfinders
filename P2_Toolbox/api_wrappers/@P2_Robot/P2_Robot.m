@@ -58,7 +58,6 @@ classdef P2_Robot < handle
         init_enc_r;     % Left Encoder Reading from Start of Trip
         
         %Plotting
-        
         position_plotting_on = 0;   % bool, Whether Position Plotting is Enabled
         position_plotting_listener; % Handle for the Last Listener to the Position Plotting Event.
         %Resources for the Position Plot:
@@ -128,7 +127,7 @@ classdef P2_Robot < handle
         
         % Waits for the Robot to Properly Initialize
         function waitForReady(obj)
-            while(~obj.ready); end
+            while(~obj.ready()); end
             pause(1.5); % Extra Assurance. Sometimes the motion timing acts
                         % inconsistently when plot have been initialized
                         % and there isn't a wait of at least 1 sec.
@@ -292,7 +291,7 @@ classdef P2_Robot < handle
             obj.position_plot_resources.setup = 1; %Setup Complete
         end % #setupPositionPlot
         %Plot the Position of the Data of the Robot
-        function plotPosition(obj, ~)
+        function plotPosition(obj, ~,~)
             tt = toc(obj.on_time);
             Dt = tt - obj.position_plot_properties.T_last;
             
