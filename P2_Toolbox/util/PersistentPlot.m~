@@ -9,10 +9,10 @@ classdef PersistentPlot < handle
         on_time;        % s, Time of Instantiation
         
         update_Tlast;   % s, Time of Last Plot Update
-        update_xs = []; % Vector to update X-Data to when an update is performed.
-        update_ys = []; % Vector to update Y-Data to when an update is performed.
-        update_x = [];  % Datum to add to X-Data when an update is performed.
-        update_y = [];  % Datum to add to Y-Data when an update is performed.
+        update_xs = []; % Vector to Update X-Data to when an update is performed.
+        update_ys = []; % Vector to Update Y-Data to when an update is performed.
+        update_x = [];  % Vector to Update X-Data to when an update is performed.
+        update_y = [];  % Vector to Update Y-Data to when an update is performed.
     end % properties
     
     events 
@@ -83,11 +83,9 @@ classdef PersistentPlot < handle
             obj.update_xs = xs;
             obj.update_ys = ys;
             notify(obj, 'UPDATE_PLOT');
-        end % #update_replaceXY
+        end
         
         %% Update Add XY
-        % **CAUSES ERRONEOUS PERFORMANCE, USE update_replaceXY IF
-        % POSSIBLE**
         % Triggers a plot update event during which the X and Y data will
         % have the values x,y added to them (x to XData, y to YData).
         % *To reset only one of these values, set the value to remain the
@@ -114,7 +112,7 @@ classdef PersistentPlot < handle
                 obj.update_y = y;
             end
             notify(obj, 'UPDATE_PLOT');
-        end % #update_addXY
+        end
         
         
         %% Set
