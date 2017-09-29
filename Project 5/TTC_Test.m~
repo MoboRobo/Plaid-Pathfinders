@@ -11,7 +11,7 @@ function TTC_Test
     k_th = 2*pi/s_f;
     k_k = 15.1084;
     k_s = 3;
-    k_v = 2;
+    k_v = 1;
     k_t = k_s/k_v;
     
     t_f = s_f/v_max + v_max / a_max;
@@ -34,13 +34,13 @@ function TTC_Test
     
     % Omega, takes Control Time
     function om = om8(obj,T)
-        V_t = @(TT)obj.V_func(obj,TT); % Control Velocity
+        v_t = @(V)obj.V_func(obj,T); % Model Velocity
         
-        Ts = (obj.times(1) : obj.resolution : T);% Control Time
-        %Control Path Length:
-        S_t = trapz(Ts, arrayfun(V_t, Ts), 2); % Numeric Integration of Scalar Func.
-        
-        K = (k_k/k_s) * sin(k_th*S_t/k_s);
+        ts = (obj.times(1) : obj.resolution : T);% Model Time
+%                                                                             clk.pause();
+        s_t = trapz(ts, arrayfun(v_t, ts), 2); % Numeric Integration of Scalar Func.
+%                                                                             clk.resume();
+        K = (k_k/k_s) * sin(k_th*s_t);
         om = K * obj.V_func(obj,T);
     end
 

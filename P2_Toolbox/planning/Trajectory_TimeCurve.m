@@ -8,6 +8,7 @@ classdef Trajectory_TimeCurve < handle
         send_delay = 0.1;   % s, Delay from Command Send to When the Robot Begins Executing it.
         
         N_samples = 100;    % Number of Samples in the Trajectory
+        resolution;         % s, Separation between Times
         
         method = 'spline';                  % Interpolation Method
     end % TrajectoryCurve <- properties(public,public)
@@ -36,6 +37,8 @@ classdef Trajectory_TimeCurve < handle
             if nargin > 4
                 obj.N_samples = ns;
             end % nargin>4?
+            obj.resolution = (tf-t0)/(obj.N_samples-1);%Beware the fence-post
+            
             if nargin > 5
                 obj.poses(0) = init_pose;
             end % nargin>5?
@@ -47,8 +50,7 @@ classdef Trajectory_TimeCurve < handle
         %% Compute
         % Computes the trajectory from time t0 to tf.
         function compute(obj,t0,tf)
-            res = (tf-t0) / (obj.N_samples-1); %Beware the fence-post
-            obj.times = (t0:res:tf);
+            obj.times = (t0 : obj.resolution : tf);
             
             %Compute First Point:
             obj.profile(1) = struct( ...
