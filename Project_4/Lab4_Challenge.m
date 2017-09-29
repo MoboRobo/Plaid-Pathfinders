@@ -117,6 +117,7 @@ global rob
         pause(0.05); % CPU Relief
     end % while ~done
     rob.moveAt(0,0);
+    rob.core.shutdown();
     
     s_delay_plot.update_replaceXY(ts,s_ref_delays);
     d_plot.update_replaceXY(ts,ds);
