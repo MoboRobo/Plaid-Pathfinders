@@ -1,5 +1,15 @@
-function TTC_Test
+function TTC_Test(robot_id)
     global clk
+    %% SETUP ROBOT
+    rasp = raspbot(robot_id, [0; 0; pi/2])
+    rob = P2_Robot(rasp);
+    if(~strcmp(robot_id,'sim'))
+        rob_type = 'raspbot';
+        rob.core.togglePlot(); %Turn on map plotting for non-simulated robots
+        RangeImage.INDEX_OFFSET(5);
+        rob.core.forksDown(); % Prevent Brown-out
+    end
+    
     clk = Clock();
     
     %% TASK PARAMETERS
@@ -10,8 +20,8 @@ function TTC_Test
     
     k_th = 2*pi/s_f;
     k_k = 15.1084;
-    k_s = 3;
-    k_v = 2;
+    k_s = 2;
+    k_v = 0.5;
     k_t = k_s/k_v;
     
     t_f = s_f/v_max + v_max / a_max;
@@ -49,10 +59,14 @@ function TTC_Test
     %% ALGORITHM
     fig = figure();
     pl = PersistentPlot(fig, 0,0);
+    axis equal
     
     first_loop = 1;
     clk = nan;
     T = 0;
+
+    xs = [];
+    ys = [];
     while(T < T_f)
         if(first_loop)
             clk = Clock();
@@ -61,9 +75,20 @@ function TTC_Test
         
         T = clk.time();
         X = ttc.getPose(T);
+        V = ttc.getV(T);
+        om = ttc.getOmega(T);
+        rob.moveAt(V,om);
+        
+        xs(end+1) = rob.hist_estPose(end).X;
+        ys(end+1) = rob.hist_estPose(end).Y;
         
         pl.addXY(-X.y, X.x);
         
         pause(0.01); % CPU Relief
     end
+    rob.moveAt(0,0);
+    figure(fig);
+    hold on
+        plot(-ys,xs);
+    hold off
 end
