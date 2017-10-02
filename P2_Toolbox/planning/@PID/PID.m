@@ -99,10 +99,10 @@ classdef PID < handle
             eth = obj.k_p * errorTh + obj.k_d * errorDerivativeTh + ...
                 obj.k_i * obj.errorIntegralTh
             %% compute actual control linear and rotational velocity
-%             u_v = ex * k_x;
-%             u_w = ey * k_y + eth * k_th;
-            u_v = errorX * k_x;
-            u_w = errorY * k_y + errorTh*k_th;
+             u_v = ex * k_x;
+            u_w = ey * k_y + eth * k_th;
+%             u_v = errorX * k_x;
+%             u_w = errorY * k_y + errorTh*k_th;
             %% ensure below ceiling
             if abs(u_v) > obj.v_max
                 sign = u_v / abs(u_v);
