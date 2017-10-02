@@ -108,5 +108,4 @@ classdef PID < handle
             obj.lastErrorOm = errorOm;
             end
         end
-    end
 end
