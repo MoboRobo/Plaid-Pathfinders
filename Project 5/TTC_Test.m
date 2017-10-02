@@ -20,8 +20,8 @@ function TTC_Test(robot_id)
     
     k_th = 2*pi/s_f;
     k_k = 15.1084;
-    k_s = 2;
-    k_v = 0.5;
+    k_s = 1;
+    k_v = 0.4;
     k_t = k_s/k_v;
     
     t_f = s_f/v_max + v_max / a_max;
@@ -65,6 +65,8 @@ function TTC_Test(robot_id)
     clk = nan;
     T = 0;
 
+    init_x = rob.hist_estPose(end).X;
+    init_y = rob.hist_estPose(end).Y;
     xs = [];
     ys = [];
     while(T < T_f)
@@ -79,14 +81,15 @@ function TTC_Test(robot_id)
         om = ttc.getOmega(T);
         rob.moveAt(V,om);
         
-        xs(end+1) = rob.hist_estPose(end).X;
-        ys(end+1) = rob.hist_estPose(end).Y;
+        xs(end+1) = rob.hist_estPose(end).X-init_x;
+        ys(end+1) = rob.hist_estPose(end).Y-init_y;
         
         pl.addXY(-X.y, X.x);
         
         pause(0.01); % CPU Relief
     end
     rob.moveAt(0,0);
+    rob.core.stop();
     figure(fig);
     hold on
         plot(-ys,xs);

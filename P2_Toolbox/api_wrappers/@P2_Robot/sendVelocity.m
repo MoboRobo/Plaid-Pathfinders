@@ -21,5 +21,5 @@ function sendVelocity(obj, v_l, v_r)
     
     obj.hist_commTime(end+1) = t;
     obj.hist_commVel(end+1) = struct('v_l',v_l, 'v_r',v_r, 'V',V, 'om',omega);
-    obj.hist_commPose(end+1) = struct('X',x, 'Y',y, 'th',th);
+    obj.hist_commPose(end+1) = pose(x, y, th);
 end % #setVelocity

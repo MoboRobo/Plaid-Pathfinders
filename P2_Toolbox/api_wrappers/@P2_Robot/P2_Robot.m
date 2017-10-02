@@ -34,7 +34,7 @@ classdef P2_Robot < handle
         hist_estTime = [0];
         % History of Robot Positions determined from Sensor Readings.
         % Formatted as: [[x_0,y_0,th_0]; ... ]
-        hist_estPose = [struct('X',0, 'Y',0, 'th',0)];
+        hist_estPose = [pose(0,0,0)];
         % History of Robot Velocities, determined from Sensor Readings.
         % Formatted as: [[vl_0,vr_0,V,0,omega,0,t_0]; ... ]
         hist_estVel = [struct('v_l',0, 'v_r',0, 'V',0, 'om',0)];
@@ -46,9 +46,9 @@ classdef P2_Robot < handle
         % History of Velocity Commands Issued to the Robot:
         % Formatted as: [[vl_0,vr_0,V,0,omega,0,t_0]; ... ]
         hist_commVel = [struct('v_l',0, 'v_r',0, 'V',0, 'om',0)];
-        % History of Robot Positions Determined from Input Commands.
+        % History of Robot Poses Determined from Input Commands.
         % Formatted as: [[x_0,y_0,th_0]; ... ]
-        hist_commPose = [struct('X',0, 'Y',0, 'th',0)];
+        hist_commPose = [pose(0,0,0)];
         
         hist_laser = [zeros(1,360)]; % m, History of LIDAR Range Reading Vectors
         
@@ -110,6 +110,11 @@ classdef P2_Robot < handle
             % Establish Data-Logging and Odometry Callback Functions
             obj.logEncoders();
             
+            evnt = obj.core.encoders.LatestMessage;
+            obj.hist_enc(1) = struct('s_l',evnt.Vector.X, 's_r',evnt.Vector.Y, 't',(evnt.Header.Stamp.Sec + evnt.Header.Stamp.Nsec/1e9));
+            obj.hist_estTime(1) = (evnt.Header.Stamp.Sec + evnt.Header.Stamp.Nsec/1e9);
+            obj.processNewEncoderData(obj.core.encoders, evnt);
+            
             obj.on_time = tic;
             obj.trip_startTime = tic;
             obj.init_enc_l = obj.core.encoders.LatestMessage.Vector.X;
@@ -164,7 +169,7 @@ classdef P2_Robot < handle
         
         % Processes New Encoder Data by Storing it and Computing Velocity
         % and Dead-Reckiong a Body Position.
-        function processNewEncoderData(obj, handle, event)
+        function processNewEncoderData(obj, ~, event)
             %Immediately Capture Event Data:
             s_l = event.Vector.X;
             s_r = event.Vector.Y;
@@ -191,7 +196,7 @@ classdef P2_Robot < handle
                 obj.hist_enc(end+1) = struct('s_l',s_l, 's_r',s_r, 't',t);
 
                 obj.hist_estTime(end+1) = t;
-                obj.hist_estPose(end+1) = struct('X',new_x, 'Y',new_y, 'th',new_th);
+                obj.hist_estPose(end+1) = pose(new_x, new_y, new_th);
                 obj.hist_estVel(end+1) = struct('v_l',v_l, 'v_r',v_r, 'V',V, 'om',omega);
                 
                 obj.triggerPositionPlot();
@@ -301,13 +306,17 @@ classdef P2_Robot < handle
         
                 figure(obj.position_plot_resources.fig);
                 hold on
+                    xxs = [obj.hist_commPose(:).poseVec]; xxs = xxs(1,:);
+                    yys = [obj.hist_commPose(:).poseVec]; yys = yys(2,:);
                     set(obj.position_plot_resources.Comm_Plot, ...
-                        'xdata',-[obj.hist_commPose(:).Y], ...
-                        'ydata',[obj.hist_commPose(:).X] ...
+                        'xdata',-yys, ...
+                        'ydata',xxs ...
                     );
+                    xxs = [obj.hist_estPose(:).poseVec]; xxs = xxs(1,:);
+                    yys = [obj.hist_estPose(:).poseVec]; yys = yys(2,:);
                     set(obj.position_plot_resources.Est_Plot, ...
-                        'xdata',-[obj.hist_estPose(:).Y], ...
-                        'ydata',[obj.hist_estPose(:).X] ...
+                        'xdata',-yys, ...
+                        'ydata',xxs ...
                     );
                 hold off
                 obj.position_plot_properties.T_last = tt;
