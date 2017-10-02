@@ -57,9 +57,11 @@ classdef PID < handle
             k_x = 1 / obj.correctiveTime;
             k_th = 1 / obj.correctiveTime;
             k_y = 2 / (abs(V) * obj.correctiveTime^2);
-            errorX = refPose.x - curPose.x;
-            errorY = refPose.y - curPose.y;
+            wrp = (refPose.poseVec(1:2) - curPose.getPoseVec(1:2));
+            thr = curPose.th;
             errorTh = refPose.th - curPose.th;
+            rrp = inv([cos(thr), -sin(thr); sin(thr), cos(thr)]) * wrp
+            [errorX errorY] = rrp';
             errorTh = atan2(sin(errorTh), cos(errorTh)); % normalize angle
             errorVel = k_x * errorX;
             errorOm = k_y * errorY + k_th * errorTh;
