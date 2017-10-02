@@ -61,7 +61,8 @@ classdef PID < handle
             thr = curPose.th;
             errorTh = refPose.th - curPose.th;
             rrp = inv([cos(thr), -sin(thr); sin(thr), cos(thr)]) * wrp
-            [errorX errorY] = rrp';
+            errorX = rrp(1);
+            errorY = rrp(2);
             errorTh = atan2(sin(errorTh), cos(errorTh)); % normalize angle
             errorVel = k_x * errorX;
             errorOm = k_y * errorY + k_th * errorTh;
