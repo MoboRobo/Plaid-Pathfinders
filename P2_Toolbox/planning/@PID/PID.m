@@ -57,7 +57,7 @@ classdef PID < handle
             k_x = 1 / obj.correctiveTime;
             k_th = 1 / obj.correctiveTime;
             k_y = 2 / (abs(V) * obj.correctiveTime^2);
-            wrp = (refPose.poseVec(1:2) - curPose.getPoseVec(1:2));
+            wrp = (refPose.poseVec(1:2) - curPose.poseVec(1:2));
             thr = curPose.th;
             errorTh = refPose.th - curPose.th;
             rrp = inv([cos(thr), -sin(thr); sin(thr), cos(thr)]) * wrp
