@@ -105,7 +105,6 @@ classdef PID < handle
             % update 'last' variables
             obj.lastErrorVel = errorVel;
             obj.lastErrorOm = errorOm;
-            obj.t_last = t;
             end
         end
     end
