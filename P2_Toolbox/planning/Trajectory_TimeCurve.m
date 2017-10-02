@@ -5,7 +5,7 @@
 classdef Trajectory_TimeCurve < handle
     %% PROPERTIES
     properties(GetAccess = public, SetAccess = public)
-        send_delay = 0.1;   % s, Delay from Command Send to When the Robot Begins Executing it.
+        send_delay = 0.18;   % s, Delay from Command Send to When the Robot Begins Executing it.
         
         N_samples = 100;    % Number of Samples in the Trajectory
         resolution;         % s, Separation between Times
@@ -104,7 +104,8 @@ classdef Trajectory_TimeCurve < handle
         
         %% Get Pose
         % Returns the pose of the robot at trajectory time, t.
-        function p = getPose(obj, t)
+        function p = getPose(obj, t_in)
+            t = t_in - obj.send_delay;
             xs = obj.xs(); % Vector of X-Positions
             ys = obj.ys();
             ths = obj.ths();
@@ -118,7 +119,8 @@ classdef Trajectory_TimeCurve < handle
         
         %% Get Velocity
         % Returns the velocity of the robot at trajectory time, t.
-        function V = getV(obj, t)
+        function V = getV(obj, t_in)
+            t = t_in - obj.send_delay;
             vs = [obj.profile(:).V];
             V = obj.genInt(obj.times,vs, t, 0);
         end % #getV
@@ -126,7 +128,8 @@ classdef Trajectory_TimeCurve < handle
         
         %% Get Omega
         % Returns the angular velocity of the robot at trajectory time, t.
-        function om = getOmega(obj, t)
+        function om = getOmega(obj, t_in)
+            t = t_in - obj.send_delay;
             oms = [obj.profile(:).om];
             om = obj.genInt(obj.times,oms, t, 0);
         end % #getPose

@@ -12,6 +12,8 @@ classdef Trajectory_Follower < handle
     end % Trajectory_Follower <- properties(public,private)
     
     properties(GetAccess=public, SetAccess=public)
+        fbk_trim = 1;       % Include Feedback-Trim (if 0, only u_ffwd is used)
+        
         u_ffwd= @(t)0;      % Function Handle for TrajectoryTime-Variant
                             % Feed-Forward Reference Velocity Curve
         u_fbk = @(t)0;      % Function Handle for TrajectoryTime-Variant 
@@ -37,7 +39,12 @@ classdef Trajectory_Follower < handle
         % Commands the Robot to assume the Motion it should have at
         % Trajectory Time, t
         function follow_update(obj, t)
-            u = obj.u_comm(t);
+            if(obj.fbk_trim)
+                u = obj.u_comm(t);
+            else
+                obj.u_fbk(t); % Just callin' it (so errors are still computed)
+                u = obj.u_ffwd(t);
+            end % fbk_trim?
             V = u(1);
             om = u(2);
             obj.robot.moveAt(V,om);

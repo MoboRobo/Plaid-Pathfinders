@@ -26,9 +26,9 @@ classdef PID < handle
         maxErrorIntegralY = 10;
         maxErrorIntegralTh = 10;
         
-        %PID coefficients
-        k_p = 3;
-        k_d = 0.1;
+        %PID coefficients (1,0,0 -> off by default)
+        k_p = 1;
+        k_d = 0;
         k_i = 0;
         
         %correctiveTime (time in which errors should be corrected)
@@ -43,7 +43,7 @@ classdef PID < handle
             obj.ttc = ttc;
             obj.rob = rob;
         end
-        function [u_v u_w] = getControl(obj, t)
+        function [u_v, u_w] = getControl(obj, t)
 
             if isempty(obj.error_times) %initialize
                 obj.error_times = [0];
@@ -56,17 +56,27 @@ classdef PID < handle
             %% determine error values in every dimension
             %get most recent velocity readings
             V = obj.rob.hist_estVel(end).V;
+            
             %error summing coefficients
             k_x = 1 / obj.correctiveTime;
             k_th = 1 / obj.correctiveTime;
-            k_y = 2 / (abs(V) * obj.correctiveTime^2);
+            if V < 0.2 % V-floor for k_y to prevent it from becoming too large
+                k_y = 0;
+            else
+                k_y = 2 / (abs(V) * obj.correctiveTime^2);
+            end % k_y<0.2?
+            
             wrp = (refPose.poseVec(1:2) - curPose.poseVec(1:2));
+            
             thr = atan2(sin(curPose.th), cos(curPose.th));
-            errorTh = atan2(sin(refPose.th), cos(refPose.th)) - ...
-                atan2(sin(curPose.th), cos(curPose.th));
-            rrp = inv([cos(thr), -sin(thr); sin(thr), cos(thr)]) * wrp
+            errorTh = refPose.th - curPose.th;
+            errorTh = atan2(sin(errorTh),cos(errorTh));
+            
+            rrp = [cos(thr), -sin(thr); sin(thr), cos(thr)] \ wrp;
+            
             errorX = rrp(1);
             errorY = rrp(2);
+            
             errorTh = atan2(sin(errorTh), cos(errorTh)); % normalize angle
             dt = t - t_last;
 
@@ -99,10 +109,11 @@ classdef PID < handle
             eth = obj.k_p * errorTh + obj.k_d * errorDerivativeTh + ...
                 obj.k_i * obj.errorIntegralTh
             %% compute actual control linear and rotational velocity
-             u_v = ex * k_x;
+            u_v = ex * k_x;
             u_w = ey * k_y + eth * k_th;
 %             u_v = errorX * k_x;
 %             u_w = errorY * k_y + errorTh*k_th;
+
             %% ensure below ceiling
             if abs(u_v) > obj.v_max
                 sign = u_v / abs(u_v);

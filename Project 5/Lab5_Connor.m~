@@ -13,7 +13,23 @@ function Lab5_Connor(robot_id)
     clk = Clock();
     
     %% TASK PARAMETERS
-    ttc = TTC_Figure8();
+    v_max = 0.25;       % m/s, peak velocity of ffwd reference trajectory
+    a_max = 3*0.25;     % m/s^2, peak acceleration of ffwd ref trajectory
+    targ_dist = 1;      % m, target distance of the ffwd ref. trajectory
+    s_f = targ_dist;
+    t_ramp = v_max / a_max;
+    t_f = s_f/v_max + t_ramp;
+    %BUT:
+    if(v_max^2/a_max > s_f) % not enough time to reach v_max and come back 
+                             % down before reaching dist.
+        v_p = sqrt(a_max*s_f); % Peak attainable velocity
+        t_ramp = v_p/a_max;
+        t_f = 2*t_ramp;
+    end
+    
+    uref = @(~,t)u_ref_ch(t,a_max,v_max,targ_dist);
+    
+    ttc = Trajectory_TimeCurve(uref,@(~,~)0, 0,t_f, 500);
     
     %% ALGORITHM:
     fig_es = figure();
@@ -21,11 +37,14 @@ function Lab5_Connor(robot_id)
     pl_eys = PersistentPlot(fig_es, 0,0);
     pl_eths = PersistentPlot(fig_es, 0,0);
     title('Transient Errors')
-    legend('Alongtrack 
+    legend('Alongtrack (\delta x)','Crosstrack (\delta y)','Heading (\delta \theta)')
     axis equal
     
     tf = Trajectory_Follower(rob,ttc);
-    tf.pid_controller.correctiveTime = 0.03;    % s, PID Time Constant
+    tf.pid_controller.correctiveTime = ttc.times(end)/4;    % s, PID Time Constant
+    tf.pid_controller.k_p = 0.0;
+    tf.pid_controller.k_d = 0.006;
+    tf.pid_controller.k_i = 0;
     
     rps = zeros(1,3);     % Vector of Robot Position Vectors across time [[Xr,Yr,th_r]]
     pps = zeros(1,3);     % Vector of Reference Position Vectors across time [[Xr,Yr,th_r]]
@@ -38,12 +57,12 @@ function Lab5_Connor(robot_id)
 %     
     es = zeros(1,3);      % Vector of Robot Error Vectors across time [[ex,ey,eth]]
     
-    ts = [];        % Vector of Times of Execution
+    ts = 0;        % Vector of Times of Execution
     
     first_loop = 1;
     clk = nan;
     T = 0;
-    while(T < Inf)%(ttc.times(end)+3))
+    while(T < (ttc.times(end)+3))
         if(first_loop)
             clk = Clock();
         first_loop = 0;
@@ -52,6 +71,10 @@ function Lab5_Connor(robot_id)
         T = clk.time();
         tf.follow_update(T);
         
+%         pl_exs.replaceXY(ts, es(:,1));
+%         pl_eys.replaceXY(ts, es(:,2));
+%         pl_eths.replaceXY(ts, es(:,3));
+        
         ts(end+1) = T;
         
         rps(end+1,:) = rob.hist_estPose(end).poseVec';
@@ -59,26 +82,32 @@ function Lab5_Connor(robot_id)
         
         es(end+1,:) = tf.pid_controller.error_poses(end).poseVec';
         
-        pl_exs.addXY(T, es(end,1));
-        pl_eys.addXY(T, es(end,2));
-        pl_eths.addXY(T, es(end,3));
-        
         pause(0.01); % CPU Relief
     end
     rob.moveAt(0,0);
     rob.core.stop();
     
+    pl_exs.replaceXY(ts, es(:,1));
+    pl_eys.replaceXY(ts, es(:,2));
+    pl_eths.replaceXY(ts, es(:,3));
+    
     fig_trajT = figure();
+    hold on
         plot(ts, rps(:,1));
         plot(ts, rps(:,2));
         plot(ts, rps(:,3));
         plot(ts, pps(:,1));
         plot(ts, pps(:,2));
         plot(ts, pps(:,3));
+    hold off
+    legend('Robot X','Robot Y','Robot \theta', 'Reference X','Reference Y','Reference \theta');
         
     fig_traj = figure();
+    hold on
         plot(-rps(:,2), rps(:,1));
         plot(-pps(:,2), pps(:,1));
+    hold off
+    legend('Robot Trajectory','Reference Trajectory');
     
     
 end % #Lab5_Connor
