@@ -73,7 +73,8 @@ classdef PID < handle
             if abs(obj.errorIntegralOm) > obj.maxErrorIntegralOm;
                 sign = obj.errorIntegralOm/abs(obj.errorIntegralOm)
                 obj.errorIntegralOm= obj.maxErrorIntegralOm * sign;
-
+            end
+            
             obj.errorIntegralVel = obj.errorIntegralVel + errorVel*dt;
             if abs(obj.errorIntegralVel) > obj.maxErrorIntegralVel;
                 sign = obj.errorIntegralVel/abs(obj.errorIntegralVel)
