@@ -43,12 +43,12 @@ classdef PID < handle
         function [u_v u_w] = getControl(obj, t)
 
             if isempty(obj.error_times) %initialize
-                obj.error_times = [0]
+                obj.error_times = [0];
             end % isEmpty(lastError)?
-            t_last = obj.error_times(end)
+            t_last = obj.error_times(end);
             %% determine reference pose and estimated pose
-            refPose = obj.ttc.getPose(t)
-            curPose = obj.rob.hist_estPose(end)
+            refPose = obj.ttc.getPose(t);
+            curPose = obj.rob.hist_estPose(end);
 
             %% determine error values in every dimension
             %get most recent velocity readings
@@ -71,13 +71,13 @@ classdef PID < handle
             errorDerivativeOm = (errorOm - obj.lastErrorOm) / dt;
             obj.errorIntegralOm = obj.errorIntegralOm + errorOm*dt;
             if abs(obj.errorIntegralOm) > obj.maxErrorIntegralOm;
-                sign = obj.errorIntegralOm/abs(obj.errorIntegralOm)
+                sign = obj.errorIntegralOm/abs(obj.errorIntegralOm);
                 obj.errorIntegralOm= obj.maxErrorIntegralOm * sign;
             end
             
             obj.errorIntegralVel = obj.errorIntegralVel + errorVel*dt;
             if abs(obj.errorIntegralVel) > obj.maxErrorIntegralVel;
-                sign = obj.errorIntegralVel/abs(obj.errorIntegralVel)
+                sign = obj.errorIntegralVel/abs(obj.errorIntegralVel);
                 obj.errorIntegralVel= obj.maxErrorIntegralVel * sign;
             end
 
