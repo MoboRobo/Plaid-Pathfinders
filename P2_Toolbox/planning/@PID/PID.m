@@ -61,8 +61,8 @@ classdef PID < handle
             errorY = refPose.y - curPose.y;
             errorTh = refPose.th - curPose.th;
             errorTh = atan2(sin(errorTh), cos(errorTh)); % normalize angle
-            errorVel = obj.k_x * errorX;
-            errorOm = obj.k_y * errorY + obj.k_th * errorTh;
+            errorVel = k_x * errorX;
+            errorOm = k_y * errorY + k_th * errorTh;
             dt = t - t_last;
             tt.hist_encError.x = errorX;
 
