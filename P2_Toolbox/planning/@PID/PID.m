@@ -91,7 +91,8 @@ classdef PID < handle
                 obj.k_i*obj.errorIntegralVel;
             u_w = obj.k_p * errorOm + obj.k_d * errorDerivativeOm + ...
                 obj.k_i * obj.errorIntegralOm;
-
+            u_v = errorVel;
+            u_w = errorOm;
             %% ensure below ceiling
             if abs(u_v) > obj.v_max
                 sign = u_v / abs(u_v);
