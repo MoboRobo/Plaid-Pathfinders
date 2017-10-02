@@ -97,7 +97,7 @@ classdef Trajectory_TimeCurve < handle
         
         %% Get Velocity
         % Returns the velocity of the robot at trajectory time, t.
-        function V =getV(obj, t)
+        function V = getV(obj, t)
             vs = [obj.profile(:).V];
             V = interp1(obj.times,vs, t, obj.method);
         end % #getV

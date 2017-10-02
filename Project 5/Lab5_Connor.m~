@@ -1,0 +1,27 @@
+function Lab5_Connor(robot_id)
+    global clk
+    %% SETUP ROBOT
+    rasp = raspbot(robot_id, [0; 0; pi/2])
+    rob = P2_Robot(rasp);
+    if(~strcmp(robot_id,'sim'))
+        rob_type = 'raspbot';
+        rob.core.togglePlot(); %Turn on map plotting for non-simulated robots
+        RangeImage.INDEX_OFFSET(5);
+        rob.core.forksDown(); % Prevent Brown-out
+    end
+    
+    clk = Clock();
+    
+    %% TASK PARAMETERS
+    ttc = TTC_Figure8();
+    ctrl = PID(rob,ttc);
+    PID.calc(){
+        ttc.getPose(t);
+        rob.hist_estPose(end);
+    }
+    ctrl.getV(T,ref,rob);
+    
+    %% ALGORITHM:
+    
+
+end % #Lab5_Connor
