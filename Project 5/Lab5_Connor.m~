@@ -14,14 +14,71 @@ function Lab5_Connor(robot_id)
     
     %% TASK PARAMETERS
     ttc = TTC_Figure8();
-    ctrl = PID(rob,ttc);
-    PID.calc(){
-        ttc.getPose(t);
-        rob.hist_estPose(end);
-    }
-    ctrl.getV(T,ref,rob);
     
     %% ALGORITHM:
+    fig_es = figure();
+    pl_exs = PersistentPlot(fig_es, 0,0);
+    pl_eys = PersistentPlot(fig_es, 0,0);
+    pl_eths = PersistentPlot(fig_es, 0,0);
+    title('Transient Errors')
+    legend('Alongtrack 
+    axis equal
     
-
+    tf = Trajectory_Follower(rob,ttc);
+    tf.pid_controller.correctiveTime = 0.03;    % s, PID Time Constant
+    
+    rps = zeros(1,3);     % Vector of Robot Position Vectors across time [[Xr,Yr,th_r]]
+    pps = zeros(1,3);     % Vector of Reference Position Vectors across time [[Xr,Yr,th_r]]
+%     
+%     r_xs = [];      % Robot X-Positions
+%     r_ys = [];      % Robot Y-Positions
+%     
+%     p_xs = [];      % Trajectory X-Positions
+%     p_ys = [];      % Trajectory Y-Positions
+%     
+    es = zeros(1,3);      % Vector of Robot Error Vectors across time [[ex,ey,eth]]
+    
+    ts = [];        % Vector of Times of Execution
+    
+    first_loop = 1;
+    clk = nan;
+    T = 0;
+    while(T < Inf)%(ttc.times(end)+3))
+        if(first_loop)
+            clk = Clock();
+        first_loop = 0;
+        end
+        
+        T = clk.time();
+        tf.follow_update(T);
+        
+        ts(end+1) = T;
+        
+        rps(end+1,:) = rob.hist_estPose(end).poseVec';
+        pps(end+1,:) = ttc.getPose(T).poseVec';
+        
+        es(end+1,:) = tf.pid_controller.error_poses(end).poseVec';
+        
+        pl_exs.addXY(T, es(end,1));
+        pl_eys.addXY(T, es(end,2));
+        pl_eths.addXY(T, es(end,3));
+        
+        pause(0.01); % CPU Relief
+    end
+    rob.moveAt(0,0);
+    rob.core.stop();
+    
+    fig_trajT = figure();
+        plot(ts, rps(:,1));
+        plot(ts, rps(:,2));
+        plot(ts, rps(:,3));
+        plot(ts, pps(:,1));
+        plot(ts, pps(:,2));
+        plot(ts, pps(:,3));
+        
+    fig_traj = figure();
+        plot(-rps(:,2), rps(:,1));
+        plot(-pps(:,2), pps(:,1));
+    
+    
 end % #Lab5_Connor

@@ -52,5 +52,5 @@ function ttc = TTC_Figure8(ks,kv,sf)
         om = K * obj.V_func(obj,T);
     end
 
-    ttc = Trajectory_TimeCurve(v8,@om8, 0,T_f, 1000); % In Control Time
+    ttc = Trajectory_TimeCurve(v8,@om8, 0,T_f, 500); % In Control Time
 end % #TTC_Figure8
