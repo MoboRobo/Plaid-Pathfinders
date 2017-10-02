@@ -119,8 +119,9 @@ classdef PID < handle
             obj.error_times(end+1) = t;
 
             % update 'last' variables
-            obj.lastErrorVel = errorVel;
-            obj.lastErrorOm = errorOm;
+            obj.lastErrorX = errorX;
+            obj.lastErrorY = errorY;
+            obj.lastErrorTh = errorTh;
             end
         end
 end
