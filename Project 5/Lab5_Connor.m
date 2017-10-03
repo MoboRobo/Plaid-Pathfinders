@@ -38,6 +38,8 @@ function Lab5_Connor(robot_id, fbktrim)
     pl_eds = PersistentPlot(fig_es, 0,0);
     pl_eths = PersistentPlot(fig_es, 0,0);
     title('Transient Errors');
+    xlabel('Time [s]');
+    ylabel('Position [m]');
     legend('Alongtrack (\deltax)','Crosstrack (\deltay)', 'Position (\deltas)', 'Heading (\delta\theta)');
     axis equal
     
@@ -104,6 +106,8 @@ function Lab5_Connor(robot_id, fbktrim)
         plot(ts, pps(:,2));
         plot(ts, pps(:,3));
     hold off
+    xlabel('Time [s]');
+    ylabel('Position [m]');
     legend('Robot X','Robot Y','Robot \theta', 'Reference X','Reference Y','Reference \theta');
         
     fig_traj = figure();
@@ -111,6 +115,8 @@ function Lab5_Connor(robot_id, fbktrim)
         plot(-rps(:,2), rps(:,1));
         plot(-pps(:,2), pps(:,1));
     hold off
+    xlabel('Position [m]');
+    ylabel('Position [m]');
     legend('Robot Trajectory','Reference Trajectory');
     
     
