@@ -72,7 +72,7 @@ classdef PID < handle
             errorTh = refPose.th - curPose.th;
             errorTh = atan2(sin(errorTh),cos(errorTh));
             
-            rrp = [cos(thr), sin(thr); -sin(thr), cos(thr)] * wrp;
+            rrp = [cos(thr),-sin(thr); sin(thr), cos(thr)] \ wrp;
             
             errorX = rrp(1);
             errorY = rrp(2);
