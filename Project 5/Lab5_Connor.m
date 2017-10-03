@@ -43,7 +43,7 @@ function Lab5_Connor(robot_id, fbktrim)
     
     tf = Trajectory_Follower(rob,ttc);
         tf.fbk_trim = fbktrim;
-        tf.pid_controller.correctiveTime = 2.3*ttc.times(end);    % s, PID Time Constant
+        tf.pid_controller.correctiveTime = 2.2*ttc.times(end);    % s, PID Time Constant
         tf.pid_controller.k_p = 1;
         tf.pid_controller.k_d = 0.1;
         tf.pid_controller.k_i = 0.0;

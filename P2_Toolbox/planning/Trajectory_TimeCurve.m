@@ -94,12 +94,14 @@ classdef Trajectory_TimeCurve < handle
         %% Interpolate
         % General Interpolation that takes into account out of bounds
         % queries, where v_ob is the value used for over-bounds queries.
-        function v = genInt(obj,ts,vs, t, v_ob)
+        function v = genInt(obj,ts,vs, t, v_ob, v_ub)
             if(t < obj.t_fin)
                 v = interp1(ts,vs, t, obj.method);
+            elseif (t < 0)
+                v = v_ub;
             else
                 v = v_ob;
-            end % t<t_fin?
+            end % t?
         end
         
         %% Get Pose
@@ -110,9 +112,9 @@ classdef Trajectory_TimeCurve < handle
             ys = obj.ys();
             ths = obj.ths();
             
-            x = obj.genInt(obj.times,xs, t, xs(end));
-            y = obj.genInt(obj.times,ys, t, ys(end));
-            th = obj.genInt(obj.times,ths, t, ths(end));
+            x = obj.genInt(obj.times,xs, t, xs(end),0);
+            y = obj.genInt(obj.times,ys, t, ys(end),0);
+            th = obj.genInt(obj.times,ths, t, ths(end),0);
             
             p = pose(x,y,th);
         end % #getPose
@@ -122,7 +124,7 @@ classdef Trajectory_TimeCurve < handle
         function V = getV(obj, t_in)
             t = t_in - obj.send_delay;
             vs = [obj.profile(:).V];
-            V = obj.genInt(obj.times,vs, t, 0);
+            V = obj.genInt(obj.times,vs, t, 0,0);
         end % #getV
         function V = V(obj,t); V=getV(obj,t); end %Shorthand
         
@@ -131,7 +133,7 @@ classdef Trajectory_TimeCurve < handle
         function om = getOmega(obj, t_in)
             t = t_in - obj.send_delay;
             oms = [obj.profile(:).om];
-            om = obj.genInt(obj.times,oms, t, 0);
+            om = obj.genInt(obj.times,oms, t, 0,0);
         end % #getPose
         function om = om(obj,t); om=getOmega(obj,t); end %Shorthand
         
