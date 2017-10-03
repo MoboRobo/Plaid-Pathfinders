@@ -5,7 +5,7 @@
 classdef Trajectory_TimeCurve < handle
     %% PROPERTIES
     properties(GetAccess = public, SetAccess = public)
-        send_delay = 0.18;   % s, Delay from Command Send to When the Robot Begins Executing it.
+        send_delay = 0.352;   % s, Delay from Command Send to When the Robot Begins Executing it.
         
         N_samples = 100;    % Number of Samples in the Trajectory
         resolution;         % s, Separation between Times

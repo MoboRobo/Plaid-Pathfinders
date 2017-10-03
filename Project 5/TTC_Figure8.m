@@ -2,7 +2,7 @@
 % Returns the TTC for implementing a figure 8, for which the user can
 % optionally supply custom k_s, k_v, and s_f parameters.
 function ttc = TTC_Figure8(ks,kv,sf)
-    v_max = 0.25;       % m/s, peak velocity of ffwd reference trajectory
+    v_max = 0.2;       % m/s, peak velocity of ffwd reference trajectory
     a_max = 3*0.25;     % m/s^2, peak acceleration of ffwd ref trajectory
     
     %% TASK_PARAMETERS

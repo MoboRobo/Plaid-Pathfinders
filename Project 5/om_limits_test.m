@@ -1,8 +1,8 @@
 function om_limits_test()
     %% SETUP ROBOT
-    rasp = raspbot(robot_id, [0; 0; pi/2])
+    rasp = raspbot('', [0; 0; pi/2])
     rob = P2_Robot(rasp);
-    if(~strcmp(robot_id,'sim'))
+    if(~strcmp('','sim'))
         rob_type = 'raspbot';
         rob.core.togglePlot(); %Turn on map plotting for non-simulated robots
         RangeImage.INDEX_OFFSET(5);
@@ -13,12 +13,12 @@ function om_limits_test()
     
     %% TESTING
     res = 0.1;
-    oms = (0:res:2*pi);
+    oms = (2*pi:res:4*pi);
     
-    figure();
+    fig = figure();
     hold on
-        pl_ref = PersistentPlot(0,0);
-        pl_meas = PersistentPlot(0,0);
+        pl_ref = PersistentPlot(fig, 0,0);
+        pl_meas = PersistentPlot(fig, 0,0);
     hold off
     
     i = 1;
@@ -29,7 +29,6 @@ function om_limits_test()
        
        pl_ref.addXY((i-1)*res, oms(i));
        pl_meas.addXY((i-1)*res, rob.hist_estVel(end).om);
-       
         
     i = i+1;
     end

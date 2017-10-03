@@ -35,17 +35,18 @@ function Lab5_Connor(robot_id, fbktrim)
     fig_es = figure();
     pl_exs = PersistentPlot(fig_es, 0,0);
     pl_eys = PersistentPlot(fig_es, 0,0);
+    pl_eds = PersistentPlot(fig_es, 0,0);
     pl_eths = PersistentPlot(fig_es, 0,0);
-    title('Transient Errors')
-    legend('Alongtrack (\delta x)','Crosstrack (\delta y)','Heading (\delta \theta)')
+    title('Transient Errors');
+    legend('Alongtrack (\deltax)','Crosstrack (\deltay)', 'Position (\deltas)', 'Heading (\delta\theta)');
     axis equal
     
     tf = Trajectory_Follower(rob,ttc);
         tf.fbk_trim = fbktrim;
-        tf.pid_controller.correctiveTime = ttc.times(end)/50;    % s, PID Time Constant
+        tf.pid_controller.correctiveTime = 1.8*ttc.times(end);    % s, PID Time Constant
         tf.pid_controller.k_p = 1;
-        tf.pid_controller.k_d = 0;
-        tf.pid_controller.k_i = 0;
+        tf.pid_controller.k_d = 0.1;
+        tf.pid_controller.k_i = 0.0;
     
     rps = zeros(1,3);     % Vector of Robot Position Vectors across time [[Xr,Yr,th_r]]
     pps = zeros(1,3);     % Vector of Reference Position Vectors across time [[Xr,Yr,th_r]]
@@ -63,7 +64,7 @@ function Lab5_Connor(robot_id, fbktrim)
     first_loop = 1;
     clk = nan;
     T = 0;
-    while(T < (ttc.times(end)+1)) % Run for one second beyond end of reference trajectory
+    while(T < (ttc.times(end)+ttc.send_delay+1)) % Run for one second beyond end of reference trajectory
         if(first_loop)
             clk = Clock();
         first_loop = 0;
@@ -72,9 +73,10 @@ function Lab5_Connor(robot_id, fbktrim)
         T = clk.time();
         tf.follow_update(T);
         
-%         pl_exs.replaceXY(ts, es(:,1));
-%         pl_eys.replaceXY(ts, es(:,2));
-%         pl_eths.replaceXY(ts, es(:,3));
+%         pl_exs.addXY(ts, es(end,1));
+%         pl_eys.addXY(ts, es(end,2));
+%         pl_eds.addXY(ts, sqrt(es(end,1).^2 + es(end,2).^2));
+%         pl_eths.addXY(ts, es(end,3));
         
         ts(end+1) = T;
         
@@ -90,6 +92,7 @@ function Lab5_Connor(robot_id, fbktrim)
     
     pl_exs.replaceXY(ts, es(:,1));
     pl_eys.replaceXY(ts, es(:,2));
+    pl_eds.replaceXY(ts, sqrt(es(:,1).^2 + es(:,2).^2));
     pl_eths.replaceXY(ts, es(:,3));
     
     fig_trajT = figure();

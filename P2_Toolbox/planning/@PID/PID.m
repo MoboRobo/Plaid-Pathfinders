@@ -21,7 +21,7 @@ classdef PID < handle
     properties(GetAccess=public, SetAccess=public)
         % maximum values
         v_max = 0.2;
-        w_max = 2*pi;
+        w_max = 8;
         maxErrorIntegralX = 10;
         maxErrorIntegralY = 10;
         maxErrorIntegralTh = 10;
