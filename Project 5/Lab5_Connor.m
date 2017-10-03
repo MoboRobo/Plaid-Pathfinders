@@ -29,7 +29,7 @@ function Lab5_Connor(robot_id, fbktrim)
     
     uref_linear = @(~,t)u_ref_ch(t,a_max,v_max,targ_dist);
     
-    ttc = Trajectory_TimeCurve(uref_linear,@(~,~)0, 0,t_f, 500);
+    ttc = TTC_Figure8();%Trajectory_TimeCurve(uref_linear,@(~,~)0, 0,t_f, 500);
     
     %% ALGORITHM:
     fig_es = figure();
