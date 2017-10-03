@@ -29,7 +29,7 @@ function Lab5_Connor(robot_id, fbktrim)
     
     uref_linear = @(~,t)u_ref_ch(t,a_max,v_max,targ_dist);
     
-    ttc = TTC_Figure8();%Trajectory_TimeCurve(uref_linear,@(~,~)0, 0,t_f, 500);
+    ttc = Trajectory_TimeCurve(uref_linear,@(~,~)0, 0,t_f, 500);
     
     %% ALGORITHM:
     fig_es = figure();
@@ -43,7 +43,7 @@ function Lab5_Connor(robot_id, fbktrim)
     
     tf = Trajectory_Follower(rob,ttc);
         tf.fbk_trim = fbktrim;
-        tf.pid_controller.correctiveTime = 2.2*ttc.times(end);    % s, PID Time Constant
+        tf.pid_controller.correctiveTime = 1.9*ttc.times(end);    % s, PID Time Constant
         tf.pid_controller.k_p = 1;
         tf.pid_controller.k_d = 0.1;
         tf.pid_controller.k_i = 0.0;

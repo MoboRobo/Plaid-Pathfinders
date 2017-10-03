@@ -5,7 +5,7 @@
 classdef Trajectory_TimeCurve < handle
     %% PROPERTIES
     properties(GetAccess = public, SetAccess = public)
-        send_delay = 0.352;   % s, Delay from Command Send to When the Robot Begins Executing it.
+        send_delay = 0.4;   % s, Delay from Command Send to When the Robot Begins Executing it.
         
         N_samples = 100;    % Number of Samples in the Trajectory
         resolution;         % s, Separation between Times
@@ -95,10 +95,10 @@ classdef Trajectory_TimeCurve < handle
         % General Interpolation that takes into account out of bounds
         % queries, where v_ob is the value used for over-bounds queries.
         function v = genInt(obj,ts,vs, t, v_ob, v_ub)
-            if(t < obj.t_fin)
-                v = interp1(ts,vs, t, obj.method);
-            elseif (t < 0)
+            if (t < 0)
                 v = v_ub;
+            elseif(t < obj.t_fin)
+                v = interp1(ts,vs, t, obj.method);
             else
                 v = v_ob;
             end % t?
