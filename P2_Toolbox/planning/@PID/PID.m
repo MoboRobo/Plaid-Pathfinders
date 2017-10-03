@@ -80,38 +80,38 @@ classdef PID < handle
             dt = t - t_last;
 
             %% compute derivatives and integrals
-%             errorDerivativeX = (errorX-obj.lastErrorX)/ dt;
-%             errorDerivativeY = (errorY - obj.lastErrorY) / dt;
-%             errorDerivativeTh = (errorTh - obj.lastErrorTh) / dt;
-%             obj.errorIntegralX = obj.errorIntegralX + errorX*dt;
-%             if abs(obj.errorIntegralX) > obj.maxErrorIntegralX;
-%                 sign = obj.errorIntegralX/abs(obj.errorIntegralX);
-%                 obj.errorIntegralX= obj.maxErrorIntegralX * sign;
-%             end
-%             
-%             obj.errorIntegralY = obj.errorIntegralY + errorY*dt;
-%             if abs(obj.errorIntegralY) > obj.maxErrorIntegralY;
-%                 sign = obj.errorIntegralY/abs(obj.errorIntegralY);
-%                 obj.errorIntegralY= obj.maxErrorIntegralY * sign;
-%             end
-% 
-%             obj.errorIntegralTh = obj.errorIntegralTh + errorTh*dt;
-%             if abs(obj.errorIntegralTh) > obj.maxErrorIntegralTh;
-%                 sign = obj.errorIntegralTh/abs(obj.errorIntegralTh);
-%                 obj.errorIntegralTh= obj.maxErrorIntegralTh * sign;
-%             end
-%             
-%             ex =obj.k_p * errorX + obj.k_d * errorDerivativeX + ...
-%                 obj.k_i * obj.errorIntegralX
-%             ey = obj.k_p * errorY + obj.k_d * errorDerivativeY + ...
-%                 obj.k_i * obj.errorIntegralY
-%             eth = obj.k_p * errorTh + obj.k_d * errorDerivativeTh + ...
-%                 obj.k_i * obj.errorIntegralTh
-            %% compute actual control linear and rotational velocity
-%             u_v = ex * k_x;
-%             u_w = ey * k_y + eth * k_th;
-            u_v = errorX * k_x;
-            u_w = errorY * k_y + errorTh*k_th;
+            errorDerivativeX = (errorX-obj.lastErrorX)/ dt;
+            errorDerivativeY = (errorY - obj.lastErrorY) / dt;
+            errorDerivativeTh = (errorTh - obj.lastErrorTh) / dt;
+            obj.errorIntegralX = obj.errorIntegralX + errorX*dt;
+            if abs(obj.errorIntegralX) > obj.maxErrorIntegralX;
+                sign = obj.errorIntegralX/abs(obj.errorIntegralX);
+                obj.errorIntegralX= obj.maxErrorIntegralX * sign;
+            end
+            
+            obj.errorIntegralY = obj.errorIntegralY + errorY*dt;
+            if abs(obj.errorIntegralY) > obj.maxErrorIntegralY;
+                sign = obj.errorIntegralY/abs(obj.errorIntegralY);
+                obj.errorIntegralY= obj.maxErrorIntegralY * sign;
+            end
+
+            obj.errorIntegralTh = obj.errorIntegralTh + errorTh*dt;
+            if abs(obj.errorIntegralTh) > obj.maxErrorIntegralTh;
+                sign = obj.errorIntegralTh/abs(obj.errorIntegralTh);
+                obj.errorIntegralTh= obj.maxErrorIntegralTh * sign;
+            end
+            
+            ex =obj.k_p * errorX + obj.k_d * errorDerivativeX + ...
+                obj.k_i * obj.errorIntegralX
+            ey = obj.k_p * errorY + obj.k_d * errorDerivativeY + ...
+                obj.k_i * obj.errorIntegralY
+            eth = obj.k_p * errorTh + obj.k_d * errorDerivativeTh + ...
+                obj.k_i * obj.errorIntegralTh
+            % compute actual control linear and rotational velocity
+            u_v = ex * k_x;
+            u_w = ey * k_y + eth * k_th;
+%             u_v = errorX * k_x;
+%             u_w = errorY * k_y + errorTh*k_th;
 
             %% ensure below ceiling
             if abs(u_v) > obj.v_max
