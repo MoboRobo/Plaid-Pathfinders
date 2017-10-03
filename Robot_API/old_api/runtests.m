@@ -1,6 +1,6 @@
 
 rosshutdown
-robot = raspbot();
+robot = raspbot('RaspBot-17');
 close all
 
 robot.startLaser();
