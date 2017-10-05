@@ -102,11 +102,11 @@ classdef PID < handle
             end
             
             ex =obj.k_p * errorX + obj.k_d * errorDerivativeX + ...
-                obj.k_i * obj.errorIntegralX
+                obj.k_i * obj.errorIntegralX;
             ey = obj.k_p * errorY + obj.k_d * errorDerivativeY + ...
-                obj.k_i * obj.errorIntegralY
+                obj.k_i * obj.errorIntegralY;
             eth = obj.k_p * errorTh + obj.k_d * errorDerivativeTh + ...
-                obj.k_i * obj.errorIntegralTh
+                obj.k_i * obj.errorIntegralTh;
             % compute actual control linear and rotational velocity
             u_v = ex * k_x;
             u_w = ey * k_y + eth * k_th;
