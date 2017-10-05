@@ -2,7 +2,7 @@
 % an Arbitrary Path defined by the Function (Handles): V_func(obj,t),
 % om_func(obj,t).
 % (TODO: Incorporate path reduction algorithm like RDP?)
-classdef Trajectory_TimeCurve < handle
+classdef Trajectory_TimeCurve < ReferenceTrajectory
     %% PROPERTIES
     properties(GetAccess = public, SetAccess = public)
         send_delay = 0.4;   % s, Delay from Command Send to When the Robot Begins Executing it.
