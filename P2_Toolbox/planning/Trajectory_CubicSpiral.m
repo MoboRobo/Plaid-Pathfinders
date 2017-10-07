@@ -85,7 +85,19 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
                     ds = sMax/(clothSamples-1); 
                     x=0.0; y = 0.0; t = 0.0; r = 0.0;
                     broke = false;
+                    k_s = 0.0;
+                    s = 0.0;
                     for i=1:clothSamples
+                        s = s + ds;
+                        % since s_f = 1
+                        k_s = s * (a+b*s) * (s - 1.0)
+                        t = t + k_s*ds;
+                        x = x + cos(t)*ds;
+                        y = y + sin(t)*ds;
+                        r = r + ((k_s^2) * ds);
+                        if ((t > tMax) || (t < tMin))
+                            broke = true;
+                            break; end
                     % Compute the curve. Break out of this loop, and then 
                     % immediately continue to next iteration of the for b loop 
                     % if tmax is exceeded in absolute value at any time.
