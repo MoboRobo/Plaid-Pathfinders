@@ -1,37 +1,44 @@
 % Abstract SuperClass for All Trajectory Planning Curves, defining a
 % standard set of external access methods and properties so that algorithms
 % using one RT (ex TTC) can easily substitute it for another (ex. TCS).
-classdef (Abstract) ReferenceTrajectory
+classdef (Abstract) ReferenceTrajectory < handle
     properties(Abstract)
         send_delay;     % s, Delay from Command Send to When the Robot Begins Executing it.
         
         N_samples;      % Number of Samples in the Trajectory
-        resolution;     % s, Separation between Times
-        
-        t_init;         % s, Curve Seed Time
-        t_fin;          % s, Curve End Time
     end % ReferenceTrajectory <-properties(Abstract)
     
-    methods (Abstract)
+    methods(Abstract)
         
+        % Compute Everything Necessary to Create a Follow-able Path
         compute(obj);
         
-        V = getVAtTime(obj,t);%         - Velocity at Time
-        om = getOmegaAtTime(obj,t);%    - Angular Velocity at Time
-        K = getCurvAtTime(obj,t);%      - Path Curvature at Time
+        % Velocity at Time:
+        V = getVAtTime(obj,t);
+        % Angular Velocity at Time:
+        om = getOmegaAtTime(obj,t);
+        % Path Curvature at Time:
+        K = getCurvAtTime(obj,t);
         
-        p = getPoseAtTime(obj,t);%      - Pose at Time
+        % Pose at Time:
+        p = getPoseAtTime(obj,t);
         
         %For Inverting Parameterization if Necessary (Computationally
         %heavy)
-        s = getSAtTime(obj,t);%         - Path Length at t
-        t = getTAtDist(obj,t);%         - Time at Path Length
+        % Path Length at t:
+        s = getSAtTime(obj,t);
+        % Time at Path Length:
+        t = getTAtDist(obj,s);
         
-        p = getPoseAtDist(obj,s);%      - Pose at Path Length
+        % Pose at Path Length
+        p = getPoseAtDist(obj,s);
         
-        K = getCurvAtDist(obj,s);%      - Curvature at Path Length
-        om = getOmegaAtDist(obj,s);%    - Angular Velocity at Path Length
-        V = getVAtDist(obj,s);%         - Velocity at Path Length
+        % Curvature at Path Length:
+        K = getCurvAtDist(obj,s);
+        % Angular Velocity at Path Length:
+        om = getOmegaAtDist(obj,s);
+        % Velocity at Path Length:
+        V = getVAtDist(obj,s);
         
         
         %Return the Pose at the End of the Path:
@@ -70,15 +77,23 @@ classdef (Abstract) ReferenceTrajectory
         function K = K_s(obj, s); K = obj.getCurvAtDist(s); end
         function om = om_s(obj, s); om = obj.getOmegaAtDist(s); end
         function V = V_s(obj, s); V = obj.getVAtDist(s); end
+       
+        
+        function xx = xs(obj); xx=getXVec(obj); end %Shorthand
+        function yy = ys(obj); yy=getYVec(obj); end %Shorthand
+        function thth = ths(obj); thth=getThVec(obj); end %Shorthand
+        
+        function tt = ts(obj); tt=getTVec(obj); end %Shorthand
+        function ss = ss(obj); ss=getSVec(obj); end %Shorthand
     end % ReferenceTrajectory <-methods
     
     % Common Access Methods
     methods (Access=public)
         % Plots the trajectory onto the active figure.
         function plot(obj)
-            xs = obj.getXVec();
-            ys = obj.getYVec();
-            plot(xs,ts,'r');
+            xs = obj.xs();
+            ys = obj.ys();
+            plot(xs,ys,'r');
             xf = xs(end);% <- there might be some subtlety I overlooked here wrt numSamples in TCS - CWC.
             yf = ys(end);
             r = max([abs(xf) abs(yf)]);
