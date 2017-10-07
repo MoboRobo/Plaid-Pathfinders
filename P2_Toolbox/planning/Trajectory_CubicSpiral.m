@@ -276,9 +276,27 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
             b = obj.parms(2);
             sf = obj.parms(3);
             ds = sf/(obj.numSamples-1);
+            
+            s = 0.0;
+            xs = obj.poseArray(1);
+            ys = obj.poseArray(2);
+            ths = obj.poseArray(3);
+            
             for i=1:obj.numSamples-1
                 % fill this in
+                s = s + ds;
+                obj.distArray(i+1) = s;
+                obj.curvArray(i+1) = s*(a + b*s)*(s-sf);
+                ths(i+1) = ths(i) + obj.curvArray(i)*ds;
+                xs(i+1) = xs(i) + cos(ths(i+1))*ds;
+                ys(i+1) = ys(i) + sin(ths(i+1))*ds;
+                
+                
             end
+            obj.poseArray(1) = xs;
+            obj.poseArray(2) = ys;
+            obj.poseArray(3) = ths;
+       
             i = obj.numSamples;
             s = (i-1)*ds;  
             obj.distArray(i) = s;
