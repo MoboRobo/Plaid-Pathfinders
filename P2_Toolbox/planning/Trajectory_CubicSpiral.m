@@ -88,13 +88,14 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
                     k_s = 0.0;
                     s = 0.0;
                     for i=1:clothSamples
-                        s = s + ds;
+                        
                         % since s_f = 1
-                        k_s = s * (a+b*s) * (s - 1.0)
+                        k_s = s * (a+b*s) * (s - 1.0);
                         t = t + k_s*ds;
                         x = x + cos(t)*ds;
                         y = y + sin(t)*ds;
                         r = r + ((k_s^2) * ds);
+                        s = s + ds;
                         if ((t > tMax) || (t < tMin))
                             broke = true;
                             break; end
