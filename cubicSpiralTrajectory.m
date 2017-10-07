@@ -298,6 +298,7 @@ classdef cubicSpiralTrajectory < handle
             
     methods(Access = public)
         
+        function obj = cubicSpiral(parms,numSamples) %Note: Change this to cubicSpiralTrajectory to test integrator ~Ben
             % Constructs a cubicSpiral for the supplied parameters. The
             % parameters are in order [a b sf]. numSamples is the
             % number of integration steps used to integrate the entire 			
