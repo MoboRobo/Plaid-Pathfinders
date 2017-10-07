@@ -53,8 +53,9 @@ classdef Trajectory_TimeCurve < ReferenceTrajectory
                 obj.poses(0) = init_pose;
             end % nargin>5?
             
-            obj.compute(t0,tf);
-%             transpose([obj.poses(:).poseVec])
+            obj.t_init = t0;
+            obj.t_fin = tf;
+            obj.compute();
         end % Constructor
         
         %% Compute
@@ -155,8 +156,47 @@ classdef Trajectory_TimeCurve < ReferenceTrajectory
             ths = [obj.poses(:).poseVec]; ths = ths(3,:);
         end % #getThVec
         function tths = ths(obj); tths=getThVec(obj); end %Shorthand
-        
 
     end % TrajectoryCurve <- methods
+    
+    % Inherited Abstract Methods (from ReferenceTrajectory)
+    methods
+        % Velocity at Time
+        function V = getVAtTime(obj,t);
+        om = getOmegaAtTime(obj,t);%    - Angular Velocity at Time
+        K = getCurvAtTime(obj,t);%      - Path Curvature at Time
+        
+        p = getPoseAtTime(obj,t);%      - Pose at Time
+        
+        %For Inverting Parameterization if Necessary (Computationally
+        %heavy)
+        s = getSAtTime(obj,t);%         - Path Length at t
+        t = getTAtDist(obj,t);%         - Time at Path Length
+        
+        p = getPoseAtDist(obj,s);%      - Pose at Path Length
+        
+        K = getCurvAtDist(obj,s);%      - Curvature at Path Length
+        om = getOmegaAtDist(obj,s);%    - Angular Velocity at Path Length
+        V = getVAtDist(obj,s);%         - Velocity at Path Length
+        
+        
+        %Return the Pose at the End of the Path:
+        pf = getFinalPose(obj);
+        %Return the Elapsed Time at the End of the Path:
+        tf = getFinalTime(obj);
+        %Return the Path Length Covered at the End of the Path:
+        sf = getFinalDist(obj);
+        
+        %Returns Vector of All X-Positions:
+        xs = getXVec(obj);
+        %Returns Vector of All Y-Positions:
+        ys = getYVec(obj);
+        %Returns Vector of All Headings:
+        ths = getThVec(obj);
+        %Returns Vector of All Times:
+        ts = getTVec(obj);
+        %Returns Vector of All Path Lengths:
+        ss = getSVec(obj);
+    end
     
 end % 

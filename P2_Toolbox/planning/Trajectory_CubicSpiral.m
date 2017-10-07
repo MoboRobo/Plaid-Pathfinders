@@ -295,18 +295,7 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
                 obj.integrateCommands();
                 obj.sgn = sign(parms(3)); % Critical for proper time series
             end
-        end
-        
-        function plot(obj)
-            plotArray1 = obj.poseArray(1,:);
-            plotArray2 = obj.poseArray(2,:);
-            plot(plotArray1,plotArray2,'r');
-            xf = obj.poseArray(1,obj.numSamples);
-            yf = obj.poseArray(2,obj.numSamples);
-            r = max([abs(xf) abs(yf)]);
-            xlim([-2*r 2*r]);
-            ylim([-2*r 2*r]);
-        end      
+        end 
                 
        function planVelocities(obj,Vmax)
             % Plan the highest possible velocity for the path where no
