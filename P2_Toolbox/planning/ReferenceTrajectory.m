@@ -93,9 +93,13 @@ classdef (Abstract) ReferenceTrajectory < handle
         function plot(obj)
             xs = obj.xs();
             ys = obj.ys();
+            
             plot(xs,ys,'r');
-            xf = xs(end);% <- there might be some subtlety I overlooked here wrt numSamples in TCS - CWC.
-            yf = ys(end);
+            
+            pf = obj.getFinalPose();
+            xf = pf(1);
+            yf = pf(2);
+            
             r = max([abs(xf) abs(yf)]);
             xlim([-2*r 2*r]);
             ylim([-2*r 2*r]);

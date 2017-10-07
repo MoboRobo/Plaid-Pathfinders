@@ -33,9 +33,6 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
         send_delay = 0;     % s, Delay from Command Send to When the Robot Begins Executing it.
         
         N_samples;      % Number of Samples in the Trajectory
-        
-        t_init;         % s, Curve Seed Time
-        t_fin;          % s, Curve End Time
     end % ReferenceTrajectory <-properties(Abstract)
     
     methods(Static = true)
@@ -276,9 +273,25 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
             b = obj.parms(2);
             sf = obj.parms(3);
             ds = sf/(obj.numSamples-1);
+            
+            s = 0.0;
+            xs = obj.poseArray(1);
+            ys = obj.poseArray(2);
+            ths = obj.poseArray(3);
+            
             for i=1:obj.numSamples-1
                 % fill this in
+                s = s + ds;
+                obj.distArray(i+1) = s;
+                obj.curvArray(i+1) = s*(a + b*s)*(s-sf);
+                ths(i+1) = ths(i) + obj.curvArray(i)*ds;
+                xs(i+1) = xs(i) + cos(ths(i+1))*ds;
+                ys(i+1) = ys(i) + sin(ths(i+1))*ds;
             end
+            obj.poseArray(1) = xs;
+            obj.poseArray(2) = ys;
+            obj.poseArray(3) = ths;
+       
             i = obj.numSamples;
             s = (i-1)*ds;  
             obj.distArray(i) = s;
@@ -306,7 +319,7 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
             
     methods(Access = public)
         
-        function obj = cubicSpiral(parms, numSamples, vm)
+        function obj = Trajectory_CubicSpiral(parms, numSamples, vm)
             % Constructs a cubicSpiral for the supplied parameters. The
             % parameters are in order [a b sf]. numSamples is the
             % number of integration steps used to integrate the entire 			
@@ -316,6 +329,9 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
             % Once the curve is integrated, path velocities not exceeding
             % obj.V_max=vm and the time series relating to each path length
             % are computed.
+            
+            % Check if all Abstract Methods are Implemented:
+            meta.abstractDetails(?Trajectory_CubicSpiral)
             
             if(nargin > 2)
                 obj.V_max = vm;
@@ -453,7 +469,7 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
         
         function pose  = getFinalPose(obj)
             pose  = obj.poseArray(:,obj.numSamples);  
-        end  
+        end 
         
         function time  = getTrajectoryDuration(obj)
             time  = obj.timeArray(:,obj.numSamples);  
@@ -534,33 +550,51 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
             K = obj.getCurvAtDist(obj.getSAtTime(obj,t));
         end
         
-        % Pose at Time:
-        function p = getPoseAtTime(obj,t);
-        
         %For Inverting Parameterization if Necessary (Computationally
         %heavy)
         % Path Length at t:
-        s = getSAtTime(obj,t);
+        function s = getSAtTime(obj,t)
+            if(t < obj.timeArray(1))
+                s = 0.0;
+            else
+                s  = interp1(obj.timeArray,obj.distArray,t,'pchip','extrap');  
+            end
+        end
         % Time at Path Length:
-        t = getTAtDist(obj,s);
+        function t = getTAtDist(obj,s)
+            if(s < obj.distArray(1))
+                t = 0.0;
+            else
+                t  = interp1(obj.distArray,obj.timeArray,s,'pchip','extrap');  
+            end
+        end
         
-        % Pose at Path Length
-        p = getPoseAtDist(obj,s);
-        
-        % Curvature at Path Length:
-        K = getCurvAtDist(obj,s);
         % Angular Velocity at Path Length:
-        om = getOmegaAtDist(obj,s);
+        function om = getOmegaAtDist(obj,s)
+            if(s < obj.distArray(1))
+                om = 0.0;
+            else
+                om  = interp1(obj.distArray,obj.wArray,s,'pchip','extrap');  
+            end
+        end
         % Velocity at Path Length:
-        V = getVAtDist(obj,s);
+        function V = getVAtDist(obj,s)
+            if(s < obj.distArray(1))
+                V = 0.0;
+            else
+                V  = interp1(obj.distArray,obj.VArray,s,'pchip','extrap');  
+            end
+        end
         
         
-        %Return the Pose at the End of the Path:
-        pf = getFinalPose(obj);
         %Return the Elapsed Time at the End of the Path:
-        tf = getFinalTime(obj);
+        function tf = getFinalTime(obj)
+            tf = obj.getTrajectoryDuration();
+        end
         %Return the Path Length Covered at the End of the Path:
-        sf = getFinalDist(obj);
+        function sf = getFinalDist(obj)
+            sf = obj.getTrajectoryDistance();
+        end
         
         %Returns Vector of All X-Positions:
         xs = getXVec(obj);

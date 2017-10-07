@@ -33,9 +33,6 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
         send_delay = 0;     % s, Delay from Command Send to When the Robot Begins Executing it.
         
         N_samples;      % Number of Samples in the Trajectory
-        
-        t_init;         % s, Curve Seed Time
-        t_fin;          % s, Curve End Time
     end % ReferenceTrajectory <-properties(Abstract)
     
     methods(Static = true)
@@ -472,7 +469,7 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
         
         function pose  = getFinalPose(obj)
             pose  = obj.poseArray(:,obj.numSamples);  
-        end  
+        end
         
         function time  = getTrajectoryDuration(obj)
             time  = obj.timeArray(:,obj.numSamples);  
@@ -581,13 +578,23 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
             end
         end
         % Velocity at Path Length:
-        V = getVAtDist(obj,s);
+        function V = getVAtDist(obj,s)
+            if(s < obj.distArray(1))
+                V = 0.0;
+            else
+                V  = interp1(obj.distArray,obj.VArray,s,'pchip','extrap');  
+            end
+        end
         
         
         %Return the Elapsed Time at the End of the Path:
-        tf = getFinalTime(obj);
+        function tf = getFinalTime(obj)
+            tf = obj.getTrajectoryDuration();
+        end
         %Return the Path Length Covered at the End of the Path:
-        sf = getFinalDist(obj);
+        function sf = getFinalDist(obj)
+            sf = obj.getTrajectoryDistance();
+        end
         
         %Returns Vector of All X-Positions:
         xs = getXVec(obj);
