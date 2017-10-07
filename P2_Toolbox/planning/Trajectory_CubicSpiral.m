@@ -99,7 +99,7 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
                     for i=1:clothSamples
                         s = s + ds;
                         % since s_f = 1
-                        k_s = s * (a+b*s) * (s - 1.0)
+                        k_s = s * (a+b*s) * (s - 1.0);
                         t = t + k_s*ds;
                         x = x + cos(t)*ds;
                         y = y + sin(t)*ds;
@@ -598,15 +598,25 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
         end
         
         %Returns Vector of All X-Positions:
-        xs = getXVec(obj);
+        function xs = getXVec(obj)
+            xs = obj.poseArray(1,:);
+        end
         %Returns Vector of All Y-Positions:
-        ys = getYVec(obj);
+        function ys = getYVec(obj)
+            ys = obj.poseArray(2,:);
+        end
         %Returns Vector of All Headings:
-        ths = getThVec(obj);
+        function ths = getThVec(obj)
+            ths = obj.poseArray(3,:);
+        end
         %Returns Vector of All Times:
-        ts = getTVec(obj);
+        function ts = getTVec(obj)
+            ts = obj.timeArray;
+        end
         %Returns Vector of All Path Lengths:
-        ss = getSVec(obj);
+        function ss = getSVec(obj)
+            ss = obj.distArray;
+        end
         
     end % ReferenceTrajectory <-methods(Abstract)
 end

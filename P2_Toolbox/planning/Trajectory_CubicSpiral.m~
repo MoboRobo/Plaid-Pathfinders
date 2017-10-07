@@ -284,9 +284,10 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
                 s = s + ds;
                 obj.distArray(i+1) = s;
                 obj.curvArray(i+1) = s*(a + b*s)*(s-sf);
-                ths(i+1) = ths(i) + obj.curvArray(i)*ds;
+                ths(i+1) = ths(i) + obj.curvArray(i)*ds/2;
                 xs(i+1) = xs(i) + cos(ths(i+1))*ds;
                 ys(i+1) = ys(i) + sin(ths(i+1))*ds;
+                ths(i+1) = ths(i+1) + obj.curvArray(i)*ds/2;
             end
             obj.poseArray(1) = xs;
             obj.poseArray(2) = ys;
@@ -469,7 +470,7 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
         
         function pose  = getFinalPose(obj)
             pose  = obj.poseArray(:,obj.numSamples);  
-        end 
+        end
         
         function time  = getTrajectoryDuration(obj)
             time  = obj.timeArray(:,obj.numSamples);  
@@ -597,13 +598,21 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
         end
         
         %Returns Vector of All X-Positions:
-        xs = getXVec(obj);
+        function xs = getXVec(obj)
+            xs = obj.poseArray(1,:);
+        end
         %Returns Vector of All Y-Positions:
-        ys = getYVec(obj);
+        function ys = getYVec(obj)
+            ys = obj.poseArray(2,:);
+        end
         %Returns Vector of All Headings:
-        ths = getThVec(obj);
+        function ths = getThVec(obj)
+            ths = obj.poseArray(3,:);
+        end
         %Returns Vector of All Times:
-        ts = getTVec(obj);
+        function ts = getTVec(obj)
+            ts = 
+        end
         %Returns Vector of All Path Lengths:
         ss = getSVec(obj);
         
