@@ -144,7 +144,7 @@ classdef PID < handle
             s_last = obj.error_dists(end);
             %% determine reference pose and estimated pose
             refPose = obj.rt.getPoseAtDist(s);
-            curPose = obj.rob.hist_estDist(end);
+            curPose = obj.rob.hist_estPose(end);
 
             %% determine error values in every dimension
             %get most recent velocity readings
