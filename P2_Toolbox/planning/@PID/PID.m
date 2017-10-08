@@ -227,6 +227,4 @@ classdef PID < handle
             obj.lastErrorTh = errorTh;
             end
         end
-    end
-        
 end
