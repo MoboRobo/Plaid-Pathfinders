@@ -1,53 +1,52 @@
 %% Trajectory Follower
-% Class for Commanding a Given Robot to Follow a Given Reference Trajectory
+% Class for Commanding a Given Robot to Follow a Given ReferenceTrajectory
 classdef Trajectory_Follower < handle
     %% PROPERTIES
     properties(GetAccess=public, SetAccess=private)
         robot;              % Robot being Following the Given Trajectory
-        ttc;                % Trajectory Time Curve to Follow
+        rt;                 % ReferenceTrajectory Curve to Follow
         pid_controller;     % PID Controller
         
-        u_comm = @(t)0;     % Function Handle for TrajectoryTime-Variant 
+        u_comm_t = @(t)0;     % Function Handle for TrajectoryTime-Variant 
                             % Velocity Control Signal (Ffwd w/Fbk-trim)
     end % Trajectory_Follower <- properties(public,private)
     
     properties(GetAccess=public, SetAccess=public)
         fbk_trim = 1;       % Include Feedback-Trim (if 0, only u_ffwd is used)
         
-        u_ffwd= @(t)0;      % Function Handle for TrajectoryTime-Variant
+        u_ffwd_t= @(t)0;      % Function Handle for TrajectoryTime-Variant
                             % Feed-Forward Reference Velocity Curve
-        u_fbk = @(t)0;      % Function Handle for TrajectoryTime-Variant 
+        u_fbk_t = @(t)0;      % Function Handle for TrajectoryTime-Variant 
                             % Feed-Back Velocity Responce (Feedback Trim)
     end % Trajectory_Follower <- properties(public,public)
 
     %% METHODS
     methods
         %% Constructor
-        function obj = Trajectory_Follower(rob, ttc)
+        function obj = Trajectory_Follower(rob, rt)
             obj.robot = rob;
-            obj.ttc = ttc;
-            obj.pid_controller = PID(rob,ttc);
+            obj.rt = rt;
+            obj.pid_controller = PID(rob,rt);
             
-            obj.u_ffwd = @(t) [ttc.getV(t) ttc.getOmega(t)];
-%             obj.u_fbk = @(t) [0 0];%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% TODO: Change This.
-            obj.u_fbk = @(t) obj.pid_controller.getControl(t);
+            obj.u_ffwd_t = @(t) [rt.V_t(t) rt.om_t(t)];
+            obj.u_fbk_t = @(t) obj.pid_controller.getControl_t(t);
             %Feedforward w/Feedback-Trim:
-            obj.u_comm = @(t)( obj.u_ffwd(t) + obj.u_fbk(t) );
+            obj.u_comm_t = @(t)( obj.u_ffwd_t(t) + obj.u_fbk_t(t) );
         end % #Trajectory_Follower
         
         %% Follow Update
         % Commands the Robot to assume the Motion it should have at
         % Trajectory Time, t
-        function follow_update(obj, t)
+        function follow_update_t(obj, t)
             if(obj.fbk_trim)
-                u = obj.u_comm(t);
+                u_t = obj.u_comm_t(t);
             else
-                obj.u_fbk(t); % Just callin' it (so errors are still computed)
-                u = obj.u_ffwd(t);
+                obj.u_fbk_t(t); % Just callin' it (so errors are still computed)
+                u_t = obj.u_ffwd_t(t);
             end % fbk_trim?
-            V = u(1);
-            om = u(2);
+            V = u_t(1);
+            om = u_t(2);
             obj.robot.moveAt(V,om);
-        end % #follow_update
+        end % #follow_update_t
     end % Trajectory_Follower <- methods
 end % Class Trajectory_Follower

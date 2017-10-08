@@ -482,15 +482,15 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
             end
         end
             
-        function pose  = getPoseAtDist(obj,s)
+        function p  = getPoseAtDist(obj,s)
             x = interp1(obj.distArray,obj.poseArray(1,:),s,'pchip','extrap');
             y = interp1(obj.distArray,obj.poseArray(2,:),s,'pchip','extrap');
             th = interp1(obj.distArray,obj.poseArray(3,:),s,'pchip','extrap');
-            pose  = [x ; y ; th];  
+            p  = pose(x, y, th);  
         end
         
-        function pose  = getFinalPose(obj)
-            pose  = obj.poseArray(:,obj.numSamples);  
+        function p  = getFinalPose(obj)
+            p  = pose(obj.poseArray(:,obj.numSamples));  
         end
         
         function time  = getTrajectoryDuration(obj)
@@ -517,11 +517,11 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
             end
         end
             
-        function pose  = getPoseAtTime(obj,t)
+        function p  = getPoseAtTime(obj,t)
             x = interp1(obj.timeArray,obj.poseArray(1,:),t,'pchip','extrap');
             y = interp1(obj.timeArray,obj.poseArray(2,:),t,'pchip','extrap');
             th = interp1(obj.timeArray,obj.poseArray(3,:),t,'pchip','extrap');
-            pose  = [x ; y ; th];  
+            p  = pose(x,y,th);  
         end  
         
         function parms  = getParms(obj)

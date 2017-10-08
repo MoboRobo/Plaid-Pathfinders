@@ -2,7 +2,7 @@ classdef PID < handle
     
     %% properties
     properties (GetAccess = public, SetAccess = private)
-        ttc;
+        rt;
         rob;
         
         %error values
@@ -39,18 +39,18 @@ classdef PID < handle
     methods 
         
         %constructor
-        function obj = PID(rob, ttc)
-            obj.ttc = ttc;
+        function obj = PID(rob, rt)
+            obj.rt = rt;
             obj.rob = rob;
         end
-        function [u_v, u_w] = getControl(obj, t)
+        function [u_v, u_w] = getControl_t(obj, t)
 
             if isempty(obj.error_times) %initialize
                 obj.error_times = [0];
             end % isEmpty(lastError)?
             t_last = obj.error_times(end);
             %% determine reference pose and estimated pose
-            refPose = obj.ttc.getPose(t);
+            refPose = obj.rt.getPoseAtTime(t);
             curPose = obj.rob.hist_estPose(end);
 
             %% determine error values in every dimension

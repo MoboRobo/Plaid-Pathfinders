@@ -1,4 +1,4 @@
-function Lab6(robot_id, fbktrim)
+function Lab6(robot_id, targX,targY,targTh, scale, fbktrim)
     global clk
     %% SETUP ROBOT
     rasp = raspbot(robot_id, [0; 0; pi/2])
@@ -29,7 +29,7 @@ function Lab6(robot_id, fbktrim)
     
     uref_linear = @(~,t)u_ref_ch(t,a_max,v_max,targ_dist);
     
-    ttc = TTC_Figure8();%Trajectory_TimeCurve(uref_linear,@(~,~)0, 0,t_f, 500);
+    rt = Trajectory_CubicSpiral.planTrajectory(targX,targY,targTh, 1, 201,scale);%Trajectory_TimeCurve(uref_linear,@(~,~)0, 0,t_f, 500);
     
     %% ALGORITHM:
     fig_es = figure();
@@ -43,9 +43,9 @@ function Lab6(robot_id, fbktrim)
     legend('Alongtrack (\deltax)','Crosstrack (\deltay)', 'Position (\deltas)', 'Heading (\delta\theta)');
     axis equal
     
-    tf = Trajectory_Follower(rob,ttc);
+    tf = Trajectory_Follower(rob,rt);
         tf.fbk_trim = fbktrim;
-        tf.pid_controller.correctiveTime = 1.8*ttc.times(end);    % s, PID Time Constant
+        tf.pid_controller.correctiveTime = 1.8*rt.getFinalTime();    % s, PID Time Constant
         tf.pid_controller.k_p = 1;
         tf.pid_controller.k_d = 0;
         tf.pid_controller.k_i = 0.0;
@@ -66,14 +66,14 @@ function Lab6(robot_id, fbktrim)
     first_loop = 1;
     clk = nan;
     T = 0;
-    while(T < (ttc.times(end)+ttc.send_delay+1)) % Run for one second beyond end of reference trajectory
+    while(T < (rt.getFinalTime()+1)) % Run for one second beyond end of reference trajectory
         if(first_loop)
             clk = Clock();
         first_loop = 0;
         end
         
         T = clk.time();
-        tf.follow_update(T);
+        tf.follow_update_t(T);
         
 %         pl_exs.addXY(ts, es(end,1));
 %         pl_eys.addXY(ts, es(end,2));
@@ -83,7 +83,7 @@ function Lab6(robot_id, fbktrim)
         ts(end+1) = T;
         
         rps(end+1,:) = rob.hist_estPose(end).poseVec';
-        pps(end+1,:) = ttc.getPose(T).poseVec';
+        pps(end+1,:) = rt.getPoseAtTime(T).poseVec';
         
         es(end+1,:) = tf.pid_controller.error_poses(end).poseVec';
         
