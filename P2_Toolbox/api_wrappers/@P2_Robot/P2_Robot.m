@@ -199,7 +199,7 @@ classdef P2_Robot < handle
 
                 obj.hist_enc(end+1) = struct('s_l',s_l, 's_r',s_r, 't',t);
 
-                obj.hist_estPose(end+1) = obj.hist_estPose(end) + V*dt;
+                obj.hist_estDist(end+1) = obj.hist_estDist(end) + V*dt;
                 
                 obj.hist_estTime(end+1) = t;
                 obj.hist_estPose(end+1) = pose(new_x, new_y, new_th);
