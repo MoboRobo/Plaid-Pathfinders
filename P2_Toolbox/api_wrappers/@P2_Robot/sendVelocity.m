@@ -19,6 +19,8 @@ function sendVelocity(obj, v_l, v_r)
     y = obj.hist_commPose(end).Y + V*sin(th)*dt;
     th = th + omega*dt/2;
     
+    obj.hist_commDist(end+1) = obj.hist_commDist(end) + V*dt;
+    
     obj.hist_commTime(end+1) = t;
     obj.hist_commVel(end+1) = struct('v_l',v_l, 'v_r',v_r, 'V',V, 'om',omega);
     obj.hist_commPose(end+1) = pose(x, y, th);

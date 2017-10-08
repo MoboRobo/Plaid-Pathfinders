@@ -39,10 +39,10 @@ classdef Trajectory_Follower < handle
             %Feedforward w/Feedback-Trim:
             obj.u_comm_t = @(t)( obj.u_ffwd_t(t) + obj.u_fbk_t(t) );
             
-            obj.u_ffwd_s = @(s) [rt.V_s(s) rt.om_s(s)];
-            obj.u_fbk_s = @(s) obj.pid_controller.getControl_s(s);
+            obj.u_ffwd_s = @(t) [rt.V_s(t) rt.om_s(t)];
+            obj.u_fbk_s = @(t) obj.pid_controller.getControl_t(t);
             %Feedforward w/Feedback-Trim:
-            obj.u_comm_s = @(s)( obj.u_ffwd_t(s) + obj.u_fbk_t(s) );
+            obj.u_comm_s = @(t)( obj.u_ffwd_t(t) + obj.u_fbk_t(t) );
         end % #Trajectory_Follower
         
         %% Follow Update
@@ -57,19 +57,6 @@ classdef Trajectory_Follower < handle
             end % fbk_trim?
             V = u_t(1);
             om = u_t(2);
-            obj.robot.moveAt(V,om);
-        end % #follow_update_t
-        % Commands the Robot to assume the Motion it should have at
-        % Trajectory Time, t
-        function follow_update_s(obj, s)
-            if(obj.fbk_trim)
-                u_s = obj.u_comm_s(s);
-            else
-                obj.u_fbk_s(s); % Just callin' it (so errors are still computed)
-                u_s = obj.u_ffwd_s(s);
-            end % fbk_trim?
-            V = u_s(1);
-            om = u_s(2);
             obj.robot.moveAt(V,om);
         end % #follow_update_t
     end % Trajectory_Follower <- methods

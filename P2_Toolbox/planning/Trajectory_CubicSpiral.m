@@ -509,6 +509,7 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
                 V = 0.0;
             elseif(t > obj.getFinalTime())
                 V = obj.VArray(obj.numSamples);
+            else
                 V  = interp1(obj.timeArray,obj.VArray,t,'pchip','extrap');  
             end
         end
@@ -588,6 +589,8 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
         function s = getSAtTime(obj,t)
             if(t < obj.timeArray(1))
                 s = 0.0;
+            elseif(t > obj.getFinalTime())
+                s = obj.distArray(obj.numSamples);
             else
                 s  = interp1(obj.timeArray,obj.distArray,t,'pchip','extrap');  
             end
