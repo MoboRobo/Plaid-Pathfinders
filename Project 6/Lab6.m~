@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 function Lab6(robot_id, targX,targY,targTh, scale, fbktrim)
+=======
+function Lab6(robot_id, fbktrim)
+>>>>>>> 826db1c59e8a8027fcb30b462c53f0d5af0a7fbb
     global clk
     %% SETUP ROBOT
     rasp = raspbot(robot_id, [0; 0; pi/2])
@@ -29,8 +33,11 @@ function Lab6(robot_id, targX,targY,targTh, scale, fbktrim)
     
     uref_linear = @(~,t)u_ref_ch(t,a_max,v_max,targ_dist);
     
+<<<<<<< HEAD
     rt = Trajectory_CubicSpiral.planTrajectory(targX,targY,targTh, 1, 201,scale);%Trajectory_TimeCurve(uref_linear,@(~,~)0, 0,t_f, 500);
+=======
     ttc = TTC_Figure8();%Trajectory_TimeCurve(uref_linear,@(~,~)0, 0,t_f, 500);
+>>>>>>> 826db1c59e8a8027fcb30b462c53f0d5af0a7fbb
     
     %% ALGORITHM:
     fig_es = figure();
@@ -43,10 +50,16 @@ function Lab6(robot_id, targX,targY,targTh, scale, fbktrim)
     ylabel('Position [m]');
     legend('Alongtrack (\deltax)','Crosstrack (\deltay)', 'Position (\deltas)', 'Heading (\delta\theta)');
     axis equal
-   
+    
+<<<<<<< HEAD
     tf = Trajectory_Follower(rob,rt);
         tf.fbk_trim = fbktrim;
         tf.pid_controller.correctiveTime = 1.8*rt.getFinalTime();    % s, PID Time Constant
+=======
+    tf = Trajectory_Follower(rob,ttc);
+        tf.fbk_trim = fbktrim;
+        tf.pid_controller.correctiveTime = 1.8*ttc.times(end);    % s, PID Time Constant
+>>>>>>> 826db1c59e8a8027fcb30b462c53f0d5af0a7fbb
         tf.pid_controller.k_p = 1;
         tf.pid_controller.k_d = 0;
         tf.pid_controller.k_i = 0.0;
@@ -67,14 +80,22 @@ function Lab6(robot_id, targX,targY,targTh, scale, fbktrim)
     first_loop = 1;
     clk = nan;
     T = 0;
+<<<<<<< HEAD
     while(T < (rt.getFinalTime()+1)) % Run for one second beyond end of reference trajectory
+=======
+    while(T < (ttc.times(end)+ttc.send_delay+1)) % Run for one second beyond end of reference trajectory
+>>>>>>> 826db1c59e8a8027fcb30b462c53f0d5af0a7fbb
         if(first_loop)
             clk = Clock();
         first_loop = 0;
         end
         
         T = clk.time();
+<<<<<<< HEAD
         tf.follow_update_t(T);
+=======
+        tf.follow_update(T);
+>>>>>>> 826db1c59e8a8027fcb30b462c53f0d5af0a7fbb
         
 %         pl_exs.addXY(ts, es(end,1));
 %         pl_eys.addXY(ts, es(end,2));
@@ -84,7 +105,11 @@ function Lab6(robot_id, targX,targY,targTh, scale, fbktrim)
         ts(end+1) = T;
         
         rps(end+1,:) = rob.hist_estPose(end).poseVec';
+<<<<<<< HEAD
         pps(end+1,:) = rt.getPoseAtTime(T).poseVec';
+=======
+        pps(end+1,:) = ttc.getPose(T).poseVec';
+>>>>>>> 826db1c59e8a8027fcb30b462c53f0d5af0a7fbb
         
         es(end+1,:) = tf.pid_controller.error_poses(end).poseVec';
         
