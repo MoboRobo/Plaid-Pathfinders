@@ -173,9 +173,16 @@ classdef PID < handle
             ds = s - s_last;
 
             %% compute derivatives and integrals
-            errorDerivativeX = (errorX-obj.lastErrorX)/ ds;
-            errorDerivativeY = (errorY - obj.lastErrorY) / ds;
-            errorDerivativeTh = (errorTh - obj.lastErrorTh) / ds;
+            if(ds == 0)
+                errorDerivativeX = 0;
+                errorDerivativeY = 0;
+                errorDerivativeTh = 0;
+            
+            else
+                errorDerivativeX = (errorX-obj.lastErrorX)/ ds;
+                errorDerivativeY = (errorY - obj.lastErrorY) / ds;
+                errorDerivativeTh = (errorTh - obj.lastErrorTh) / ds;
+            end
             obj.errorIntegralX = obj.errorIntegralX + errorX*ds;
             if abs(obj.errorIntegralX) > obj.maxErrorIntegralX;
                 sign = obj.errorIntegralX/abs(obj.errorIntegralX);
