@@ -42,7 +42,7 @@ classdef Trajectory_Follower < handle
             obj.u_ffwd_s = @(s) [rt.V_s(s) rt.om_s(s)];
             obj.u_fbk_s = @(s) obj.pid_controller.getControl_s(s);
             %Feedforward w/Feedback-Trim:
-            obj.u_comm_s = @(s)( obj.u_ffwd_t(s) + obj.u_fbk_t(s) );
+            obj.u_comm_s = @(s)( obj.u_ffwd_s(s) + obj.u_fbk_s(s) );
         end % #Trajectory_Follower
         
         %% Follow Update

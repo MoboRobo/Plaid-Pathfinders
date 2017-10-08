@@ -206,6 +206,7 @@ classdef P2_Robot < handle
                 obj.hist_estVel(end+1) = struct('v_l',v_l, 'v_r',v_r, 'V',V, 'om',omega);
                 
                 obj.triggerPositionPlot();
+                
             end % dt>0?
             
         end % #processNewEncoderData

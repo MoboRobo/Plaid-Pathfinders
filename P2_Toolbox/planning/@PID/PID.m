@@ -80,10 +80,17 @@ classdef PID < handle
             errorTh = atan2(sin(errorTh), cos(errorTh)); % normalize angle
             dt = t - t_last;
 
-            %% compute derivatives and integrals
-            errorDerivativeX = (errorX-obj.lastErrorX)/ dt;
-            errorDerivativeY = (errorY - obj.lastErrorY) / dt;
-            errorDerivativeTh = (errorTh - obj.lastErrorTh) / dt;
+            %% compute derivatives and integrals            
+            if(dt == 0)
+                errorDerivativeX = 0;
+                errorDerivativeY = 0;
+                errorDerivativeTh = 0;
+            
+            else
+                errorDerivativeX = (errorX-obj.lastErrorX)/ dt;
+                errorDerivativeY = (errorY - obj.lastErrorY) / dt;
+                errorDerivativeTh = (errorTh - obj.lastErrorTh) / dt;
+            end
             obj.errorIntegralX = obj.errorIntegralX + errorX*dt;
             if abs(obj.errorIntegralX) > obj.maxErrorIntegralX;
                 sign = obj.errorIntegralX/abs(obj.errorIntegralX);

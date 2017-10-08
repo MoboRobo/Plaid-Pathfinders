@@ -63,16 +63,21 @@ function Lab6(robot_id, targX,targY,targTh, scale, fbktrim)
     
     ts = 0;        % Vector of Times of Execution
     
+    S0 = 0;
     first_loop = 1;
     clk = nan;
     T = 0;
-    while(T < (rt.getFinalTime()+1)) % Run for one second beyond end of reference trajectory
+    S = 0;
+    while(T < (rt.getFinalTime+1)) % Run for one second beyond end of reference trajectory
         if(first_loop)
             clk = Clock();
+            S0 = rob.hist_estDist(end)-0.0001;
         first_loop = 0;
         end
         
         T = clk.time();
+        S = rob.hist_estDist(end) - S0;
+        %tf.follow_update_t(T);
         tf.follow_update_t(T);
         
 %         pl_exs.addXY(ts, es(end,1));

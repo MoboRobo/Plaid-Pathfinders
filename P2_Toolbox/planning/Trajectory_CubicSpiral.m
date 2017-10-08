@@ -158,7 +158,15 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
             end
             
             save(strcat('cubicSpirals_Data_',num2str(scale)),'a1Tab','a2Tab','b1Tab','b2Tab','r1Tab','r2Tab');
-
+            fileInfo = dir(strcat('cubicSpirals_Data_',num2str(scale),'.mat'));
+            if(fileInfo.bytes > 95e6) % Split Up File if Too Large
+                warning('Output File Too Large for Git, Splitting it Up...');
+                Split_TCS_Data(scale);
+                warning('Split Complete. Deleting Original...');
+                delete(strcat('cubicSpirals_Data_',num2str(scale),'.mat'));
+                warning('Origin Dumped.');
+            end
+            
             figure(2);
             I1 = mat2gray(a1Tab.cellArray, [-aMax aMax]);
             imshow(I1);
@@ -203,7 +211,13 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
             end
             
             function load_data(scale)
-                load(strcat('cubicSpirals_Data_',num2str(scale)),'a1Tab','a2Tab','b1Tab','b2Tab','r1Tab','r2Tab');
+                try
+                    load(strcat('cubicSpirals_Data_',num2str(scale)),'a1Tab','a2Tab','b1Tab','b2Tab','r1Tab','r2Tab');
+                catch
+                    load(strcat('cubicSpirals_Data_',num2str(scale),'_A'),'a1Tab','a2Tab');
+                    load(strcat('cubicSpirals_Data_',num2str(scale),'_B'),'b1Tab','b2Tab');
+                    load(strcat('cubicSpirals_Data_',num2str(scale),'_r'),'r1Tab','r2Tab');
+                end
                 data_loaded = true;
                 a1T = a1Tab;a2T = a2Tab;b1T = b1Tab;b2T = b2Tab;r1T = r1Tab;r2T = r2Tab;
             end
