@@ -507,7 +507,8 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
         function V  = getVAtTime(obj,t)
             if( t < obj.timeArray(1))
                 V = 0.0;
-            else
+            elseif(t > obj.getFinalTime())
+                V = obj.VArray(obj.numSamples);
                 V  = interp1(obj.timeArray,obj.VArray,t,'pchip','extrap');  
             end
         end
@@ -515,16 +516,22 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
         function w  = getwAtTime(obj,t)
             if(t < obj.timeArray(1))
                 w = 0.0;
+            elseif(t > obj.getFinalTime())
+                w = obj.wArray(obj.numSamples);
             else
                 w  = interp1(obj.timeArray,obj.wArray,t,'pchip','extrap');  
             end
         end
             
         function p  = getPoseAtTime(obj,t)
-            x = interp1(obj.timeArray,obj.poseArray(1,:),t,'pchip','extrap');
-            y = interp1(obj.timeArray,obj.poseArray(2,:),t,'pchip','extrap');
-            th = interp1(obj.timeArray,obj.poseArray(3,:),t,'pchip','extrap');
-            p  = pose(x,y,th);  
+            if(t > obj.getFinalTime())
+                p = obj.getFinalPose();
+            else
+                x = interp1(obj.timeArray,obj.poseArray(1,:),t,'pchip','extrap');
+                y = interp1(obj.timeArray,obj.poseArray(2,:),t,'pchip','extrap');
+                th = interp1(obj.timeArray,obj.poseArray(3,:),t,'pchip','extrap');
+                p  = pose(x,y,th);
+            end
         end  
         
         function parms  = getParms(obj)
