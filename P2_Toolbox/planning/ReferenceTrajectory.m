@@ -97,8 +97,8 @@ classdef (Abstract) ReferenceTrajectory < handle
             plot(xs,ys,'r');
             
             pf = obj.getFinalPose();
-            xf = pf(1);
-            yf = pf(2);
+            xf = pf.X;
+            yf = pf.Y;
             
             r = max([abs(xf) abs(yf)]);
             xlim([-2*r 2*r]);
