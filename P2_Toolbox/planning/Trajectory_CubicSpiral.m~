@@ -97,14 +97,13 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
                     k_s = 0.0;
                     s = 0.0;
                     for i=1:clothSamples
-                        
+                        s = s + ds;
                         % since s_f = 1
                         k_s = s * (a+b*s) * (s - 1.0);
                         t = t + k_s*ds;
                         x = x + cos(t)*ds;
                         y = y + sin(t)*ds;
                         r = r + ((k_s^2) * ds);
-                        s = s + ds;
                         if ((t > tMax) || (t < tMin))
                             broke = true;
                             break; end
@@ -133,7 +132,7 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
                         fprintf('Took %f minutes\n',elapsedTime/60.0);
                     end;
                     n = n + 1;
-                    % Store coesfficients.
+                    % Store coefficients.
                     r1Now = r1Tab.get(q,t);
                     r2Now = r2Tab.get(q,t);
                     if(abs(r1Now) > abs(r) && a >=0.0)
@@ -156,7 +155,7 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
                 plot(plotArrayX(1:n-1),plotArrayY(1:n-1),'.k','MarkerSize',3);
             end
             
-            save(strcat('cubicSpirals_Data_',num2str(scale)),'a1Tab','a2Tab','b1Tab','b2Tab','r1Tab','r2Tab');
+            save(strcat('cubicSpirals_Data_',scale),'a1Tab','a2Tab','b1Tab','b2Tab','r1Tab','r2Tab');
 
             figure(2);
             I1 = mat2gray(a1Tab.cellArray, [-aMax aMax]);
@@ -177,32 +176,23 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
         end
         
         % Plans a trajectory to Position (x,y,th) Relative to Current Robot
-        % Position in the direction of sgn, with number of samples 
-        % optionally specified by ns, and optionally loading data of a 
-        % particular scale as specified by ds.
+        % Position, with  optionally loading data of a particular scale as
+        % specified by ds.
         function curve = planTrajectory(x,y,th,sgn, ns, ds)
             persistent data_loaded;
-            persistent a1T a2T b1T b2T r1T r2T num_samp data_scale
+            persistent a1T a2T b1T b2T r1T r2T data_scale
             
             if(nargin > 4)
-                num_samp = ns;
-            elseif(isempty(num_samp))
-                num_samp = 201; %default value
-            end % nargin>4?
-            
-            if(nargin > 5)
                 data_scale = ds;
                 load_data(data_scale);
-            elseif(isempty(data_scale))
-                data_scale = 30; % default value
-            end % nargin>5?
+            end
             
             if(isempty(data_loaded))
                 load_data(data_scale);
             end
             
             function load_data(scale)
-                load(strcat('cubicSpirals_Data_',num2str(scale)),'a1Tab','a2Tab','b1Tab','b2Tab','r1Tab','r2Tab');
+                load(strcat('cubicSpirals_Data_',scale),'a1Tab','a2Tab','b1Tab','b2Tab','r1Tab','r2Tab');
                 data_loaded = true;
                 a1T = a1Tab;a2T = a2Tab;b1T = b1Tab;b2T = b2Tab;r1T = r1Tab;r2T = r2Tab;
             end
@@ -248,7 +238,7 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
 
             % Plot the corresponding unit
             su = 1.0;
-            clothu = Trajectory_CubicSpiral([au bu su],num_samp);
+            clothu = cubicSpiral([au bu su],201);
 
             %hold on;
 
@@ -267,7 +257,7 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
                 as = -as;  
                 ss = -ss;
             end
-            curve = Trajectory_CubicSpiral([as bs ss],num_samp);
+            curve = cubicSpiral([as bs ss],201);
         end
             
     end
@@ -297,9 +287,9 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
             ds = sf/(obj.numSamples-1);
             
             s = 0.0;
-            xs = obj.getXVec();
-            ys = obj.getYVec();
-            ths = obj.getThVec();
+            xs = obj.poseArray(1);
+            ys = obj.poseArray(2);
+            ths = obj.poseArray(3);
             
             for i=1:obj.numSamples-1
                 % fill this in
@@ -311,9 +301,9 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
                 ys(i+1) = ys(i) + sin(ths(i+1))*ds;
                 ths(i+1) = ths(i+1) + obj.curvArray(i)*ds/2;
             end
-            obj.poseArray(1,:) = xs;
-            obj.poseArray(2,:) = ys;
-            obj.poseArray(3,:) = ths;
+            obj.poseArray(1) = xs;
+            obj.poseArray(2) = ys;
+            obj.poseArray(3) = ths;
        
             i = obj.numSamples;
             s = (i-1)*ds;  
@@ -371,10 +361,10 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
             end
         end 
                 
-       function planVelocities(obj,Vmax)
+       function planVelocities(obj,V_max)
             % Plan the highest possible velocity for the path where no
             % wheel may exceed Vmax in absolute value.
-            obj.V_max = Vmax; % Update Class Property
+            obj.V_max = V_max; % Update Class Property
             
             for i=1:obj.numSamples
                 Vbase = Vmax;
@@ -420,19 +410,19 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
         function J = getJacobian(obj)
             eps = 0.00001;
             dp = [eps 0.0 0.0];
-            clothPlus1 = Trajectory_CubicSpiral(obj.parms+dp,obj.numSamples);
+            clothPlus1 = cubicSpiral(obj.parms+dp,obj.numSamples);
             posePlus = clothPlus1.getFinalPose;
             poseObj = obj.getFinalPose();
             J(:,1) = (posePlus-poseObj)/eps;
            
             dp = [0.0 eps 0.0];
-            clothPlus2 = Trajectory_CubicSpiral(obj.parms+dp,obj.numSamples);
+            clothPlus2 = cubicSpiral(obj.parms+dp,obj.numSamples);
             posePlus = clothPlus2.getFinalPose;
             poseObj = obj.getFinalPose();
             J(:,2) = (posePlus-poseObj)/eps;
             
             dp = [0.0 0.0 eps];
-            clothPlus3 = Trajectory_CubicSpiral(obj.parms+dp,obj.numSamples);            
+            clothPlus3 = cubicSpiral(obj.parms+dp,obj.numSamples);            
             posePlus = clothPlus3.getFinalPose;
             poseObj = obj.getFinalPose();
             J(:,3) = (posePlus-poseObj)/eps; 
@@ -441,7 +431,7 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
         function refineParameters(obj,goalPose)
             disp('Entering iterations');
             newParms = obj.getParms();
-            newObj = Trajectory_CubicSpiral(newParms,5001); % hi samples for derivatives
+            newObj = cubicSpiral(newParms,5001); % hi samples for derivatives
             thisPose = newObj.getFinalPose();
             error = inf; n = 1;
             while(error > 0.001)
@@ -461,7 +451,7 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
                 error = norm(thisPose-goalPose);
                 disp(error);
                 if(n >=20)
-                    fprintf('Trajectory_CubicSpiral failing to refine Parameters\n');
+                    fprintf('cubicSpiral failing to refine Parameters\n');
                     break;
                 end
             end

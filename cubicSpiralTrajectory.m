@@ -252,8 +252,25 @@ classdef cubicSpiralTrajectory < handle
             b = obj.parms(2);
             sf = obj.parms(3);
             ds = sf/(obj.numSamples-1);
+           
+            s = 0.0;
+            xs = obj.poseArray(1);
+            ys = obj.poseArray(2);
+            ths = obj.poseArray(3);
+            
             for i=1:obj.numSamples-1
                 % fill this in
+                s = s + ds/2; 
+                obj.distArray(i+1) = s;
+                obj.curvArray(i+1) = s*(a + b*s)*(s-sf);
+                ths(i+1) = ths(i) + obj.curvArray(i)*ds;
+                xs(i+1) = xs(i) + cos(ths(i+1))*ds;
+                ys(i+1) = ys(i) + sin(ths(i+1))*ds; 
+                
+                obj.poseArray(1,i+1) = xs(i+1);
+                obj.poseArray(2,i+1) = ys(i+1);
+                obj.poseArray(3,i+1) = ths(i+1);
+                s = s + ds/2;  
             end
             i = obj.numSamples;
             s = (i-1)*ds;  
@@ -282,7 +299,7 @@ classdef cubicSpiralTrajectory < handle
             
     methods(Access = public)
         
-        function obj = cubicSpiral(parms,numSamples)
+        function obj = cubicSpiral(parms,numSamples) %Note: Change this to cubicSpiralTrajectory to test integrator ~Ben
             % Constructs a cubicSpiral for the supplied parameters. The
             % parameters are in order [a b sf]. numSamples is the
             % number of integration steps used to integrate the entire 			

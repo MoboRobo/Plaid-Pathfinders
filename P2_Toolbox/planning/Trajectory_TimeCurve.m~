@@ -36,9 +36,6 @@ classdef Trajectory_TimeCurve < ReferenceTrajectory
         % time-variant functions vf(obj,t), omf(obj,t) across ns samples
         % from time t0 to tf, optionally starting at init_pose
         function obj = Trajectory_TimeCurve(vf, omf, t0,tf, ns, init_pose)
-            % Check if all Abstract Methods are Implemented:
-            meta.abstractDetails(?Trajectory_TimeCurve)
-            
             obj.V_func = vf;
             obj.om_func = omf;
             
@@ -171,49 +168,33 @@ classdef Trajectory_TimeCurve < ReferenceTrajectory
         % Path Length at t:
         function s = getSAtTime(obj,t)
             ts = obj.getTVec();
-            ss = obj.getSVec();
-            s = obj.getInt(ts,ss, t, ss(end), 0);
+            ss = 
+            s = obj.getInt(obj.ts(),obj.ss(), t, 
         end
         % Time at Path Length:
-        function t = getTAtDist(obj,s)
-            ss = obj.getSVec();
-            ts = obj.getTVec();
-            t = obj.getInt(ss,ts, s, ts(end), 0);
+        function t = getTAtDist(obj,t)
+            
         end
         
         % Pose at Path Length
-        function p = getPoseAtDist(obj,s)
-            p = obj.getPoseAtTime(obj.getTAtDist(obj,s));
-        end
+        p = getPoseAtDist(obj,s);
         
         % Curvature at Path Length:
-        function K = getCurvAtDist(obj,s)
-            K = obj.getCurvAtTime(obj.getTAtDist(obj,s));
-        end
+        K = getCurvAtDist(obj,s);
         % Angular Velocity at Path Length:
-        function om = getOmegaAtDist(obj,s)
-            om = obj.getOmegaAtTime(obj.getTAtDist(obj,s));
-        end
+        om = getOmegaAtDist(obj,s);
         % Velocity at Path Length:
-        function V = getVAtDist(obj,s)
-            V = obj.getVAtTime(obj.getTAtDist(obj,s));
-        end
+        V = getVAtDist(obj,s);
         
         
         %Return the Pose at the End of the Path:
-        function pf = getFinalPose(obj)
-            pf = obj.poses(end);
-        end
+        pf = getFinalPose(obj);
         %Return the Elapsed Time at the End of the Path:
-        function tf = getFinalTime(obj)
-            tf = obj.times(end);
-        end
+        tf = getFinalTime(obj);
         %Return the Path Length Covered at the End of the Path:
-        function sf = getFinalDist(obj)
-            sf = obj.dists(end);
-        end
+        sf = getFinalDist(obj);
         
-        
+
         %% Get X Vec
         % Returns a Vector of X-Positions
         function xs = getXVec(obj)
@@ -231,13 +212,9 @@ classdef Trajectory_TimeCurve < ReferenceTrajectory
         end % #getThVec
         
         %Returns Vector of All Times:
-        function ts = getTVec(obj)
-            ts = obj.times;
-        end
+        ts = getTVec(obj);
         %Returns Vector of All Path Lengths:
-        function ss = getSVec(obj)
-            ss = obj.dists;
-        end
+        ss = getSVec(obj);
     end
     
 end % 
