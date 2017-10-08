@@ -99,7 +99,7 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
                     for i=1:clothSamples
                         s = s + ds;
                         % since s_f = 1
-                        k_s = s * (a+b*s) * (s - 1.0)
+                        k_s = s * (a+b*s) * (s - 1.0);
                         t = t + k_s*ds;
                         x = x + cos(t)*ds;
                         y = y + sin(t)*ds;
@@ -155,7 +155,7 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
                 plot(plotArrayX(1:n-1),plotArrayY(1:n-1),'.k','MarkerSize',3);
             end
             
-            save('cubicSpirals','a1Tab','a2Tab','b1Tab','b2Tab','r1Tab','r2Tab');
+            save(strcat('cubicSpirals_Data_',scale),'a1Tab','a2Tab','b1Tab','b2Tab','r1Tab','r2Tab');
 
             figure(2);
             I1 = mat2gray(a1Tab.cellArray, [-aMax aMax]);
@@ -175,13 +175,25 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
             xlabel('Heading'); ylabel('Bearing'); title('b2Tab');
         end
         
-        function curve = planTrajectory(x,y,th,sgn)
-            persistent inited;
-            persistent a1T a2T b1T b2T r1T r2T;
-                    
-            if(isempty(inited))
-                load('cubicSpirals2mm_015rads','a1Tab','a2Tab','b1Tab','b2Tab','r1Tab','r2Tab');
-                inited = true;
+        % Plans a trajectory to Position (x,y,th) Relative to Current Robot
+        % Position, with  optionally loading data of a particular scale as
+        % specified by ds.
+        function curve = planTrajectory(x,y,th,sgn, ns, ds)
+            persistent data_loaded;
+            persistent a1T a2T b1T b2T r1T r2T data_scale
+            
+            if(nargin > 4)
+                data_scale = ds;
+                load_data(data_scale);
+            end
+            
+            if(isempty(data_loaded))
+                load_data(data_scale);
+            end
+            
+            function load_data(scale)
+                load(strcat('cubicSpirals_Data_',scale),'a1Tab','a2Tab','b1Tab','b2Tab','r1Tab','r2Tab');
+                data_loaded = true;
                 a1T = a1Tab;a2T = a2Tab;b1T = b1Tab;b2T = b2Tab;r1T = r1Tab;r2T = r2Tab;
             end
             
@@ -388,7 +400,7 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
                 obj.vlArray(i) = vl;
                 obj.vrArray(i) = vr;
                 obj.VArray(i) = (vr + vl)/2.0;
-                obj.wArray(i) = (vr - vl)/robotModel.W;                
+                obj.wArray(i) = (vr - vl)/robotModel.W;
             end
             % Now compute the times that are implied by the velocities and
             % the distances.
@@ -611,10 +623,12 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
         end
         %Returns Vector of All Times:
         function ts = getTVec(obj)
-            ts = 
+            ts = obj.timeArray;
         end
         %Returns Vector of All Path Lengths:
-        ss = getSVec(obj);
+        function ss = getSVec(obj)
+            ss = obj.distArray;
+        end
         
     end % ReferenceTrajectory <-methods(Abstract)
 end
