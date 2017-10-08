@@ -132,7 +132,7 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
                         fprintf('Took %f minutes\n',elapsedTime/60.0);
                     end;
                     n = n + 1;
-                    % Store coefficients.
+                    % Store coesfficients.
                     r1Now = r1Tab.get(q,t);
                     r2Now = r2Tab.get(q,t);
                     if(abs(r1Now) > abs(r) && a >=0.0)
@@ -155,7 +155,7 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
                 plot(plotArrayX(1:n-1),plotArrayY(1:n-1),'.k','MarkerSize',3);
             end
             
-            save(strcat('cubicSpirals_Data_',scale),'a1Tab','a2Tab','b1Tab','b2Tab','r1Tab','r2Tab');
+            save(strcat('cubicSpirals_Data_',num2str(scale)),'a1Tab','a2Tab','b1Tab','b2Tab','r1Tab','r2Tab');
 
             figure(2);
             I1 = mat2gray(a1Tab.cellArray, [-aMax aMax]);
@@ -176,15 +176,16 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
         end
         
         % Plans a trajectory to Position (x,y,th) Relative to Current Robot
-        % Position, with number of samples optionally specified by ns, and 
-        % optionally loading data of a particular scale as specified by ds.
+        % Position in the direction of sgn, with number of samples 
+        % optionally specified by ns, and optionally loading data of a 
+        % particular scale as specified by ds.
         function curve = planTrajectory(x,y,th,sgn, ns, ds)
             persistent data_loaded;
             persistent a1T a2T b1T b2T r1T r2T num_samp data_scale
             
             if(nargin > 4)
                 num_samp = ns;
-            elseif(isempty(data_scale))
+            elseif(isempty(num_samp))
                 num_samp = 201; %default value
             end % nargin>4?
             
@@ -200,7 +201,7 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
             end
             
             function load_data(scale)
-                load(strcat('cubicSpirals_Data_',scale),'a1Tab','a2Tab','b1Tab','b2Tab','r1Tab','r2Tab');
+                load(strcat('cubicSpirals_Data_',num2str(scale)),'a1Tab','a2Tab','b1Tab','b2Tab','r1Tab','r2Tab');
                 data_loaded = true;
                 a1T = a1Tab;a2T = a2Tab;b1T = b1Tab;b2T = b2Tab;r1T = r1Tab;r2T = r2Tab;
             end
@@ -295,9 +296,9 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
             ds = sf/(obj.numSamples-1);
             
             s = 0.0;
-            xs = obj.poseArray(1);
-            ys = obj.poseArray(2);
-            ths = obj.poseArray(3);
+            xs = obj.getXVec();
+            ys = obj.getYVec();
+            ths = obj.getThVec();
             
             for i=1:obj.numSamples-1
                 % fill this in
@@ -309,9 +310,9 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
                 ys(i+1) = ys(i) + sin(ths(i+1))*ds;
                 ths(i+1) = ths(i+1) + obj.curvArray(i)*ds/2;
             end
-            obj.poseArray(1) = xs;
-            obj.poseArray(2) = ys;
-            obj.poseArray(3) = ths;
+            obj.poseArray(1,:) = xs;
+            obj.poseArray(2,:) = ys;
+            obj.poseArray(3,:) = ths;
        
             i = obj.numSamples;
             s = (i-1)*ds;  
@@ -369,10 +370,10 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
             end
         end 
                 
-       function planVelocities(obj,V_max)
+       function planVelocities(obj,Vmax)
             % Plan the highest possible velocity for the path where no
             % wheel may exceed Vmax in absolute value.
-            obj.V_max = V_max; % Update Class Property
+            obj.V_max = Vmax; % Update Class Property
             
             for i=1:obj.numSamples
                 Vbase = Vmax;
