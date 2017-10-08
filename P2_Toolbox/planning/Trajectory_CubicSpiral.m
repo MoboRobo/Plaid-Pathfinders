@@ -100,12 +100,12 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
                         s = s + (ds /2.0);
                         % since s_f = 1
                         k_s = s * (a+b*s) * (s - 1.0);
-                        t = t + k_s*ds;
+                        t = t + k_s*(ds/2.0);
                         x = x + cos(t)*ds;
                         y = y + sin(t)*ds;
                         r = r + ((k_s^2) * ds);
                         s = s + (ds / 2.0);
-                        t = t + k_s*ds/2;
+                        t = t + k_s*(ds/2.0);
                         if ((t > tMax) || (t < tMin))
                             broke = true;
                             break; end
