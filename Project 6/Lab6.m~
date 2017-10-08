@@ -1,5 +1,5 @@
-function Lab6(robot_id, targX,targY,targTh, scale, fbktrim)
-    global clk
+function Lab6(robot_id, scale, fbktrim)
+    global clk rob
     %% SETUP ROBOT
     rasp = raspbot(robot_id, [0; 0; pi/2])
     rob = P2_Robot(rasp);
@@ -13,61 +13,59 @@ function Lab6(robot_id, targX,targY,targTh, scale, fbktrim)
     clk = Clock();
     
     %% TASK PARAMETERS
-    v_max = 0.25;       % m/s, peak velocity of ffwd reference trajectory
-    a_max = 3*0.25;     % m/s^2, peak acceleration of ffwd ref trajectory
-    targ_dist = 1;      % m, target distance of the ffwd ref. trajectory
-    s_f = targ_dist;
-    t_ramp = v_max / a_max;
-    t_f = s_f/v_max + t_ramp;
-    %BUT:
-    if(v_max^2/a_max > s_f) % not enough time to reach v_max and come back 
-                             % down before reaching dist.
-        v_p = sqrt(a_max*s_f); % Peak attainable velocity
-        t_ramp = v_p/a_max;
-        t_f = 2*t_ramp;
-    end
+    k_p = 1.0;
+    k_d = 0.0;
+    k_i = 0.0;
     
-    uref_linear = @(~,t)u_ref_ch(t,a_max,v_max,targ_dist);
-    
-    rt = Trajectory_CubicSpiral.planTrajectory(targX,targY,targTh, 1, 201,scale);%Trajectory_TimeCurve(uref_linear,@(~,~)0, 0,t_f, 500);
+    rtA = Trajectory_CubicSpiral.planTrajectory(0.3048,0.3048,0.0, 1, 201,scale);%Trajectory_TimeCurve(uref_linear,@(~,~)0, 0,t_f, 500);
+    rtB = Trajectory_CubicSpiral.planTrajectory(-0.6096,-0.6096,-pi/2.0, 1, 201,scale);
+    rtC = Trajectory_CubicSpiral.planTrajectory(-3.048,3.048,pi/2.0, 1, 201,scale);
     
     %% ALGORITHM:
-    fig_es = figure();
-    pl_exs = PersistentPlot(fig_es, 0,0);
-    pl_eys = PersistentPlot(fig_es, 0,0);
-    pl_eds = PersistentPlot(fig_es, 0,0);
-    pl_eths = PersistentPlot(fig_es, 0,0);
-    title('Transient Errors');
-    xlabel('Time [s]');
-    ylabel('Position [m]');
-    legend('Alongtrack (\deltax)','Crosstrack (\deltay)', 'Position (\deltas)', 'Heading (\delta\theta)');
-    axis equal
-   
-    tf = Trajectory_Follower(rob,rt);
-        tf.fbk_trim = fbktrim;
-        tf.pid_controller.correctiveTime = 1.8*rt.getFinalTime();    % s, PID Time Constant
-        tf.pid_controller.k_p = 1;
-        tf.pid_controller.k_d = 0;
-        tf.pid_controller.k_i = 0.0;
-    
-    rps = zeros(1,3);     % Vector of Robot Position Vectors across time [[Xr,Yr,th_r]]
-    pps = zeros(1,3);     % Vector of Reference Position Vectors across time [[Xr,Yr,th_r]]
-%     
-%     r_xs = [];      % Robot X-Positions
-%     r_ys = [];      % Robot Y-Positions
-%     
-%     p_xs = [];      % Trajectory X-Positions
-%     p_ys = [];      % Trajectory Y-Positions
-%     
     es = zeros(1,3);      % Vector of Robot Error Vectors across time [[ex,ey,eth]]
     
     ts = 0;        % Vector of Times of Execution
     
+    tfA = Trajectory_Follower(rob,rtA);
+        tfA.fbk_trim = fbktrim;
+        tfA.pid_controller.correctiveTime = 1.8*rtA.getFinalTime();    % s, PID Time Constant
+        tfA.pid_controller.k_p = k_p;
+        tfA.pid_controller.k_d = k_d;
+        tfA.pid_controller.k_i = k_i;
+    tfB = Trajectory_Follower(rob,rtB);
+        tfB.fbk_trim = fbktrim;
+        tfB.pid_controller.correctiveTime = 1.8*rtB.getFinalTime();    % s, PID Time Constant
+        tfB.pid_controller.k_p = k_p;
+        tfB.pid_controller.k_d = k_d;
+        tfB.pid_controller.k_i = k_i;
+    tfC = Trajectory_Follower(rob,rtC);
+        tfC.fbk_trim = fbktrim;
+        tfC.pid_controller.correctiveTime = 1.8*rtC.getFinalTime();    % s, PID Time Constant
+        tfC.pid_controller.k_p = k_p;
+        tfC.pid_controller.k_d = k_i;
+        tfC.pid_controller.k_i = k_d;
+    
+    run_trajectory(tfA);
+     pause(0.1); % short pause between each
+    run_trajectory(tfB);
+     pause(0.1); % short pause between each
+    run_trajectory(tfC);
+
+    rob.moveAt(0,0);
+    rob.core.stop();
+    
+    
+end % #Lab6
+
+% Runs the Robot along the Trajectory Specified by the Given
+% TrajectoryFollower
+function run_trajectory(tf)
+    
     S0 = 0;
     first_loop = 1;
     clk = nan;
-    T = 0;
-    while(T < (rt.getFinalTime()+1)) % Run for one second beyond end of reference trajectory
+    S = 0;
+    while(S < tf.rt.getFinalDist())
         if(first_loop)
             clk = Clock();
             S0 = rob.hist_estDist(end)-0.0001;
@@ -76,52 +74,8 @@ function Lab6(robot_id, targX,targY,targTh, scale, fbktrim)
         
         T = clk.time();
         S = rob.hist_estDist(end) - S0;
-        %tf.follow_update_t(T);
-        tf.follow_update_t(rt.t_s(S));
-        
-%         pl_exs.addXY(ts, es(end,1));
-%         pl_eys.addXY(ts, es(end,2));
-%         pl_eds.addXY(ts, sqrt(es(end,1).^2 + es(end,2).^2));
-%         pl_eths.addXY(ts, es(end,3));
-        
-        ts(end+1) = T;
-        
-        rps(end+1,:) = rob.hist_estPose(end).poseVec';
-        pps(end+1,:) = rt.getPoseAtTime(T).poseVec';
-        
-        es(end+1,:) = tf.pid_controller.error_poses(end).poseVec';
+        tf.follow_update_t(tf.rt.t_s(S));
         
         pause(0.01); % CPU Relief
     end
-    rob.moveAt(0,0);
-    rob.core.stop();
-    
-    pl_exs.replaceXY(ts, es(:,1));
-    pl_eys.replaceXY(ts, es(:,2));
-    pl_eds.replaceXY(ts, sqrt(es(:,1).^2 + es(:,2).^2));
-    pl_eths.replaceXY(ts, es(:,3));
-    
-    fig_trajT = figure();
-    hold on
-        plot(ts, rps(:,1));
-        plot(ts, rps(:,2));
-        plot(ts, rps(:,3));
-        plot(ts, pps(:,1));
-        plot(ts, pps(:,2));
-        plot(ts, pps(:,3));
-    hold off
-    xlabel('Time [s]');
-    ylabel('Position [m]');
-    legend('Robot X','Robot Y','Robot \theta', 'Reference X','Reference Y','Reference \theta');
-        
-    fig_traj = figure();
-    hold on
-        plot(-rps(:,2), rps(:,1));
-        plot(-pps(:,2), pps(:,1));
-    hold off
-    xlabel('Position [m]');
-    ylabel('Position [m]');
-    legend('Robot Trajectory','Reference Trajectory');
-    
-    
-end % #Lab6
+end
