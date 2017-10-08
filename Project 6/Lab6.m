@@ -30,7 +30,6 @@ function Lab6(robot_id, targX,targY,targTh, scale, fbktrim)
     uref_linear = @(~,t)u_ref_ch(t,a_max,v_max,targ_dist);
     
     rt = Trajectory_CubicSpiral.planTrajectory(targX,targY,targTh, 1, 201,scale);%Trajectory_TimeCurve(uref_linear,@(~,~)0, 0,t_f, 500);
-    ttc = TTC_Figure8();%Trajectory_TimeCurve(uref_linear,@(~,~)0, 0,t_f, 500);
     
     %% ALGORITHM:
     fig_es = figure();
