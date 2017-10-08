@@ -137,7 +137,7 @@ classdef PID < handle
         
         
         function [u_v, u_w] = getControl_s(obj, s)
-
+            s
             if isempty(obj.error_dists) %initialize
                 obj.error_dists = [0];
             end % isEmpty(lastError)?
