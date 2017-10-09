@@ -173,19 +173,14 @@ classdef P2_Robot < handle
         
         % Resets All Robot State Data
         function resetStateData(obj)
+            obj.hist_enc = obj.hist_enc(1);
+
             obj.hist_estDist(end+1) = obj.hist_estDist(1);
 
             obj.hist_estTime(end+1) = obj.hist_estTime(1);
-            obj.hist_estPose(end+1) = obj.hist_estPose(1);
+            obj.hist_estPose(end+1) = obj.hist_estTime(1);
             obj.hist_estVel(end+1) = obj.hist_estVel(1);
             
-            obj.hist_commTime = obj.hist_commTime(1);
-            obj.hist_commDist = obj.hist_commDist(1);
-            obj.hist_commVel = obj.hist_commVel(1);
-            obj.hist_commPose = obj.hist_commPose(1);
-            
-            obj.curr_V = 0;
-            obj.curr_omega = 0;
             
             obj.on_time = tic;
         end
