@@ -79,7 +79,7 @@ function run_trajectory(tf)
     clk = nan;
     S = 0;
     S_f = tf.rt.getFinalDist();
-    while(~within(Et,0.05,0))
+    while(~within(Et,0.02,0))
         if(first_loop)
             clk = Clock();
             S0 = rob.hist_estDist(end)-0.0001;
@@ -113,7 +113,8 @@ function run_trajectory(tf)
     
     pf = tf.rt.getFinalPose();
     figure();
-    title(strcat('Trajectory to : ', num2str(pf.X),',',num2str(pf.Y)));
+    title({strcat('Trajectory to : ', num2str(pf.X),',',num2str(pf.Y)),...
+           strcat('Terminal Odometry Error: ', num2str(Et), 'm')});
     xlabel('World X-Position Relative to Start [m]');
     ylabel('World Y-Position Relative to Start [m]');
     hold on
