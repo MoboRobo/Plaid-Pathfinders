@@ -46,9 +46,9 @@ function Lab6(robot_id, scale, fbktrim)
         tfC.pid_controller.k_i = k_d;
     
     run_trajectory(tfA);
-     pause(0.1); % short pause between each
+     pause(0.3); % short pause between each
     run_trajectory(tfB);
-     pause(0.1); % short pause between each
+     pause(0.3); % short pause between each
     run_trajectory(tfC);
 
     rob.moveAt(0,0);
@@ -61,11 +61,23 @@ end % #Lab6
 % TrajectoryFollower
 function run_trajectory(tf)
     global clk rob
+    
+    rxs = zeros(1000,0); % History of Robot X Positions
+    rys = zeros(1000,0); % History of Robot Y Positions
+    
+    txs = zeros(1000,0); % History of Trajectory X Positions
+    tys = zeros(1000,0); % History of Trajectory Y Positions
+    
+    p0 = rob.hist_estPose(end);
+    x0 = p0.X; y0 = p0.Y;
+    
+    count = 0;
     S0 = 0;
     first_loop = 1;
     clk = nan;
     S = 0;
-    while(S < tf.rt.getFinalDist())
+    S_f = tf.rt.getFinalDist();
+    while(~within(S,0.005,S_f))
         if(first_loop)
             clk = Clock();
             S0 = rob.hist_estDist(end)-0.0001;
@@ -74,8 +86,32 @@ function run_trajectory(tf)
         
         T = clk.time();
         S = rob.hist_estDist(end) - S0;
-        tf.follow_update_t(tf.rt.t_s(S));
+        t_s = tf.rt.t_s(S);
         
+        tf.follow_update_s(S);
+        
+        rp = rob.hist_estPose(end);
+        rxs(count) = rp.X - x0;
+        rys(count) = rp.Y - y0;
+        
+        tp = tf.rt.p_s(S);
+        txs(count) = tp.X;
+        tys(count) = tp.Y;
+        
+        count = count+1;
         pause(0.01); % CPU Relief
     end
+    
+    rob.moveAt(0,0);
+%     
+%     pf = tf.rt.getFinalPose();
+%     figure();
+%     title(strcat('Trajectory to : ', num2str(pf.X),',',num2str(pf.Y)));
+%     xlabel('World X-Position Relative to Start [m]');
+%     ylabel('World Y-Position Relative to Start [m]');
+%     hold on
+%         plot(rxs,rys);
+%         plot(txs,tys);
+%     hold off
+%     axis equal
 end
