@@ -71,7 +71,7 @@ function run_trajectory(tf)
     p0 = rob.hist_estPose(end);
     x0 = p0.X; y0 = p0.Y;
     
-    count = 0;
+    count = 1;
     S0 = 0;
     first_loop = 1;
     clk = nan;
@@ -86,15 +86,14 @@ function run_trajectory(tf)
         
         T = clk.time();
         S = rob.hist_estDist(end) - S0;
-        t_s = tf.rt.t_s(S);
         
-        tf.follow_update_s(S);
+        tf.follow_update_t(T);
         
         rp = rob.hist_estPose(end);
         rxs(count) = rp.X - x0;
         rys(count) = rp.Y - y0;
         
-        tp = tf.rt.p_s(S);
+        tp = tf.rt.p_t(T);
         txs(count) = tp.X;
         tys(count) = tp.Y;
         
@@ -103,15 +102,15 @@ function run_trajectory(tf)
     end
     
     rob.moveAt(0,0);
-%     
-%     pf = tf.rt.getFinalPose();
-%     figure();
-%     title(strcat('Trajectory to : ', num2str(pf.X),',',num2str(pf.Y)));
-%     xlabel('World X-Position Relative to Start [m]');
-%     ylabel('World Y-Position Relative to Start [m]');
-%     hold on
-%         plot(rxs,rys);
-%         plot(txs,tys);
-%     hold off
-%     axis equal
+    
+    pf = tf.rt.getFinalPose();
+    figure();
+    title(strcat('Trajectory to : ', num2str(pf.X),',',num2str(pf.Y)));
+    xlabel('World X-Position Relative to Start [m]');
+    ylabel('World Y-Position Relative to Start [m]');
+    hold on
+        plot(rxs,rys);
+        plot(txs,tys);
+    hold off
+    axis equal
 end
