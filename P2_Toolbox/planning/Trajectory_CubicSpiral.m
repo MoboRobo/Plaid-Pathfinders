@@ -613,6 +613,8 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
         function t = getTAtDist(obj,s)
             if(s < obj.distArray(1))
                 t = 0.0;
+            elseif (s > obj.getFinalDist())
+                t = obj.getFinalTime();
             else
                 t  = interp1(obj.distArray,obj.timeArray,s,'pchip','extrap');  
             end
