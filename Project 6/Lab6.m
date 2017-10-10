@@ -32,19 +32,19 @@ function Lab6(robot_id, scale, fbktrim)
         tfA.pid_controller.correctiveTime = k_tau*rtA.getFinalTime();    % s, PID Time Constant
         tfA.pid_controller.k_p = k_p;
         tfA.pid_controller.k_d = k_d;
-        tfA.pid_controller.k_i = k_i;
+        tfA.pid_controller.k_i = k_i+0;
     tfB = Trajectory_Follower(rob,rtB);
         tfB.fbk_trim = fbktrim;
         tfB.pid_controller.correctiveTime = k_tau*rtB.getFinalTime();    % s, PID Time Constant
         tfB.pid_controller.k_p = k_p;
         tfB.pid_controller.k_d = k_d;
-        tfB.pid_controller.k_i = k_i;
+        tfB.pid_controller.k_i = k_i+0;
     tfC = Trajectory_Follower(rob,rtC);
         tfC.fbk_trim = fbktrim;
         tfC.pid_controller.correctiveTime = k_tau*rtC.getFinalTime();    % s, PID Time Constant
         tfC.pid_controller.k_p = k_p;
-        tfC.pid_controller.k_d = k_i;
-        tfC.pid_controller.k_i = k_d;
+        tfC.pid_controller.k_d = k_d;
+        tfC.pid_controller.k_i = k_i+0.009;
     
     run_trajectory(tfA);
      pause(0.3); % short pause between each
