@@ -82,7 +82,7 @@ classdef P2_Robot < handle
     
     properties (GetAccess=public, SetAccess=public)
         %Geometry:
-        WHEEL_TREAD = 0.09; % [m] Lateral Distance between Wheel Centers
+        WHEEL_TREAD = 0.08675; % [m] Lateral Distance between Wheel Centers
         
         %Motion:
         L2R_RATIO = 1;  % Ratio of Natural Left-to-Right Wheel Running Speeds (Curvature Correction)

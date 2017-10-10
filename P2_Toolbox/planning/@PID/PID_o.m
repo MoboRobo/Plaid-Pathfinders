@@ -116,8 +116,8 @@ classdef PID < handle
             eth = obj.k_p * errorTh + obj.k_d * errorDerivativeTh + ...
                 obj.k_i * obj.errorIntegralTh;
             % compute actual control linear and rotational velocity
-            u_v = errorX*k_x + norm([ex ey]);
-            u_w = errorY*k_y + errorTh*k_th + eth;
+            u_v = ex * k_x;
+            u_w = ey * k_y + eth * k_th;
 %             u_v = errorX * k_x;
 %             u_w = errorY * k_y + errorTh*k_th;
 
@@ -141,6 +141,104 @@ classdef PID < handle
             obj.lastErrorY = errorY;
             obj.lastErrorTh = errorTh;
         end
-    end
+        
+        
+        function [u_v, u_w] = getControl_s(obj, s)
+            s
+            if isempty(obj.error_dists) %initialize
+                obj.error_dists = [0];
+            end % isEmpty(lastError)?
+            s_last = obj.error_dists(end);
+            %% determine reference pose and estimated pose
+            refPose = obj.rt.getPoseAtDist(s);
+            curPose = obj.rob.hist_estPose(end);
+
+            %% determine error values in every dimension
+            %get most recent velocity readings
+            V = obj.rob.hist_estVel(end).V;
+            
+            %error summing coefficients
+            k_x = 1 / obj.correctiveTime;
+            k_th = 1 / obj.correctiveTime;
+            if V < 0.2 % V-floor for k_y to prevent it from becoming too large
+                k_y = 0;
+            else
+                k_y = 2 / (abs(V) * obj.correctiveTime^2);
+            end % k_y<0.2?
+            
+            wrp = (refPose.poseVec(1:2) - curPose.poseVec(1:2));
+            
+            thr = atan2(sin(curPose.th), cos(curPose.th));
+            errorTh = refPose.th - curPose.th;
+            errorTh = atan2(sin(errorTh),cos(errorTh));
+            
+            rrp = [cos(thr),-sin(thr); sin(thr), cos(thr)] \ wrp;
+            
+            errorX = rrp(1);
+            errorY = rrp(2);
+            errorTh = atan2(sin(errorTh), cos(errorTh)); % normalize angle
+            ds = s - s_last;
+
+            %% compute derivatives and integrals
+            if(ds == 0)
+                errorDerivativeX = 0;
+                errorDerivativeY = 0;
+                errorDerivativeTh = 0;
+            
+            else
+                errorDerivativeX = (errorX-obj.lastErrorX)/ ds;
+                errorDerivativeY = (errorY - obj.lastErrorY) / ds;
+                errorDerivativeTh = (errorTh - obj.lastErrorTh) / ds;
+            end
+            obj.errorIntegralX = obj.errorIntegralX + errorX*ds;
+            if abs(obj.errorIntegralX) > obj.maxErrorIntegralX;
+                sign = obj.errorIntegralX/abs(obj.errorIntegralX);
+                obj.errorIntegralX= obj.maxErrorIntegralX * sign;
+            end
+            
+            obj.errorIntegralY = obj.errorIntegralY + errorY*ds;
+            if abs(obj.errorIntegralY) > obj.maxErrorIntegralY;
+                sign = obj.errorIntegralY/abs(obj.errorIntegralY);
+                obj.errorIntegralY= obj.maxErrorIntegralY * sign;
+            end
+
+            obj.errorIntegralTh = obj.errorIntegralTh + errorTh*ds;
+            if abs(obj.errorIntegralTh) > obj.maxErrorIntegralTh;
+                sign = obj.errorIntegralTh/abs(obj.errorIntegralTh);
+                obj.errorIntegralTh= obj.maxErrorIntegralTh * sign;
+            end
+            
+            ex =obj.k_p * errorX + obj.k_d * errorDerivativeX + ...
+                obj.k_i * obj.errorIntegralX;
+            ey = obj.k_p * errorY + obj.k_d * errorDerivativeY + ...
+                obj.k_i * obj.errorIntegralY;
+            eth = obj.k_p * errorTh + obj.k_d * errorDerivativeTh + ...
+                obj.k_i * obj.errorIntegralTh;
+            % compute actual control linear and rotational velocity
+            u_v = ex * k_x;
+            u_w = ey * k_y + eth * k_th;
+%             u_v = errorX * k_x;
+%             u_w = errorY * k_y + errorTh*k_th;
+
+            %% ensure below ceiling
+            if abs(u_v) > obj.v_max
+                sign = u_v / abs(u_v);
+                u_v = sign * obj.v_max;
+            end
+
+            if abs(u_w) > obj.w_max
+                sign = u_w / abs(u_w);
+                u_w = sign*obj.w_max;
+            end
+            
+            % update history of error poses and times
+            obj.error_poses(end+1) = pose(errorX, errorY, errorTh);
+            obj.error_dists(end+1) = s;
+
+            % update 'last' variables
+            obj.lastErrorX = errorX;
+            obj.lastErrorY = errorY;
+            obj.lastErrorTh = errorTh;
+            end
+        end
 end
-       

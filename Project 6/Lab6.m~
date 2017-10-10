@@ -73,7 +73,6 @@ function run_trajectory(tf)
     tys = zeros(1000,0); % History of Trajectory Y Positions
 
     Et = Inf;
-    E_head = Inf;
     pf = tf.rt.getFinalPose();
     
     count = 1;
@@ -84,7 +83,7 @@ function run_trajectory(tf)
     S_f = tf.rt.getFinalDist();
     T = 0;
     %while(~within(Et,0.02,0))
-    while (T < tf.rt.getFinalTime()+1 )%&& (~within(E_head,0.01,0) || T < 0.9*tf.rt.getFinalTime()))
+    while (T < tf.rt.getFinalTime()+1 && within(Et,0.02,0))
         if(first_loop)
             clk = Clock();
             S0 = rob.hist_estDist(end)-0.0001;
@@ -105,7 +104,6 @@ function run_trajectory(tf)
         tys(count) = tp.Y;
         
         Et = sqrt( (pf.X-rp.X)^2 + (pf.Y-rp.Y)^2 );
-        %E_head = (pf.X-rp.X)*sin(rp.th) - sign(rp.th)*(pf.Y-rp.Y)*cos(rp.th);
         
         count = count+1;
         pause(0.01); % CPU Relief
