@@ -25,7 +25,7 @@ function Lab6(robot_id, scale, fbktrim)
     %% ALGORITHM:
     es = zeros(1,3);      % Vector of Robot Error Vectors across time [[ex,ey,eth]]
     
-    ts = 0;        % Vector of Times of Execution
+    ts = 0;               % Vector of Times of Execution
     
     tfA = Trajectory_Follower(rob,rtA);
         tfA.fbk_trim = fbktrim;

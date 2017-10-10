@@ -5,7 +5,7 @@ classdef Trajectory_Follower < handle
     properties(GetAccess=public, SetAccess=private)
         robot;              % Robot being Following the Given Trajectory
         rt;                 % ReferenceTrajectory Curve to Follow
-        pid_controller;     % PID Controller
+        pid_controller = PID.empty;     % PID Controller
         
         u_comm_t = @(t)0;     % Function Handle for TrajectoryTime-Variant 
                             % Velocity Control Signal (Ffwd w/Fbk-trim)
