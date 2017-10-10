@@ -45,6 +45,7 @@ function Lab6(robot_id, scale, fbktrim)
         tfC.pid_controller.k_p = k_p;
         tfC.pid_controller.k_d = k_d;
         tfC.pid_controller.k_i = k_i+0.009;
+        tfC.pid_controller.k_i = k_i;
     
     run_trajectory(tfA);
      pause(0.3); % short pause between each
@@ -79,7 +80,9 @@ function run_trajectory(tf)
     clk = nan;
     S = 0;
     S_f = tf.rt.getFinalDist();
-    while(~within(Et,0.02,0))
+    T = 0;
+    %while(~within(Et,0.02,0))
+    while (T < tf.rt.getFinalTime()+1)
         if(first_loop)
             clk = Clock();
             S0 = rob.hist_estDist(end)-0.0001;
