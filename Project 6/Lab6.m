@@ -82,6 +82,7 @@ function run_trajectory(tf)
     T = 0;
     %while(~within(Et,0.02,0))
     while (T < tf.rt.getFinalTime()+1)
+        x = [tf.rt.pid_controller.k_p, tf.rt.pid_controller.k_d, tf.rt.pid_controller.k_i]
         if(first_loop)
             clk = Clock();
             S0 = rob.hist_estDist(end)-0.0001;
