@@ -44,7 +44,6 @@ function Lab6(robot_id, scale, fbktrim)
         tfC.pid_controller.correctiveTime = k_tau*rtC.getFinalTime();    % s, PID Time Constant
         tfC.pid_controller.k_p = k_p;
         tfC.pid_controller.k_d = k_d;
-        tfC.pid_controller.k_i = k_i+0.009;
         tfC.pid_controller.k_i = k_i;
     
     run_trajectory(tfA);
