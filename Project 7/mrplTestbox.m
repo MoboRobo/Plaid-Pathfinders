@@ -19,10 +19,6 @@ classdef mrplTestbox
     methods
         %% Constructor:
         function obj = mrplTestbox(robot_id)
-            close all;
-            rosshutdown
-            rosinit
-            
             %% Setup Internal Data Classes:
             obj.clock = Clock();
             

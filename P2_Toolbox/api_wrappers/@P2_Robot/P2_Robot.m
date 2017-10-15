@@ -219,7 +219,7 @@ classdef P2_Robot < handle
                 
                 obj.encTraj.update(V,omega,t);
                 
-                obj.hist_estVel(end+1) = struct('v_l',v_l, 'v_r',v_r);
+                obj.hist_estWheelVel(end+1) = struct('v_l',v_l, 'v_r',v_r);
                 
                 obj.triggerPositionPlot();
                 

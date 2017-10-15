@@ -113,11 +113,9 @@ classdef (Abstract) Trajectory < handle
             yf = pf.Y;
             
             r = max([abs(xf) abs(yf)]);
-            if(r ~= 0)
-                k_r = 1.2;
-                xlim([-k_r*r k_r*r]);
-                ylim([-k_r*r k_r*r]);
-            end
+            if(
+            xlim([-2*r 2*r]);
+            ylim([-2*r 2*r]);
         end % #plot
     end % Trajectory <-methods
 end % Class Trajectory

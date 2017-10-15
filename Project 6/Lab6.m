@@ -87,16 +87,16 @@ function run_trajectory(tf)
     while (T < tf.rt.getFinalTime()+1 )%&& (~within(E_head,0.01,0) || T < 0.9*tf.rt.getFinalTime()))
         if(first_loop)
             clk = Clock();
-            S0 = rob.hist_estDist(end)-0.0001;
+            S0 = rob.measTraj.s_f-0.0001;
         first_loop = 0;
         end
         
         T = clk.time();
-        S = rob.hist_estDist(end) - S0;
+        S = rob.measTraj.s_f - S0;
         
         tf.follow_update_t(T);
         
-        rp = rob.hist_estPose(end);
+        rp = rob.measTraj.p_f;
         rxs(count) = rp.X;
         rys(count) = rp.Y;
         
@@ -113,7 +113,7 @@ function run_trajectory(tf)
     
     rob.moveAt(0,0);
     
-    rp = rob.hist_estPose(end);
+    rp = rob.measTraj.p_f;
     rxs(count) = rp.X;
     rys(count) = rp.Y;
     
