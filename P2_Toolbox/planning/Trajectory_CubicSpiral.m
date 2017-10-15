@@ -703,6 +703,10 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
         function ss = getSVec(obj)
             ss = obj.distArray;
         end
+        %Returns Vector of All Poses:
+        function ps = getPVec(obj)
+            ps = obj.poseArray;
+        end
         
     end % ReferenceTrajectory <-methods(Abstract)
 end
