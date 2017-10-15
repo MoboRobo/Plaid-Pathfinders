@@ -23,7 +23,8 @@ classdef mrplSystem < handle
             %% Setup Internal Data Classes:
             obj.clock = Clock();
             %% Set Initial NullTrajectory: 
-            obj.traj_vec = NullTrajectory(startPose);  
+            obj.traj_vec(1) = NullTrajectory();
+            obj.traj_vec(1).offsetInitPose(startPose);
             %% Setup Robot
             rasp = raspbot(robot_id, startPose);
             obj.rob = P2_Robot( rasp, @()(obj.clock.time()) );
