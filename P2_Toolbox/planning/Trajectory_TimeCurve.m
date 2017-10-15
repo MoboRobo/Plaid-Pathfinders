@@ -97,7 +97,14 @@ classdef Trajectory_TimeCurve < ReferenceTrajectory
             i = i+1;
             end
         end % #compute
-            
+        
+        % Transforms Every Pose in the Data-Set to World Coordinates based
+        % on the Object's "init_pose" property.
+        function offsetInitPose(obj)
+            % TODO: Implement %
+            warning('Implement: TTC::offsetInitPose');
+        end
+        
         %% Interpolate
         % General Interpolation that takes into account out of bounds
         % queries, where v_ob is the value used for over-bounds queries.

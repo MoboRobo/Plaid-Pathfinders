@@ -29,22 +29,22 @@ function Lab6(robot_id, scale, fbktrim)
     
     tfA = Trajectory_Follower(rob,rtA);
         tfA.fbk_trim = fbktrim;
-        tfA.pid_controller.correctiveTime = k_tau*rtA.getFinalTime();    % s, PID Time Constant
-        tfA.pid_controller.k_p = k_p;
-        tfA.pid_controller.k_d = k_d;
-        tfA.pid_controller.k_i = k_i;
+        tfA.fbk_controller.correctiveTime = k_tau*rtA.getFinalTime();    % s, PID Time Constant
+        tfA.fbk_controller.k_p = k_p;
+        tfA.fbk_controller.k_d = k_d;
+        tfA.fbk_controller.k_i = k_i;
     tfB = Trajectory_Follower(rob,rtB);
         tfB.fbk_trim = fbktrim;
-        tfB.pid_controller.correctiveTime = k_tau*rtB.getFinalTime();    % s, PID Time Constant
-        tfB.pid_controller.k_p = k_p;
-        tfB.pid_controller.k_d = k_d;
-        tfB.pid_controller.k_i = k_i;
+        tfB.fbk_controller.correctiveTime = k_tau*rtB.getFinalTime();    % s, PID Time Constant
+        tfB.fbk_controller.k_p = k_p;
+        tfB.fbk_controller.k_d = k_d;
+        tfB.fbk_controller.k_i = k_i;
     tfC = Trajectory_Follower(rob,rtC);
         tfC.fbk_trim = fbktrim;
-        tfC.pid_controller.correctiveTime = k_tau*rtC.getFinalTime();    % s, PID Time Constant
-        tfC.pid_controller.k_p = k_p;
-        tfC.pid_controller.k_d = k_d;
-        tfC.pid_controller.k_i = k_i;
+        tfC.fbk_controller.correctiveTime = k_tau*rtC.getFinalTime();    % s, PID Time Constant
+        tfC.fbk_controller.k_p = k_p;
+        tfC.fbk_controller.k_d = k_d;
+        tfC.fbk_controller.k_i = k_i;
     
     run_trajectory(tfA);
      pause(0.3); % short pause between each
@@ -64,7 +64,7 @@ function run_trajectory(tf)
     global clk rob
     rob.resetStateData(); % Reset Robot Odometry
     
-    x = [tf.pid_controller.k_p, tf.pid_controller.k_d, tf.pid_controller.k_i]
+    x = [tf.fbk_controller.k_p, tf.fbk_controller.k_d, tf.fbk_controller.k_i]
     
     rxs = zeros(1000,0); % History of Robot X Positions
     rys = zeros(1000,0); % History of Robot Y Positions

@@ -5,7 +5,7 @@ classdef Trajectory_Follower < handle
     properties(GetAccess=public, SetAccess=private)
         robot;              % Robot being Following the Given Trajectory
         rt;                 % ReferenceTrajectory Curve to Follow
-        pid_controller = PID.empty;     % PID Controller
+        fbk_controller = FeedbackController.empty; % Feedback Controller
         
         u_comm_t = @(t)0;     % Function Handle for TrajectoryTime-Variant 
                             % Velocity Control Signal (Ffwd w/Fbk-trim)
@@ -32,15 +32,15 @@ classdef Trajectory_Follower < handle
         function obj = Trajectory_Follower(rob, rt)
             obj.robot = rob;
             obj.rt = rt;
-            obj.pid_controller = PID(rob,rt);
+            obj.fbk_controller = FeedbackController(rob,rt);
             
             obj.u_ffwd_t = @(t) [rt.V_t(t) rt.om_t(t)];
-            obj.u_fbk_t = @(t) obj.pid_controller.getControl_t(t);
+            obj.u_fbk_t = @(t) obj.fbk_controller.getControl_t(t);
             %Feedforward w/Feedback-Trim:
             obj.u_comm_t = @(t)( obj.u_ffwd_t(t) + obj.u_fbk_t(t) );
             
             obj.u_ffwd_s = @(s) [rt.V_s(s) rt.om_s(s)];
-            obj.u_fbk_s = @(s) obj.pid_controller.getControl_s(s);
+            obj.u_fbk_s = @(s) obj.fbk_controller.getControl_s(s);
             %Feedforward w/Feedback-Trim:
             obj.u_comm_s = @(s)( obj.u_ffwd_s(s) + obj.u_fbk_s(s) );
         end % #Trajectory_Follower

@@ -588,6 +588,13 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
             obj.planVelocities(obj.V_max);
         end
         
+        % Transforms Every Pose in the Data-Set to World Coordinates based
+        % on the Object's "init_pose" property.
+        function offsetInitPose(obj)
+            % TODO: Implement %
+            warning('Implement: TCS::offsetInitPose');
+        end
+        
         % Angular Velocity at Time:
         function om = getOmegaAtTime(obj,t)
             om = getwAtTime(obj,t);

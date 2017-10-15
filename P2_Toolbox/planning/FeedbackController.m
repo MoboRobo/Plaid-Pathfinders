@@ -17,7 +17,7 @@ classdef FeedbackController < handle
         error_poses = [pose(0, 0, 0)];
         error_times;
         error_dists;
-    end %PID->properties(public, private)
+    end %FeedbackController<-properties(public, private)
     
     properties(GetAccess=public, SetAccess=public)
         % maximum values
@@ -26,15 +26,18 @@ classdef FeedbackController < handle
         maxErrorIntegralX = 10;
         maxErrorIntegralY = 10;
         maxErrorIntegralTh = 10;
-        
-        %PID coefficients (1,0,0 -> off by default)
-        k_p = 1;
-        k_d = 0;
-        k_i = 0;
-        
+                
+        % Proportional Control:
         %correctiveTime (time in which errors should be corrected)
         correctiveTime = .3;
-    end %PID -> properties(public, public)
+        
+        % PID Layer:
+        %PID coefficients (0,0,0 -> off by default)
+        k_p = 0;
+        k_d = 0;
+        k_i = 0;
+
+    end %FeedbackController <- properties(public, public)
 
     %% methods
     methods 
