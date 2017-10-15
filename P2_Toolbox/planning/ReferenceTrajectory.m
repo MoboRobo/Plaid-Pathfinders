@@ -31,7 +31,7 @@ classdef (Abstract) ReferenceTrajectory < Trajectory
         
         % Transforms Every Pose in the Data-Set to World Coordinates based
         % on the Object's "init_pose" property.
-        offsetInitPose(obj)
+        offsetInitPose(obj);
         
     end % ReferenceTrajectory <-methods(Abstract)
     
