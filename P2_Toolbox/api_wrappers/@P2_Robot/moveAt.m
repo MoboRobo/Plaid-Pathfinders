@@ -16,7 +16,16 @@ function moveAt(obj, V, omega)
     if (v_r < -.5)
         fprintf('v_r less than min!');
     end
-    obj.sendVelocity(v_l,v_r);
+    
+    obj.core.sendVelocity(v_l, v_r);
+    
+    %Compute Amount of Time Elapsed since Previous Command Was Given.
+    t = obj.getTime();
+    
+    %Update Commanded Odometry:
+    obj.commTraj.update(V,omega, t);
+    
+    obj.hist_commVel(end+1) = struct('v_l',v_l, 'v_r',v_r);
     
     obj.curr_V = V;
     obj.curr_omega = omega;

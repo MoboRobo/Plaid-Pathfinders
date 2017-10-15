@@ -17,8 +17,12 @@
 classdef P2_Robot < handle
     %% PROPERTIES
     properties (GetAccess=public, SetAccess=private)
-        core;           % RaspBot Core Class (manages ROS communication, et al)
-        on_time;        % Time (tic) that the robot started
+        core;     	% RaspBot Core Class (manages ROS communication, et al)
+        
+        on_time; 	% Time (tic) that the robot started
+        getTime;    % Lambda Function for Getting Time
+                    % (for opt. use of external clocks)
+                                    
         
         %Motion:
         curr_V = 0;     % m/s, Most Recently Commanded Body Velocity
@@ -29,30 +33,17 @@ classdef P2_Robot < handle
         % History of Encoder Readings [m]
         % Formatted as: [[sl_0,sr_0, t_0]; ... ]:
         hist_enc = [struct('s_l',0, 's_r',0, 't',0)];
-        % History of Estimation Times (vector of robot time-stamps of when
-        % the nth estimation was made).
-        hist_estTime = [0];
-        % History of Estimated Path Distances
-        hist_estDist = [0];
-        % History of Robot Positions determined from Sensor Readings.
-        % Formatted as: [[x_0,y_0,th_0]; ... ]
-        hist_estPose = [pose(0,0,0)];
-        % History of Robot Velocities, determined from Sensor Readings.
-        % Formatted as: [[vl_0,vr_0,V,0,omega,0,t_0]; ... ]
-        hist_estVel = [struct('v_l',0, 'v_r',0, 'V',0, 'om',0)];
+        % History of Robot Wheel Velocities, determined from Sensor Readings.
+        % Formatted as: [[vl_0,vr_0]; ... ]
+        hist_estWheelVel = [struct('v_l',0, 'v_r',0)];
+        % History of Robot Measured Trajectory (Odometry), RobotTrajectory:
+        measTraj;
         
-        
-        % History of Commanded Times (vector of CPU time-stamps of when
-        % the nth command was sent).
-        hist_commTime = [0];
-        % History of Commanded Path Lengths
-        hist_commDist = [0];
         % History of Velocity Commands Issued to the Robot:
         % Formatted as: [[vl_0,vr_0,V,0,omega,0,t_0]; ... ]
-        hist_commVel = [struct('v_l',0, 'v_r',0, 'V',0, 'om',0)];
-        % History of Robot Poses Determined from Input Commands.
-        % Formatted as: [[x_0,y_0,th_0]; ... ]
-        hist_commPose = [pose(0,0,0)];
+        hist_commWheelVel = [struct('v_l',0, 'v_r',0)];
+        % History of Robot Commanded Trajectory (Odometry), RobotTrajectory:
+        commTraj;
         
         hist_laser = [zeros(1,360)]; % m, History of LIDAR Range Reading Vectors
         
@@ -100,13 +91,19 @@ classdef P2_Robot < handle
     methods
         %% Constructor
         % rb - RaspBot/Neato Robot Class which manages ROS Communication
-        function obj = P2_Robot(rb)
+        function obj = P2_Robot(rb, time_lambda)
             if nargin>0
                 if isa(rb,'raspbot')
                     obj.core = rb;
                 else
                     error('Debugger Robot must be a raspbot')
                 end % r is raspbot?
+                
+                if nargin>1
+                    obj.getTime = time_lambda;
+                else
+                    obj.getTime = @()toc(obj.on_time);
+                end % nargin>1
             else
                 error('Must give Debugger a Robot to track')
             end % nargin>0?
@@ -116,7 +113,10 @@ classdef P2_Robot < handle
             
             evnt = obj.core.encoders.LatestMessage;
             obj.hist_enc(1) = struct('s_l',evnt.Vector.X, 's_r',evnt.Vector.Y, 't',(evnt.Header.Stamp.Sec + evnt.Header.Stamp.Nsec/1e9));
-            obj.hist_estTime(1) = (evnt.Header.Stamp.Sec + evnt.Header.Stamp.Nsec/1e9);
+            
+            obj.measTraj = RobotTrajectory();
+            obj.commTraj = RobotTrajectory();
+            
             obj.processNewEncoderData(obj.core.encoders, evnt);
             
             obj.on_time = tic;
@@ -173,16 +173,12 @@ classdef P2_Robot < handle
         
         % Resets All Robot State Data
         function resetStateData(obj)
-            obj.hist_estDist(end+1) = obj.hist_estDist(1);
-
-            obj.hist_estTime(end+1) = obj.hist_estTime(1);
-            obj.hist_estPose(end+1) = obj.hist_estPose(1);
-            obj.hist_estVel(end+1) = obj.hist_estVel(1);
+            obj.hist_enc(end+1) = obj.hist_enc(1);
+            obj.hist_estWheelVel(end+1) = obj.hist_estWheelVel(1);
+            obj.measTraj.reset();
             
-            obj.hist_commTime = obj.hist_commTime(1);
-            obj.hist_commDist = obj.hist_commDist(1);
-            obj.hist_commVel = obj.hist_commVel(1);
-            obj.hist_commPose = obj.hist_commPose(1);
+            obj.hist_commWheelVel = obj.hist_commWheelVel(1);
+            obj.commTraj.reset();
             
             obj.curr_V = 0;
             obj.curr_omega = 0;
@@ -200,6 +196,9 @@ classdef P2_Robot < handle
             
             %Compute Amount of Time Elapsed since Previous Measurement
             dt = t - obj.hist_enc(end).t;
+            
+            obj.hist_enc(end+1) = struct('s_l',s_l, 's_r',s_r, 't',t);
+            
             if(dt > 0)
                 %Compute Translational Velocity of the Robot's since the last
                 %Measurement:
@@ -209,25 +208,14 @@ classdef P2_Robot < handle
                 %Now that Previous Command is Done (a new command has been issued),
                 %compute IK and robot pose based on how long it was active for.
                 [V, omega] = obj.computeIK(v_l, v_r);
-
-                %Update Commanded Odometry (Mid-Point Algorithm):
-                new_th = obj.hist_estPose(end).th + omega*dt/2;
-                new_x = obj.hist_estPose(end).X + V*cos(new_th)*dt;
-                new_y = obj.hist_estPose(end).Y + V*sin(new_th)*dt;
-                new_th = new_th + omega*dt/2;
-
-                obj.hist_enc(end+1) = struct('s_l',s_l, 's_r',s_r, 't',t);
-
-                obj.hist_estDist(end+1) = obj.hist_estDist(end) + V*dt;
                 
-                obj.hist_estTime(end+1) = t;
-                obj.hist_estPose(end+1) = pose(new_x, new_y, new_th);
-                obj.hist_estVel(end+1) = struct('v_l',v_l, 'v_r',v_r, 'V',V, 'om',omega);
+                obj.measTraj(V,omega,t);
+                
+                obj.hist_estVel(end+1) = struct('v_l',v_l, 'v_r',v_r);
                 
                 obj.triggerPositionPlot();
                 
             end % dt>0?
-            
         end % #processNewEncoderData
         
         % Sets/Saves a new Robot State from which Odometry is Collected (overwrites 
@@ -264,9 +252,7 @@ classdef P2_Robot < handle
         
         % Moves the Robot with a Speed, V (as measured from robot center) and
         % Rotational Velocity, omega.
-        % sim - [bool] Whether the robot is simulated. If it is, the sendVelocity
-        % command takes (v_left,v_right); if real, it takes (v_right,v_left).
-        moveAt(obj, V, omega, sim);
+        moveAt(obj, V, omega);
         
         % Calculates a Constant Curvature Trajectory to the Point at
         % (x,y) relative to the robot, with bearing th, and then moves along it at 

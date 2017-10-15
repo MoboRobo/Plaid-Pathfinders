@@ -54,7 +54,7 @@ classdef RobotTrajectory < Trajectory
             if nargin>4
                 obj.data_t = slidingFifo(RobotTrajectory.max_queue_size, init_t);
             else
-                obj.data_t = slidingFifo(RobotTrajectory.max_queue_size, 0);
+                obj.data_t = slidingFifo(RobotTrajectory.max_queue_size);
             end
         end
     end
@@ -93,10 +93,11 @@ classdef RobotTrajectory < Trajectory
             
             obj.data_V = slidingFifo(RobotTrajectory.max_queue_size, obj.data_V.first());
             obj.data_om = slidingFifo(RobotTrajectory.max_queue_size, obj.data_om.first());
-            obj.data_K = slidingFifo(RobotTrajectory.max_queue_size, obj.data_K.first());
+            obj.data_K = slidingFifo(RobotTrajectory.max_queue_size, obj.data_K.dir);
                 
-            obj.data_s = slidingFifo(RobotTrajectory.max_queue_size, obj.data_s.first());
-            obj.data_t = slidingFifo(RobotTrajectory.max_queue_size, obj.data_t.first());
+            obj.data_s = slidingFifo(RobotTrajectory.max_queue_size, init_s);
+            
+            obj.data_t = slidingFifo(RobotTrajectory.max_queue_size, init_t);
         end % #reset
         
         % Interpolation Function with optional specification for the value
