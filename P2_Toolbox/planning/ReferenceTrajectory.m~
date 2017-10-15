@@ -3,8 +3,7 @@
 % using one RT (ex TTC) can easily substitute it for another (ex. TCS).
 classdef (Abstract) ReferenceTrajectory < Trajectory
     properties(GetAccess=public, SetAccess=public)
-        init_pose;          % Initial Pose of the Trajectory
-        transformed = 0;    % Whether the Entire Trajectory has been Transformed
+        init_pose;
     end % ReferenceTrajectory <-properties(public,public)
     
     properties(Abstract)
@@ -24,14 +23,12 @@ classdef (Abstract) ReferenceTrajectory < Trajectory
         
     end % ReferenceTrajectory <-methods(Static)
     
+    m
+    
     methods(Abstract)
         
         % Compute Everything Necessary to Create a Follow-able Path
         compute(obj);
-        
-        % Transforms Every Pose in the Data-Set to World Coordinates based
-        % on the Object's "init_pose" property.
-        offsetInitPose(obj)
         
     end % ReferenceTrajectory <-methods(Abstract)
     

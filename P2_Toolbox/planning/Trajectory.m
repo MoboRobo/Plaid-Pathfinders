@@ -39,6 +39,12 @@ classdef (Abstract) Trajectory < handle
         tf = getFinalTime(obj);
         %Return the Path Length Covered at the End of the Path:
         sf = getFinalDist(obj);
+        %Returns the Velocity at the End of the Path:
+        vf = getFinalVelocity(obj);
+        %Returns the Velocity at the End of the Path:
+        omf = getFinalOmega(obj);
+        %Returns the Velocity at the End of the Path:
+        Kf = getFinalCurv(obj);
         
         %Returns Vector of All X-Positions:
         xs = getXVec(obj);
@@ -77,6 +83,20 @@ classdef (Abstract) Trajectory < handle
         
         function tt = ts(obj); tt=getTVec(obj); end %Shorthand
         function ss = ss(obj); ss=getSVec(obj); end %Shorthand
+        
+        %Return the Pose at the End of the Path:
+        function f = p_f(obj); f = obj.getFinalPose(); end
+        %Return the Elapsed Time at the End of the Path:
+        function f = t_f(obj); f = obj.getFinalTime(); end
+        %Return the Path Length Covered at the End of the Path:
+        function f = s_f(obj); f= obj.getFinalDist(); end
+        
+        %Returns the Velocity at the End of the Path:
+        function f = V_f(obj); f = obj.getFinalVelocity(); end
+        %Returns the Velocity at the End of the Path:
+        function f = om_f(obj); f = obj.getFinalOmega(); end
+        %Returns the Velocity at the End of the Path:
+        function f = K_f(obj); f = obj.getFinalCurv(); end
     end % Trajectory <-methods
     
     % Common Access Methods

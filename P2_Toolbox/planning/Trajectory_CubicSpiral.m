@@ -594,7 +594,7 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
         end
         % Path Curvature at Time:
         function K = getCurvAtTime(obj,t)
-            K = obj.getCurvAtDist(obj.getSAtTime(obj,t));
+            K = obj.getCurvAtDist(obj.getSAtTime(t));
         end
         
         %For Inverting Parameterization if Necessary (Computationally
@@ -646,6 +646,12 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
         function sf = getFinalDist(obj)
             sf = obj.getTrajectoryDistance();
         end
+        %Returns the Velocity at the End of the Path:
+        function vf = getFinalVelocity(obj); vf = obj.V_t(obj.t_f); end
+        %Returns the Velocity at the End of the Path:
+        function omf = getFinalOmega(obj); omf = obj.om_t(obj.t_f); end
+        %Returns the Velocity at the End of the Path:
+        function Kf = getFinalCurv(obj); Kf = obj.K_t(obj.t_f); end
         
         %Returns Vector of All X-Positions:
         function xs = getXVec(obj)

@@ -213,6 +213,13 @@ classdef Trajectory_TimeCurve < ReferenceTrajectory
             sf = obj.dists(end);
         end
         
+        %Returns the Velocity at the End of the Path:
+        function vf = getFinalVelocity(obj); vf = obj.V_t(obj.t_f); end
+        %Returns the Velocity at the End of the Path:
+        function omf = getFinalOmega(obj); omf = obj.om_t(obj.t_f); end
+        %Returns the Velocity at the End of the Path:
+        function Kf = getFinalCurv(obj); Kf = obj.K_t(obj.t_f); end
+        
         
         %% Get X Vec
         % Returns a Vector of X-Positions

@@ -27,13 +27,13 @@ classdef RobotTrajectory < Trajectory
             if nargin>0
                 obj.data_poses = slidingFifo(RobotTrajectory.max_queue_size, init_pose);
             else
-                obj.data_poses = slidingFifo(RobotTrajectory.max_queue_size);
+                obj.data_poses = slidingFifo(RobotTrajectory.max_queue_size, pose(0,0,0));
             end
             
             if nargin>1
                 obj.data_V = slidingFifo(RobotTrajectory.max_queue_size, init_V);
             else
-                obj.data_V = slidingFifo(RobotTrajectory.max_queue_size);
+                obj.data_V = slidingFifo(RobotTrajectory.max_queue_size, 0);
             end
             
             if nargin>2
@@ -41,14 +41,14 @@ classdef RobotTrajectory < Trajectory
                 init_K = init_om / init_V;
                 obj.data_K = slidingFifo(RobotTrajectory.max_queue_size, init_K);
             else
-                obj.data_om = slidingFifo(RobotTrajectory.max_queue_size);
-                obj.data_K = slidingFifo(RobotTrajectory.max_queue_size);
+                obj.data_om = slidingFifo(RobotTrajectory.max_queue_size, 0);
+                obj.data_K = slidingFifo(RobotTrajectory.max_queue_size, 0);
             end
                 
             if nargin>3
                 obj.data_s = slidingFifo(RobotTrajectory.max_queue_size, init_s);
             else
-                obj.data_s = slidingFifo(RobotTrajectory.max_queue_size);
+                obj.data_s = slidingFifo(RobotTrajectory.max_queue_size, 0);
             end
                 
             if nargin>4
@@ -176,6 +176,21 @@ classdef RobotTrajectory < Trajectory
         function sf = getFinalDist(obj)
             ss = obj.data_s.vec();
             sf = ss(end);
+        end
+        %Returns the Velocity at the End of the Path:
+        function vf = getFinalVelocity(obj)
+            vs = obj.data_V.vec();
+            vf = vs(end);
+        end
+        %Returns the Velocity at the End of the Path:
+        function omf = getFinalOmega(obj)
+            oms = obj.data_om.vec();
+            omf = oms(end);
+        end
+        %Returns the Velocity at the End of the Path:
+        function Kf = getFinalCurv(obj)
+            Ks = obj.data_K.vec();
+            Kf = Ks(end);
         end
         
         %Returns Vector of All X-Positions:
