@@ -36,17 +36,23 @@ classdef P2_Robot < handle
         % History of Robot Wheel Velocities, determined from Sensor Readings.
         % Formatted as: [[vl_0,vr_0]; ... ]
         hist_estWheelVel = [struct('v_l',0, 'v_r',0)];
-        % History of Robot Measured Trajectory (Odometry), RobotTrajectory:
-        measTraj;
+        % Robot Trajectory determined by Encoders (Odometry), RobotTrajectory:
+        encTraj;
         
         % History of Velocity Commands Issued to the Robot:
         % Formatted as: [[vl_0,vr_0,V,0,omega,0,t_0]; ... ]
         hist_commWheelVel = [struct('v_l',0, 'v_r',0)];
-        % History of Robot Commanded Trajectory (Odometry), RobotTrajectory:
+        % Robot Commanded Trajectory (Odometry), RobotTrajectory:
         commTraj;
         
         hist_laser = [zeros(1,360)]; % m, History of LIDAR Range Reading Vectors
         
+        % Measured Trajectory, Points to Handle of whichever Trajectory
+        % (Encoder, Lidar, Fusion, etc.) should represent the Robot's
+        % official "measured" trajectory.
+        measTraj;
+        
+
         %Odometry:
         trip_startTime; % Time Most Recent Trip Started (odometry)
         init_enc_l;     % Left Encoder Reading from Start of Trip
@@ -114,8 +120,10 @@ classdef P2_Robot < handle
             evnt = obj.core.encoders.LatestMessage;
             obj.hist_enc(1) = struct('s_l',evnt.Vector.X, 's_r',evnt.Vector.Y, 't',(evnt.Header.Stamp.Sec + evnt.Header.Stamp.Nsec/1e9));
             
-            obj.measTraj = RobotTrajectory();
+            obj.encTraj = RobotTrajectory();
             obj.commTraj = RobotTrajectory();
+            
+            obj.measTraj = obj.encTraj;
             
             obj.processNewEncoderData(obj.core.encoders, evnt);
             
@@ -175,7 +183,7 @@ classdef P2_Robot < handle
         function resetStateData(obj)
             obj.hist_enc(end+1) = obj.hist_enc(1);
             obj.hist_estWheelVel(end+1) = obj.hist_estWheelVel(1);
-            obj.measTraj.reset();
+            obj.encTraj.reset();
             
             obj.hist_commWheelVel = obj.hist_commWheelVel(1);
             obj.commTraj.reset();
@@ -209,7 +217,7 @@ classdef P2_Robot < handle
                 %compute IK and robot pose based on how long it was active for.
                 [V, omega] = obj.computeIK(v_l, v_r);
                 
-                obj.measTraj(V,omega,t);
+                obj.encTraj.update(V,omega,t);
                 
                 obj.hist_estVel(end+1) = struct('v_l',v_l, 'v_r',v_r);
                 
