@@ -70,10 +70,6 @@ classdef RobotTrajectory < Trajectory
                 % Mid-Point Algorithm:
                 last_pose = obj.data_poses.last();
                 
-                xs = obj.data_poses.vec;
-                if(obj.p_f.X ~= 0)
-                    x = [xs(:).poseVec]
-                end
                 last_V = obj.data_V.last();
                 last_om = obj.data_om.last();
                 
@@ -85,8 +81,6 @@ classdef RobotTrajectory < Trajectory
                 obj.data_s.add( obj.data_s.last() + last_V*dt );
 
                 obj.data_poses.add( pose(new_x, new_y, new_th) );
-                
-                pl = obj.data_poses.last();
             end
             
             obj.data_V.add(V);
