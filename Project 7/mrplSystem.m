@@ -37,9 +37,9 @@ classdef mrplSystem < handle
         end
         
         function goTo_Rel(obj,rel_pose)
-            x = rel_pose(0);
-            y = rel_pose(1);
-            th = rel_pose(2);
+            x = rel_pose.x;
+            y = rel_pose.y;
+            th = rel_pose.th;
             
             rt = Trajectory_CubicSpiral.planTrajectory( ...
                 x, y, th, 1, ...
@@ -49,6 +49,7 @@ classdef mrplSystem < handle
             rt.offsetInitPose(obj.trajVec(end).getFinalPose())
 
             tf = Trajectory_Follower(obj.rob, rt);
+            tf.fbk_controller.correctiveTime = obj.k_tau * rt.getFinalTime();
             
             first_loop = 1;
          	T = 0;
@@ -67,7 +68,6 @@ classdef mrplSystem < handle
             end      
             %Store completed trajectory 
             obj.trajVec(end+1) = rt;
-            
         end
 
         function updatePlot(obj)

@@ -23,7 +23,7 @@ classdef mrplSystem < handle
             %% Setup Internal Data Classes:
             obj.clock = Clock();
             %% Set Initial NullTrajectory: 
-            obj.traj_vec(1) = NullTrajectory();
+            obj.traj_vec(1) = Trajectory_CubicSpiral.planTrajectory(0,0,0,1,2,1);
             obj.traj_vec(1).offsetInitPose(startPose);
             %% Setup Robot
             rasp = raspbot(robot_id, startPose);
@@ -37,9 +37,9 @@ classdef mrplSystem < handle
         end
         
         function goTo_Rel(obj,rel_pose)
-            x = rel_pose(0);
-            y = rel_pose(1);
-            th = rel_pose(2);
+            x = rel_pose.x;
+            y = rel_pose.y;
+            th = rel_pose.th;
             
             rt = Trajectory_CubicSpiral.planTrajectory( ...
                 x, y, th, 1, ...
