@@ -98,12 +98,31 @@ classdef Trajectory_TimeCurve < ReferenceTrajectory
             end
         end % #compute
         
+        
+        function transMat = getTransformMat(obj)
+            transMat = obj.init_pose.bToA()
+        end
         % Transforms Every Pose in the Data-Set to World Coordinates based
         % on the Object's "init_pose" property.
         function offsetInitPose(obj)
-            % TODO: Implement %
-            warning('Implement: TTC::offsetInitPose');
+            transformMat = obj.getTransformMat()
+            
+            %iterate through all x, y, and th in poseArray and transform
+            %   them
+            for i=1:obj.numSamples
+                oldTh = obj.poses(i).th;
+                oldX = obj.poses(i).x;
+                oldY = obj.poses(i).y;
+                oldPose = [oldX; oldY; oldTh]
+                
+                newPose = transformMat * oldPose
+                newX = newPose(1);
+                newY = newPose(2);
+                newTh = newPose(3);
+                obj.poses(i) = pose(newX,newY,newTh);
+            end      
         end
+        
         
         %% Interpolate
         % General Interpolation that takes into account out of bounds

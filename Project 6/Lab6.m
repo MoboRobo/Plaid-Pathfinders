@@ -96,10 +96,10 @@ function run_trajectory(tf)
         
         tf.follow_update_t(T);
         
-        rp = rob.measTraj.p_f;
+        rp = rob.encTraj.data_poses.last();
         rxs(count) = rp.X;
         rys(count) = rp.Y;
-        
+        rp.poseVec
         tp = tf.rt.p_t(T);
         txs(count) = tp.X;
         tys(count) = tp.Y;
@@ -112,7 +112,8 @@ function run_trajectory(tf)
     end
     
     rob.moveAt(0,0);
-    
+    rxs
+    rys
     rp = rob.measTraj.p_f;
     rxs(count) = rp.X;
     rys(count) = rp.Y;

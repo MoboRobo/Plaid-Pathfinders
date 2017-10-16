@@ -317,7 +317,6 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
             ths = obj.getThVec();
             
             for i=1:obj.numSamples-1
-                % fill this in
                 s = s + ds/2;
                 obj.distArray(i+1) = s;
                 obj.curvArray(i+1) = s*(a + b*s)*(s-sf);
@@ -588,11 +587,35 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
             obj.planVelocities(obj.V_max);
         end
         
+        function transMat = getTransformMat(obj)
+            transMat = obj.init_pose.bToA()
+        end
         % Transforms Every Pose in the Data-Set to World Coordinates based
         % on the Object's "init_pose" property.
         function offsetInitPose(obj)
-            % TODO: Implement %
-            warning('Implement: TCS::offsetInitPose');
+            
+            transformMat = obj.getTransformMat()
+            
+            
+            %iterate through all x, y, and th in poseArray and transform
+            %   them
+            s = 0.0
+            xs = obj.getXVec()
+            ys = obj.getYVec()
+            ths = obj.getThVec()
+            for i=1:obj.numSamples
+                oldTh = ths(i);
+                oldX = xs(i);
+                oldY = ys(i);
+                oldPose = [oldX; oldY; oldTh]
+                newPose = transformMat * oldPose
+                xs(i) = newPose(1);
+                ys(i) = newPose(2);
+                ths(i) = newPose(3);
+            end
+            obj.poseArray(1,:) = xs;
+            obj.poseArray(2,:) = ys;
+            obj.poseArray(3,:) = ths;
         end
         
         % Angular Velocity at Time:
@@ -679,6 +702,10 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
         %Returns Vector of All Path Lengths:
         function ss = getSVec(obj)
             ss = obj.distArray;
+        end
+        %Returns Vector of All Poses:
+        function ps = getPVec(obj)
+            ps = obj.poseArray;
         end
         
     end % ReferenceTrajectory <-methods(Abstract)
