@@ -23,7 +23,7 @@ classdef mrplSystem < handle
             %% Setup Internal Data Classes:
             obj.clock = Clock();
             %% Set Initial NullTrajectory: 
-            obj.traj_vec(1) = NullTrajectory();
+            obj.traj_vec(1) = Trajectory_CubicSpiral.planTrajectory(0,0,0,1,2,1);
             obj.traj_vec(1).offsetInitPose(startPose);
             %% Setup Robot
             rasp = raspbot(robot_id, startPose);
@@ -76,11 +76,8 @@ classdef mrplSystem < handle
                 for traj = obj.traj_vec
                     traj.plot() %for loop? - can we vectorize this?
                 end
-                obj.rob.estTraj.plot()
+                obj.rob.measTraj.plot()
             hold off
-            
-            axis equal
-
         end
         
         function plottingOn(obj)

@@ -7,7 +7,8 @@ classdef mrplSystem < handle
         tcs_scale = 1;      % Scale of Cubic Spiral Trajectory Data to be Used
         traj_samples = 201; % Number of Trajectory Samples to Compute in 
                             % Trajectory Planning
-        traj_vec = nullTrajectory(); 
+        
+        traj_vec; 
         plotting_enabled = 1;
     end
     
@@ -21,9 +22,11 @@ classdef mrplSystem < handle
         function obj = mrplSystem(robot_id, startPose)
             %% Setup Internal Data Classes:
             obj.clock = Clock();
-            
+            %% Set Initial NullTrajectory: 
+            obj.traj_vec(1) = NullTrajectory();
+            obj.traj_vec(1).offsetInitPose(startPose);
             %% Setup Robot
-            rasp = raspbot(robot_id, [0; 0; pi/2])
+            rasp = raspbot(robot_id, startPose);
             obj.rob = P2_Robot( rasp, @()(obj.clock.time()) );
             if(~strcmp(robot_id,'sim'))
                 obj.rob.core.togglePlot(); %Turn on map plotting for non-simulated robots
@@ -43,14 +46,20 @@ classdef mrplSystem < handle
                 obj.traj_samples, obj.tcs_scale ...
             );
             
-            rt.offsetInitPose(obj.trajVec(end))
+            rt.offsetInitPose(obj.trajVec(end).getFinalPose())
 
             tf = Trajectory_Follower(obj.rob, rt);
             
-            T = 0; 
+            first_loop = 1;
+         	T = 0;
             while(T < tf.rt.getFinalTime()+1)
-                T = clk.time();
+                if(first_loop)
+                    obj.clock = Clock();
+                    first_loop = 0;
+                end
+                T = obj.clock.time();
                 tf.follow_update_t(T);
+                pause(0.01);
             end
             %Update plot after completed trajectory
             if(obj.plotting_enabled == 1)
@@ -63,14 +72,12 @@ classdef mrplSystem < handle
 
         function updatePlot(obj)
             figure();
-           hold on
-                obj.rob.measTraj.plot();
-                rt.plot();
+            hold on
+                for traj = obj.traj_vec
+                    traj.plot() %for loop? - can we vectorize this?
+                end
+                obj.rob.measTraj.plot()
             hold off
-            for traj = obj.traj_vec
-                traj.plot() %for loop? - can we vectorize this?
-            end
-            obj.rob.estTraj.plot()
         end
         
         function plottingOn(obj)
