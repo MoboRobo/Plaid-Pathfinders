@@ -69,6 +69,11 @@ classdef RobotTrajectory < Trajectory
             if(dt > 0)
                 % Mid-Point Algorithm:
                 last_pose = obj.data_poses.last();
+                
+                xs = obj.data_poses.vec;
+                if(obj.p_f.X ~= 0)
+                    x = [xs(:).poseVec]
+                end
                 last_V = obj.data_V.last();
                 last_om = obj.data_om.last();
                 
