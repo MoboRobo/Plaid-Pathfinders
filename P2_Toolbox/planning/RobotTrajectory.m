@@ -72,14 +72,16 @@ classdef RobotTrajectory < Trajectory
                 last_V = obj.data_V.last();
                 last_om = obj.data_om.last();
                 
-                new_th = last_pose.th + last_om*dt/2;
+                new_th = last_pose.th + last_om*dt/2.0;
                 new_x = last_pose.X + last_V*cos(new_th)*dt;
                 new_y = last_pose.Y + last_V*sin(new_th)*dt;
-                new_th = new_th + last_om*dt/2;
-
+                new_th = new_th + last_om*dt/2.0;
+                
                 obj.data_s.add( obj.data_s.last() + last_V*dt );
 
                 obj.data_poses.add( pose(new_x, new_y, new_th) );
+                
+                pl = obj.data_poses.last();
             end
             
             obj.data_V.add(V);

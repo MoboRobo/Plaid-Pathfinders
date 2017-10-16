@@ -4,8 +4,8 @@ function Lab6(robot_id, scale, fbktrim)
     rasp = raspbot(robot_id, [0; 0; pi/2])
     rob = P2_Robot(rasp);
     if(~strcmp(robot_id,'sim'))
-        rob_type = 'raspbot';
-        rob.core.togglePlot(); %Turn on map plotting for non-simulated robots
+%         rob_type = 'raspbot';
+%         rob.core.togglePlot(); %Turn on map plotting for non-simulated robots
         RangeImage.INDEX_OFFSET(5);
         rob.core.forksDown(); % Prevent Brown-out
     end
@@ -92,7 +92,7 @@ function run_trajectory(tf)
         end
         
         T = clk.time();
-        S = rob.measTraj.s_f - S0;
+        S = rob.encTraj.s_f - S0;
         
         tf.follow_update_t(T);
         

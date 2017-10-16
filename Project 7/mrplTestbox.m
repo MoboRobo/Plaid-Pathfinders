@@ -1,6 +1,6 @@
 % Basic Container Shell Version of mrplSystem for use of testing robot
 % class.
-classdef mrplTestbox
+classdef mrplTestbox < handle
     %% PROPERTIES
     properties(GetAccess=public, SetAccess=private)
         clock;              % Internal Time Keeping
@@ -64,6 +64,8 @@ classdef mrplTestbox
                 
                 pause(0.01); % CPU Relief
             end
+            obj.rob.moveAt(0,0);
+            obj.rob.core.stop();
             
             pf = rt.getFinalPose();
             figure();

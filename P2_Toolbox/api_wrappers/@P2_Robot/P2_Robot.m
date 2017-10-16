@@ -22,6 +22,7 @@ classdef P2_Robot < handle
         on_time; 	% Time (tic) that the robot started
         getTime;    % Lambda Function for Getting Time
                     % (for opt. use of external clocks)
+                                                                           test_prop;
                                     
         
         %Motion:
@@ -105,17 +106,19 @@ classdef P2_Robot < handle
                     error('Debugger Robot must be a raspbot')
                 end % r is raspbot?
                 
-                if nargin>1
-                    obj.getTime = time_lambda;
-                else
-                    obj.getTime = @()toc(obj.on_time);
-                end % nargin>1
             else
                 error('Must give Debugger a Robot to track')
             end % nargin>0?
             
-            % Establish Data-Logging and Odometry Callback Functions
-            obj.logEncoders();
+          % Initialize Timing:
+            obj.on_time = tic;
+            obj.trip_startTime = tic;
+            obj.startTrip(); % Default odometry starts at instantiation.
+            if nargin>1
+                obj.getTime = time_lambda;
+            else
+                obj.getTime = @()toc(obj.on_time);
+            end % nargin>1
             
             evnt = obj.core.encoders.LatestMessage;
             obj.hist_enc(1) = struct('s_l',evnt.Vector.X, 's_r',evnt.Vector.Y, 't',(evnt.Header.Stamp.Sec + evnt.Header.Stamp.Nsec/1e9));
@@ -127,11 +130,16 @@ classdef P2_Robot < handle
             
             obj.processNewEncoderData(obj.core.encoders, evnt);
             
-            obj.on_time = tic;
-            obj.trip_startTime = tic;
             obj.init_enc_l = obj.core.encoders.LatestMessage.Vector.X;
             obj.init_enc_r = obj.core.encoders.LatestMessage.Vector.Y;
-            obj.startTrip(); % Default odometry starts at instantiation.
+
+            % Establish Data-Logging and Odometry Callback Functions
+            obj.logEncoders();
+            
+            %Wait for Sim to Initialize:
+            pause(1.5);
+            obj.core.sendVelocity(0,0);
+            pause(1);
         end % #P2_Robot Constructor
         
         %% Destructor
@@ -205,8 +213,6 @@ classdef P2_Robot < handle
             %Compute Amount of Time Elapsed since Previous Measurement
             dt = t - obj.hist_enc(end).t;
             
-            obj.hist_enc(end+1) = struct('s_l',s_l, 's_r',s_r, 't',t);
-            
             if(dt > 0)
                 %Compute Translational Velocity of the Robot's since the last
                 %Measurement:
@@ -224,6 +230,8 @@ classdef P2_Robot < handle
                 obj.triggerPositionPlot();
                 
             end % dt>0?
+            
+            obj.hist_enc(end+1) = struct('s_l',s_l, 's_r',s_r, 't',t);
         end % #processNewEncoderData
         
         % Sets/Saves a new Robot State from which Odometry is Collected (overwrites 

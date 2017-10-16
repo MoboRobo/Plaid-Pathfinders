@@ -106,7 +106,7 @@ classdef (Abstract) Trajectory < handle
             xs = obj.xs();
             ys = obj.ys();
             
-            plot(xs,ys,'r');
+            plot(xs,ys);
             
             pf = obj.getFinalPose();
             xf = pf.X;
