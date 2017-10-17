@@ -107,7 +107,7 @@ classdef (Abstract) Trajectory < handle
             xs = obj.xs();
             ys = obj.ys();
             
-            plot(xs,ys);
+            plot(-ys,xs);
             
             axis equal;
         hold off

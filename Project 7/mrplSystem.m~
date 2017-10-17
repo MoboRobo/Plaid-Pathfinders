@@ -15,7 +15,7 @@ classdef mrplSystem < handle
     end
     
     properties(GetAccess=private, SetAccess=private)
-         k_tau = 1.4;    % Trajectory Time Multiplier for Corrective Time
+         k_tau = 7.0253;%1.4;    % Trajectory Time Multiplier for Corrective Time
     end
 
 %% METHODS
@@ -53,11 +53,11 @@ classdef mrplSystem < handle
             rt.offsetInitPose()
 
             tf = Trajectory_Follower(obj.rob, rt);
-            tf.fbk_controller.correctiveTime = obj.k_tau * rt.getFinalTime();
+            tf.fbk_controller.correctiveTime = obj.k_tau;%* rt.getFinalTime();
             
             first_loop = 1;
          	T = 0;
-            while(T < tf.rt.getFinalTime()+1)
+            while (T < tf.rt.getFinalTime()+1)
                 if(first_loop)
                     obj.clock = Clock();
                     first_loop = 0;
@@ -66,29 +66,35 @@ classdef mrplSystem < handle
                 tf.follow_update_t(T);
                 pause(0.01);
             end
+            obj.rob.moveAt(0,0);
+            obj.rob.core.stop();
+            
+            figure()
+            obj.rob.measTraj.plot();
+            
             %Update plot after completed trajectory
             if(obj.plotting_enabled)
                obj.updatePlot();
-            end      
-            %Store completed trajectory 
+            end 
+            %Store completed trajectory
             obj.traj_vec(end+1) = rt;
         end
 
         function updatePlot(obj)
             if isempty(obj.plot_figure)
                 obj.plot_figure = figure();
-                pf = obj.rob.measTraj.p_f;
-                title(strcat('Trajectory to: ', num2str(pf.X),',',num2str(pf.Y)));
                 xlabel('World X-Position Relative to Start [m]');
                 ylabel('World Y-Position Relative to Start [m]');
             end
+            
             figure(obj.plot_figure);
-            hold on
+            pf = obj.rob.measTraj.p_f;
+            title(strcat('Trajectory to: ', num2str(pf.X),',',num2str(pf.Y)));
+            
                 obj.rob.measTraj.plot();
-                while traj = obj.traj_vec
-                    traj.plot(); %for loop? - can we vectorize this?
-                end
-            hold off
+                
+                traj = obj.traj_vec(end)
+                traj.plot();
             
             legend('Measured Trajectory', 'Reference Trajectory');
             axis equal

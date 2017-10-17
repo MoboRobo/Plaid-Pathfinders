@@ -8,14 +8,12 @@ classdef mrplSystem < handle
         traj_samples = 201; % Number of Trajectory Samples to Compute in 
                             % Trajectory Planning
         
-        traj_vec = Trajectory_CubicSpiral.empty; 
+        traj_vec = Trajectory_CubicSpiral.empty;
         plotting_enabled = 1;
-        
-        plot_figure;
     end
     
     properties(GetAccess=private, SetAccess=private)
-         k_tau = 1.4;    % Trajectory Time Multiplier for Corrective Time
+         k_tau = 0.7;%7.0253;%1.4;    % Trajectory Time Multiplier for Corrective Time
     end
 
 %% METHODS
@@ -25,7 +23,7 @@ classdef mrplSystem < handle
             %% Setup Internal Data Classes:
             obj.clock = Clock();
             %% Set Initial NullTrajectory: 
-            obj.traj_vec = Trajectory_CubicSpiral.planTrajectory(0,0,0,1,2,1);
+            obj.traj_vec = Trajectory_CubicSpiral.planTrajectory(0,0,0,1,10,1);
             obj.traj_vec.init_pose = startPose;
             obj.traj_vec.offsetInitPose();
             %% Setup Robot
@@ -50,14 +48,14 @@ classdef mrplSystem < handle
             );
             
             rt.init_pose = obj.traj_vec(end).getFinalPose();
-            rt.offsetInitPose()
+            rt.offsetInitPose();
 
             tf = Trajectory_Follower(obj.rob, rt);
-            tf.fbk_controller.correctiveTime = obj.k_tau * rt.getFinalTime();
+            tf.fbk_controller.correctiveTime = obj.k_tau;%* rt.getFinalTime();
             
             first_loop = 1;
          	T = 0;
-            while(T < tf.rt.getFinalTime()+1)
+            while (T < tf.rt.getFinalTime()+1)
                 if(first_loop)
                     obj.clock = Clock();
                     first_loop = 0;
@@ -66,28 +64,30 @@ classdef mrplSystem < handle
                 tf.follow_update_t(T);
                 pause(0.01);
             end
+            obj.rob.moveAt(0,0);
+            obj.rob.core.stop();
+            
+            %Store completed trajectory
+            obj.traj_vec(end+1) = rt;
             %Update plot after completed trajectory
             if(obj.plotting_enabled)
                obj.updatePlot();
-            end      
-            %Store completed trajectory 
-            obj.traj_vec(end+1) = rt;
+            end 
         end
 
         function updatePlot(obj)
-            if isempty(obj.plot_figure)
-                obj.plot_figure = figure();
-                pf = obj.rob.measTraj.p_f;
-                title(strcat('Trajectory to: ', num2str(pf.X),',',num2str(pf.Y)));
-                xlabel('World X-Position Relative to Start [m]');
-                ylabel('World Y-Position Relative to Start [m]');
-            end
-            figure(obj.plot_figure);
+            figure();
+            xlabel('World X-Position Relative to Start [m]');
+            ylabel('World Y-Position Relative to Start [m]');
+            
+            pf = obj.rob.measTraj.p_f;
+            title(strcat('Trajectory to: ', num2str(pf.X),',',num2str(pf.Y)));
+            
                 obj.rob.measTraj.plot();
                 
-                i = 1;
-                while i < length(obj.traj_vec)
-                    traj = obj.traj_vec(i);
+                i = 2;
+                while i <= length(obj.traj_vec)
+                    traj = obj.traj_vec();
                     traj.plot(); %for loop? - can we vectorize this?
                 i = i+1;
                 end

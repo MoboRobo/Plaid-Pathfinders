@@ -11,7 +11,7 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
     properties(Access = private)
         parms = [0 0 1];
         sgn=0.0;
-        rampLength = 0.05;
+        rampLength = 0.10;
     end
     
     properties(Access = public)
