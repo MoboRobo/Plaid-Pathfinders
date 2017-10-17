@@ -231,11 +231,13 @@ classdef FeedbackController < handle
 
             %% ensure below ceiling
             if abs(u_v) > obj.v_max
+                fprintf('v greater than v_max!');
                 sign = u_v / abs(u_v);
                 u_v = sign * obj.v_max;
             end
 
             if abs(u_w) > obj.w_max
+                fprintf('omega greater than omega_max');
                 sign = u_w / abs(u_w);
                 u_w = sign*obj.w_max;
             end
