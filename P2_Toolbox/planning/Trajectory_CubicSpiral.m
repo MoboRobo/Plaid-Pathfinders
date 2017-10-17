@@ -595,7 +595,7 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
         function offsetInitPose(obj)
             
             transformMat = obj.getTransformMat()
-            
+            offsetTh = obj.init_pose.th
             
             %iterate through all x, y, and th in poseArray and transform
             %   them
@@ -607,11 +607,11 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
                 oldTh = ths(i);
                 oldX = xs(i);
                 oldY = ys(i);
-                oldPose = [oldX; oldY; oldTh]
+                oldPose = [oldX; oldY; 1]
                 newPose = transformMat * oldPose
                 xs(i) = newPose(1);
                 ys(i) = newPose(2);
-                ths(i) = newPose(3);
+                ths(i) = oldTh + offsetTh;
             end
             obj.poseArray(1,:) = xs;
             obj.poseArray(2,:) = ys;

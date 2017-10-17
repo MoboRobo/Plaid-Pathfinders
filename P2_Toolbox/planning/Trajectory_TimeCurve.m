@@ -106,19 +106,19 @@ classdef Trajectory_TimeCurve < ReferenceTrajectory
         % on the Object's "init_pose" property.
         function offsetInitPose(obj)
             transformMat = obj.getTransformMat()
-            
+            offsetTh = obj.init_pose.th
             %iterate through all x, y, and th in poseArray and transform
             %   them
             for i=1:obj.numSamples
                 oldTh = obj.poses(i).th;
                 oldX = obj.poses(i).x;
                 oldY = obj.poses(i).y;
-                oldPose = [oldX; oldY; oldTh]
+                oldPose = [oldX; oldY; 1]
                 
                 newPose = transformMat * oldPose
                 newX = newPose(1);
                 newY = newPose(2);
-                newTh = newPose(3);
+                newTh = offsetTh + oldTh;
                 obj.poses(i) = pose(newX,newY,newTh);
             end      
         end
