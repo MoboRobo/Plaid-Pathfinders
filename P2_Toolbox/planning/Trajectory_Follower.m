@@ -59,6 +59,10 @@ classdef Trajectory_Follower < handle
             end % fbk_trim?
             V = u_t(1);
             om = u_t(2);
+%             if (V < 0)
+%                 V = 0;
+%                 om = 0;
+%             end
             obj.robot.moveAt(V,om);
         end % #follow_update_t
         % Commands the Robot to assume the Motion it should have at

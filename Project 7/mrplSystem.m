@@ -11,15 +11,16 @@ classdef mrplSystem < handle
         traj_vec = Trajectory_CubicSpiral.empty;
         plotting_enabled = 1;
         
-        delay_plots = 0;    % Whether Transient Velocity Plots for Determining should be Made.
+        delay_plots = 1;    % Whether Transient Velocity Plots for Determining should be Made.
         
         plot_figure;
         errors;
     end
     
     properties(GetAccess=private, SetAccess=private)
-         k_tau = 6;%7.0253;%1.4; A.S.S.: 1.95    % Trajectory Time Multiplier for Corrective Time
+         k_tau = 5.5;%7.0253;%1.4; A.S.S.: 1.95    % Trajectory Time Multiplier for Corrective Time
          % RaspBot-16: Delay:0.164,Ramp:0.05,k_tau:6,vm:0.2
+         % RaspBot-17: Delay:0.164,Ramp:0.05,k_tau:5.5,vm:0.2
     end
 
 %% METHODS
@@ -76,7 +77,7 @@ classdef mrplSystem < handle
                 tf.follow_update_t(T);
                 
                 if obj.delay_plots
-                    obj.delay_plot_data(end+1) = struct( ...
+                    delay_plot_data(end+1) = struct( ...
                         'tv', rt.V_t(T), ...
                         'rv', obj.rob.measTraj.V_f, ...
                         't', T ...
