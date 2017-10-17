@@ -611,7 +611,7 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
                 newPose = transformMat * oldPose
                 xs(i) = newPose(1);
                 ys(i) = newPose(2);
-                ths(i) = oldTh + offsetTh;
+                ths(i) = atan2(sin(oldTh + offsetTh), cos(oldTh + offsetTh));
             end
             obj.poseArray(1,:) = xs;
             obj.poseArray(2,:) = ys;
