@@ -11,6 +11,8 @@ classdef Trajectory_Follower < handle
                             % Velocity Control Signal (Ffwd w/Fbk-trim)
         u_comm_s = @(s)0;     % Function Handle for TrajectoryTime-Variant 
                             % Velocity Control Signal (Ffwd w/Fbk-trim)
+        
+        send_delay = 0.164; % Delay in Command Sending to Robot
     end % Trajectory_Follower <- properties(public,private)
     
     properties(GetAccess=public, SetAccess=public)
@@ -35,7 +37,7 @@ classdef Trajectory_Follower < handle
             obj.fbk_controller = FeedbackController(rob,rt);
             
             obj.u_ffwd_t = @(t) [rt.V_t(t) rt.om_t(t)];
-            obj.u_fbk_t = @(t) obj.fbk_controller.getControl_t(t);
+            obj.u_fbk_t = @(t) obj.fbk_controller.getControl_t(t-obj.send_delay);
             %Feedforward w/Feedback-Trim:
             obj.u_comm_t = @(t)( obj.u_ffwd_t(t) + obj.u_fbk_t(t) );
             

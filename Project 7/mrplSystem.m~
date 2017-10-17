@@ -11,12 +11,15 @@ classdef mrplSystem < handle
         traj_vec = Trajectory_CubicSpiral.empty;
         plotting_enabled = 1;
         
+        delay_plots = 1;    % Whether Transient Velocity Plots for Determining should be Made.
+        delay_plot_data = [struct('tv',0, 'rv',0, 't',0)]; % Transient Data for Reference Trajectory and Robot Velocities
+        
         plot_figure;
         errors;
     end
     
     properties(GetAccess=private, SetAccess=private)
-         k_tau = 0.7;%7.0253;%1.4;    % Trajectory Time Multiplier for Corrective Time
+         k_tau = 7.0253;%1.4;    % Trajectory Time Multiplier for Corrective Time
     end
 
 %% METHODS
@@ -62,12 +65,26 @@ classdef mrplSystem < handle
                     obj.clock = Clock();
                     first_loop = 0;
                 end
+                
                 T = obj.clock.time();
                 tf.follow_update_t(T);
+                
+                if obj.delay_plots
+                    obj.delay_plot_data = 
+                end % delay_plots
+                
                 pause(0.01);
             end
             obj.rob.moveAt(0,0);
             obj.rob.core.stop();
+            
+            if obj.delay_plots
+                
+                figure();
+                    hold on
+                    
+                        plot(obj.t
+            end % delay_plots?
             
             %Store completed trajectory
             obj.traj_vec(end+1) = rt;
@@ -91,12 +108,12 @@ classdef mrplSystem < handle
             last_traj = obj.traj_vec(end);
             tf = last_traj.p_f;
             rf = obj.rob.measTraj.p_f;
-            obj.errors(end+1) = norm(rf.poseVec - tf.poseVec);
+            obj.errors(end+1) = norm(rf.poseVec(1:2) - tf.poseVec(1:2));
             avg_error = mean(obj.errors);
             
             title({ ...
                 strcat('Trajectory to: ', num2str(tf.X),',',num2str(tf.Y)), ...
-                strcat('Error: ', num2str(obj.errors(end)), ' 
+                strcat('Error: ', num2str(obj.errors(end)), ' Avg. Errors: ', num2str(avg_error))
             });
             
                 obj.rob.measTraj.plot();

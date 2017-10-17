@@ -11,7 +11,7 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
     properties(Access = private)
         parms = [0 0 1];
         sgn=0.0;
-        rampLength = 0.10;
+        rampLength = 0.05;
     end
     
     properties(Access = public)
@@ -588,7 +588,7 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
         end
         
         function transMat = getTransformMat(obj)
-            transMat = obj.init_pose.bToA()
+            transMat = obj.init_pose.bToA();
         end
         % Transforms Every Pose in the Data-Set to World Coordinates based
         % on the Object's "init_pose" property.
@@ -694,6 +694,12 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
         function ths = getThVec(obj)
             ths = obj.poseArray(3,:);
         end
+        
+        %Returns Vector of All Velocities:
+        function Vs = getVVec(obj)
+            Vs = obj.VArray;
+        end
+        
         %Returns Vector of All Times:
         function ts = getTVec(obj)
             ts = obj.timeArray;

@@ -230,6 +230,12 @@ classdef RobotTrajectory < Trajectory
             ps = obj.data_poses.vec();
             ths = [ps.poseVec]; ths = ths(3,:);
         end
+        
+        %Returns Vector of All Velocities:
+        function Vs = getVVec(obj)
+            Vs = obj.data_V.vec();
+        end
+        
         %Returns Vector of All Times:
         function ts = getTVec(obj); ts = obj.data_t.vec(); end
         %Returns Vector of All Path Lengths:

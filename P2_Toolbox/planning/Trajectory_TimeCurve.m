@@ -263,6 +263,11 @@ classdef Trajectory_TimeCurve < ReferenceTrajectory
             ths = [obj.poses(:).poseVec]; ths = ths(3,:);
         end % #getThVec
         
+        %Returns Vector of All Velocities:
+        function Vs = getVVec(obj)
+            Vs = [obj.profile(:).V];
+        end
+        
         %Returns Vector of All Times:
         function ts = getTVec(obj)
             ts = obj.times;

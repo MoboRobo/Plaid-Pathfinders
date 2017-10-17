@@ -52,6 +52,10 @@ classdef (Abstract) Trajectory < handle
         ys = getYVec(obj);
         %Returns Vector of All Headings:
         ths = getThVec(obj);
+        
+        %Returns Vector of All Velocities:
+        Vs = getVVec(obj);
+        
         %Returns Vector of All Times:
         ts = getTVec(obj);
         %Returns Vector of All Path Lengths:
@@ -80,6 +84,8 @@ classdef (Abstract) Trajectory < handle
         function xx = xs(obj); xx=getXVec(obj); end %Shorthand
         function yy = ys(obj); yy=getYVec(obj); end %Shorthand
         function thth = ths(obj); thth=getThVec(obj); end %Shorthand
+        
+        function vv = Vs(obj); vv=getVVec(obj); end
         
         function tt = ts(obj); tt=getTVec(obj); end %Shorthand
         function ss = ss(obj); ss=getSVec(obj); end %Shorthand

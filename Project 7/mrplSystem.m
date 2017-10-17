@@ -11,12 +11,15 @@ classdef mrplSystem < handle
         traj_vec = Trajectory_CubicSpiral.empty;
         plotting_enabled = 1;
         
+        delay_plots = 0;    % Whether Transient Velocity Plots for Determining should be Made.
+        
         plot_figure;
         errors;
     end
     
     properties(GetAccess=private, SetAccess=private)
-         k_tau = 7.0253;%1.4;    % Trajectory Time Multiplier for Corrective Time
+         k_tau = 6;%7.0253;%1.4; A.S.S.: 1.95    % Trajectory Time Multiplier for Corrective Time
+         % RaspBot-16: Delay:0.164,Ramp:0.05,k_tau:6,vm:0.2
     end
 
 %% METHODS
@@ -55,6 +58,12 @@ classdef mrplSystem < handle
             tf = Trajectory_Follower(obj.rob, rt);
             tf.fbk_controller.correctiveTime = obj.k_tau;%* rt.getFinalTime();
             
+            if obj.delay_plots
+                % Transient Data for Reference Trajectory and Robot Velocities
+                delay_plot_data = struct('tv',0, 'rv',0, 't',0);
+            end % delay_plots?
+            
+            
             first_loop = 1;
          	T = 0;
             while (T < tf.rt.getFinalTime()+1)
@@ -62,12 +71,37 @@ classdef mrplSystem < handle
                     obj.clock = Clock();
                     first_loop = 0;
                 end
+                
                 T = obj.clock.time();
                 tf.follow_update_t(T);
+                
+                if obj.delay_plots
+                    obj.delay_plot_data(end+1) = struct( ...
+                        'tv', rt.V_t(T), ...
+                        'rv', obj.rob.measTraj.V_f, ...
+                        't', T ...
+                    );
+                end % delay_plots
+                
                 pause(0.01);
             end
             obj.rob.moveAt(0,0);
             obj.rob.core.stop();
+            
+            if obj.delay_plots
+                tvs = [delay_plot_data(:).tv];
+                rvs = [delay_plot_data(:).rv];
+                ts = [delay_plot_data(:).t];
+                figure();
+                    hold on
+                        plot(ts,tvs);
+                        plot(ts,rvs);
+                    hold off
+                    title('Transient Velocity Plots for Determining Delay');
+                    xlabel('Time [s]');
+                    ylabel('Velocity at Time [m/s]');
+                    legend('Reference Trajectory', 'Robot Trajectory');
+            end % delay_plots?
             
             %Store completed trajectory
             obj.traj_vec(end+1) = rt;
