@@ -60,7 +60,7 @@ classdef (Abstract) Trajectory < handle
     end % ReferenceTrajectory <-methods(Abstract)
     
     % Short-hand methods:
-    methods (Access=public)
+    methods (Sealed, Access=public)
         function V = V_t(obj, t); V = obj.getVAtTime(t); end
         function om = om_t(obj, t); om = obj.getOmegaAtTime(t); end
         function K = K_t(obj, t); K = obj.getCurvAtTime(t); end

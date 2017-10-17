@@ -57,67 +57,51 @@ classdef Trajectory_Null < ReferenceTrajectory
     methods
         
         % Compute Everything Necessary to Create a Follow-able Path
-        function compute(obj)
+        function compute(~)
             % Nothing to Compute
         end
         
+        function offsetInitPose(~)
+            % Nothing to Offset.
+        end
+        
         % Angular Velocity at Time:
-        function om = getOmegaAtTime(obj,t)
-            om = getwAtTime(obj,t);
+        function om = getOmegaAtTime(~,~)
+            om = 0;
         end
         % Path Curvature at Time:
-        function K = getCurvAtTime(obj,t)
-            K = obj.getCurvAtDist(obj.getSAtTime(t));
+        function K = getCurvAtTime(~,~)
+            K = 0;
         end
         
         %For Inverting Parameterization if Necessary (Computationally
         %heavy)
         % Path Length at t:
-        function s = getSAtTime(obj,t)
-            if(t < obj.timeArray(1))
-                s = 0.0;
-            elseif(t > obj.getFinalTime())
-                s = obj.distArray(obj.numSamples);
-            else
-                s  = interp1(obj.timeArray,obj.distArray,t,'pchip','extrap');  
-            end
+        function s = getSAtTime(~,~)
+            s = 0;
         end
         % Time at Path Length:
-        function t = getTAtDist(obj,s)
-            if(s < obj.distArray(1))
-                t = 0.0;
-            elseif (s > obj.getFinalDist())
-                t = obj.getFinalTime();
-            else
-                t  = interp1(obj.distArray,obj.timeArray,s,'pchip','extrap');  
-            end
+        function t = getTAtDist(~,~)
+            t = 0;
         end
         
         % Angular Velocity at Path Length:
-        function om = getOmegaAtDist(obj,s)
-            if(s < obj.distArray(1))
-                om = 0.0;
-            else
-                om  = interp1(obj.distArray,obj.wArray,s,'pchip','extrap');  
-            end
+        function om = getOmegaAtDist(~,~)
+            om = 0;
         end
         % Velocity at Path Length:
-        function V = getVAtDist(obj,s)
-            if(s < obj.distArray(1))
-                V = 0.0;
-            else
-                V  = interp1(obj.distArray,obj.VArray,s,'pchip','extrap');  
-            end
+        function V = getVAtDist(~,~)
+            V = 0;
         end
         
         
         %Return the Elapsed Time at the End of the Path:
-        function tf = getFinalTime(obj)
-            tf = obj.getTrajectoryDuration();
+        function tf = getFinalTime(~)
+            tf = 0;
         end
         %Return the Path Length Covered at the End of the Path:
-        function sf = getFinalDist(obj)
-            sf = obj.getTrajectoryDistance();
+        function sf = getFinalDist(~)
+            sf = 0;
         end
         %Returns the Velocity at the End of the Path:
         function vf = getFinalVelocity(obj); vf = obj.V_t(obj.t_f); end
@@ -127,28 +111,28 @@ classdef Trajectory_Null < ReferenceTrajectory
         function Kf = getFinalCurv(obj); Kf = obj.K_t(obj.t_f); end
         
         %Returns Vector of All X-Positions:
-        function xs = getXVec(obj)
-            xs = obj.poseArray(1,:);
+        function xs = getXVec(~)
+            xs = [0 0 0];
         end
         %Returns Vector of All Y-Positions:
-        function ys = getYVec(obj)
-            ys = obj.poseArray(2,:);
+        function ys = getYVec(~)
+            ys = [0 0 0];
         end
         %Returns Vector of All Headings:
-        function ths = getThVec(obj)
-            ths = obj.poseArray(3,:);
+        function ths = getThVec(~)
+            ths = [0 0 0];
         end
         %Returns Vector of All Times:
-        function ts = getTVec(obj)
-            ts = obj.timeArray;
+        function ts = getTVec(~)
+            ts = [0 0 0];
         end
         %Returns Vector of All Path Lengths:
-        function ss = getSVec(obj)
-            ss = obj.distArray;
+        function ss = getSVec(~)
+            ss = [0 0 0];
         end
         %Returns Vector of All Poses:
-        function ps = getPVec(obj)
-            ps = obj.poseArray;
+        function ps = getPVec(~)
+            ps = [pose(0,0,0), pose(0,0,0), pose(0,0,0)];
         end
         
     end % ReferenceTrajectory <-methods(Abstract)

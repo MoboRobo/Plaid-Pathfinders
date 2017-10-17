@@ -15,99 +15,41 @@ classdef Trajectory_Null < ReferenceTrajectory
             meta.abstractDetails(?Trajectory_Null)
         end 
         
-        function s  = getDistAtDist(obj,s)
-            if( s < obj.distArray(1))
-                s = 0.0;
-            else
-                s  = interp1(obj.distArray,obj.distArray,s,'pchip','extrap');  
-            end
+        function s  = getDistAtDist(~,~)
+            s = 0;
         end
         
-        function K  = getCurvAtDist(obj,s)
-            if( s < obj.distArray(1))
-                K = 0.0;
-            else
-                K  = interp1(obj.distArray,obj.curvArray,s,'pchip','extrap');  
-            end
+        function K  = getCurvAtDist(~,~)
+            K = 0;
+        end
+        
+        function p  = getPoseAtDist(~,~)
+            p = pose(0,0,0);
+        end
+        
+        function p  = getFinalPose(~)
+            p = pose(0,0,0);  
+        end
+        
+        function time  = getTrajectoryDuration(~)
+            time = 0;  
+        end
+        
+        function dist  = getTrajectoryDistance(~)
+            dist = 0;  
+        end
+        
+        function V  = getVAtTime(~,~)
+            V = 0;
         end
             
-        function p  = getPoseAtDist(obj,s)
-            x = interp1(obj.distArray,obj.poseArray(1,:),s,'pchip','extrap');
-            y = interp1(obj.distArray,obj.poseArray(2,:),s,'pchip','extrap');
-            th = interp1(obj.distArray,obj.poseArray(3,:),s,'pchip','extrap');
-            p  = pose(x, y, th);  
-        end
-        
-        function p  = getFinalPose(obj)
-            p  = pose(obj.poseArray(:,obj.numSamples));  
-        end
-        
-        function time  = getTrajectoryDuration(obj)
-            time  = obj.timeArray(:,obj.numSamples);  
-        end
-        
-        function dist  = getTrajectoryDistance(obj)
-            dist  = obj.distArray(:,obj.numSamples);  
-        end
-        
-        function V  = getVAtTime(obj,t)
-            if( t < obj.timeArray(1))
-                V = 0.0;
-            elseif(t > obj.getFinalTime())
-                V = obj.VArray(obj.numSamples);
-            else
-                V  = interp1(obj.timeArray,obj.VArray,t,'pchip','extrap');  
-            end
+        function w  = getwAtTime(~,~)
+            w = 0;
         end
             
-        function w  = getwAtTime(obj,t)
-            if(t < obj.timeArray(1))
-                w = 0.0;
-            elseif(t > obj.getFinalTime())
-                w = obj.wArray(obj.numSamples);
-            else
-                w  = interp1(obj.timeArray,obj.wArray,t,'pchip','extrap');  
-            end
-        end
-            
-        function p  = getPoseAtTime(obj,t)
-            if(t > obj.getFinalTime())
-                p = obj.getFinalPose();
-            else
-                x = interp1(obj.timeArray,obj.poseArray(1,:),t,'pchip','extrap');
-                y = interp1(obj.timeArray,obj.poseArray(2,:),t,'pchip','extrap');
-                th = interp1(obj.timeArray,obj.poseArray(3,:),t,'pchip','extrap');
-                p  = pose(x,y,th);
-            end
+        function p  = getPoseAtTime(~,~)
+            p = 0;
         end  
-        
-        function parms  = getParms(obj)
-            parms  = obj.parms;  
-        end
-        
-        function setSgn(obj,sgn)
-            obj.sgn  = sgn;  
-        end  
-        
-        function reflectX(obj)
-            % reflect curve around X axis by modifying parameters
-            obj.parms(1) = - obj.parms(1);  
-            obj.parms(2) = - obj.parms(2);
-            obj.integrateCommands();
-        end 
-        function reflectY(obj)
-            % reflect curve around Y axis by modifying parameters
-            obj.parms(2) = - obj.parms(2);  
-            obj.parms(3) = - obj.parms(3); 
-            obj.integrateCommands();
-        end 
-        
-        function reflectXY(obj)
-            % reflect curve around X and Y axes (i.e. through origin) by modifying parameters
-            obj.parms(1) = - obj.parms(1);  
-            obj.parms(3) = - obj.parms(3);
-            obj.integrateCommands();
-        end 
     end
     
     
@@ -115,99 +57,51 @@ classdef Trajectory_Null < ReferenceTrajectory
     methods
         
         % Compute Everything Necessary to Create a Follow-able Path
-        function compute(obj)
-            obj.integrateCommands();
-            obj.planVelocities(obj.V_max);
+        function compute(~)
+            % Nothing to Compute
         end
         
-        function transMat = getTransformMat(obj)
-            transMat = obj.init_pose.bToA()
-        end
-        % Transforms Every Pose in the Data-Set to World Coordinates based
-        % on the Object's "init_pose" property.
-        function offsetInitPose(obj)
+        function offsetInitPose(~)
             
-            transformMat = obj.getTransformMat()
-            offsetTh = obj.init_pose.th
-            
-            %iterate through all x, y, and th in poseArray and transform
-            %   them
-            s = 0.0
-            xs = obj.getXVec()
-            ys = obj.getYVec()
-            ths = obj.getThVec()
-            for i=1:obj.numSamples
-                oldTh = ths(i);
-                oldX = xs(i);
-                oldY = ys(i);
-                oldPose = [oldX; oldY; 1]
-                newPose = transformMat * oldPose
-                xs(i) = newPose(1);
-                ys(i) = newPose(2);
-                ths(i) = oldTh; %atan2(sin(oldTh + offsetTh), cos(oldTh + offsetTh));
-            end
-            obj.poseArray(1,:) = xs;
-            obj.poseArray(2,:) = ys;
-            obj.poseArray(3,:) = ths;
         end
         
         % Angular Velocity at Time:
-        function om = getOmegaAtTime(obj,t)
-            om = getwAtTime(obj,t);
+        function om = getOmegaAtTime(~,~)
+            om = 0;
         end
         % Path Curvature at Time:
-        function K = getCurvAtTime(obj,t)
-            K = obj.getCurvAtDist(obj.getSAtTime(t));
+        function K = getCurvAtTime(~,~)
+            K = 0;
         end
         
         %For Inverting Parameterization if Necessary (Computationally
         %heavy)
         % Path Length at t:
-        function s = getSAtTime(obj,t)
-            if(t < obj.timeArray(1))
-                s = 0.0;
-            elseif(t > obj.getFinalTime())
-                s = obj.distArray(obj.numSamples);
-            else
-                s  = interp1(obj.timeArray,obj.distArray,t,'pchip','extrap');  
-            end
+        function s = getSAtTime(~,~)
+            s = 0;
         end
         % Time at Path Length:
-        function t = getTAtDist(obj,s)
-            if(s < obj.distArray(1))
-                t = 0.0;
-            elseif (s > obj.getFinalDist())
-                t = obj.getFinalTime();
-            else
-                t  = interp1(obj.distArray,obj.timeArray,s,'pchip','extrap');  
-            end
+        function t = getTAtDist(~,~)
+            t = 0;
         end
         
         % Angular Velocity at Path Length:
-        function om = getOmegaAtDist(obj,s)
-            if(s < obj.distArray(1))
-                om = 0.0;
-            else
-                om  = interp1(obj.distArray,obj.wArray,s,'pchip','extrap');  
-            end
+        function om = getOmegaAtDist(~,~)
+            om = 0;
         end
         % Velocity at Path Length:
-        function V = getVAtDist(obj,s)
-            if(s < obj.distArray(1))
-                V = 0.0;
-            else
-                V  = interp1(obj.distArray,obj.VArray,s,'pchip','extrap');  
-            end
+        function V = getVAtDist(~,~)
+            V = 0;
         end
         
         
         %Return the Elapsed Time at the End of the Path:
-        function tf = getFinalTime(obj)
-            tf = obj.getTrajectoryDuration();
+        function tf = getFinalTime(~)
+            tf = 0;
         end
         %Return the Path Length Covered at the End of the Path:
-        function sf = getFinalDist(obj)
-            sf = obj.getTrajectoryDistance();
+        function sf = getFinalDist(~)
+            sf = 0;
         end
         %Returns the Velocity at the End of the Path:
         function vf = getFinalVelocity(obj); vf = obj.V_t(obj.t_f); end
@@ -217,28 +111,28 @@ classdef Trajectory_Null < ReferenceTrajectory
         function Kf = getFinalCurv(obj); Kf = obj.K_t(obj.t_f); end
         
         %Returns Vector of All X-Positions:
-        function xs = getXVec(obj)
-            xs = obj.poseArray(1,:);
+        function xs = getXVec(~)
+            xs = [0 0 0];
         end
         %Returns Vector of All Y-Positions:
-        function ys = getYVec(obj)
-            ys = obj.poseArray(2,:);
+        function ys = getYVec(~)
+            ys = [0 0 0];
         end
         %Returns Vector of All Headings:
-        function ths = getThVec(obj)
-            ths = obj.poseArray(3,:);
+        function ths = getThVec(~)
+            ths = [0 0 0];
         end
         %Returns Vector of All Times:
-        function ts = getTVec(obj)
-            ts = obj.timeArray;
+        function ts = getTVec(~)
+            ts = [0 0 0];
         end
         %Returns Vector of All Path Lengths:
-        function ss = getSVec(obj)
-            ss = obj.distArray;
+        function ss = getSVec(~)
+            ss = [0 0 0];
         end
         %Returns Vector of All Poses:
-        function ps = getPVec(obj)
-            ps = obj.poseArray;
+        function ps = getPVec(~)
+            ps = [pose(0,0,0), pose(0,0,0), pose(0,0,0)];
         end
         
     end % ReferenceTrajectory <-methods(Abstract)

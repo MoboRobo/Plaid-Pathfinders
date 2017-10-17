@@ -10,10 +10,13 @@ classdef mrplSystem < handle
         
         traj_vec = Trajectory_CubicSpiral.empty;
         plotting_enabled = 1;
+        
+        plot_figure;
+        errors;
     end
     
     properties(GetAccess=private, SetAccess=private)
-         k_tau = 0.7;%7.0253;%1.4;    % Trajectory Time Multiplier for Corrective Time
+         k_tau = 7.0253;%1.4;    % Trajectory Time Multiplier for Corrective Time
     end
 
 %% METHODS
@@ -23,9 +26,8 @@ classdef mrplSystem < handle
             %% Setup Internal Data Classes:
             obj.clock = Clock();
             %% Set Initial NullTrajectory: 
-            obj.traj_vec = Trajectory_CubicSpiral.planTrajectory(0,0,0,1,10,1);
-            obj.traj_vec.init_pose = startPose;
-            obj.traj_vec.offsetInitPose();
+            obj.traj_vec = Trajectory_CubicSpiral.planTrajectory(0,0,0,1,2,1);
+            obj.traj_vec.is_null = 1;
             %% Setup Robot
             rasp = raspbot(robot_id, [startPose.X; startPose.Y; startPose.th+pi/2.0]);
             obj.rob = P2_Robot( rasp, @()(obj.clock.time()) );
@@ -76,19 +78,35 @@ classdef mrplSystem < handle
         end
 
         function updatePlot(obj)
-            figure();
+            if isempty(obj.plot_figure)
+                obj.plot_figure = figure();
+            else
+                figure(obj.plot_figure);
+            end
+            clf;
+            
             xlabel('World X-Position Relative to Start [m]');
             ylabel('World Y-Position Relative to Start [m]');
             
-            pf = obj.rob.measTraj.p_f;
-            title(strcat('Trajectory to: ', num2str(pf.X),',',num2str(pf.Y)));
+            last_traj = obj.traj_vec(end);
+            tf = last_traj.p_f;
+            rf = obj.rob.measTraj.p_f;
+            obj.errors(end+1) = norm(rf.poseVec(1:2) - tf.poseVec(1:2));
+            avg_error = mean(obj.errors);
+            
+            title({ ...
+                strcat('Trajectory to: ', num2str(tf.X),',',num2str(tf.Y)), ...
+                strcat('Error: ', num2str(obj.errors(end)), ' Avg. Errors: ', num2str(avg_error))
+            });
             
                 obj.rob.measTraj.plot();
                 
                 i = 2;
                 while i <= length(obj.traj_vec)
-                    traj = obj.traj_vec();
-                    traj.plot(); %for loop? - can we vectorize this?
+                    traj = obj.traj_vec(i);
+                    if(~traj.is_null)
+                        traj.plot(); %for loop? - can we vectorize this?
+                    end
                 i = i+1;
                 end
             
