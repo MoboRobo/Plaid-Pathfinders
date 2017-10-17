@@ -6,7 +6,7 @@ classdef (Abstract) ReferenceTrajectory < Trajectory
         init_pose;          % Initial Pose of the Trajectory
         transformed = 0;    % Whether the Entire Trajectory has been Transformed
         
-        is_null = 0;        % Red flag to not mess with null methods.
+        is_null;            %D
     end % ReferenceTrajectory <-properties(public,public)
     
     properties(Abstract)

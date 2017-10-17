@@ -13,6 +13,13 @@ classdef FeedbackController < handle
         errorIntegralY = 0;
         errorIntegralTh = 0;
         
+        lastErrorX_s = 0; % w.r.t. s
+        lastErrorY_s = 0;
+        lastErrorTh_s = 0;
+        errorIntegralX_s = 0;
+        errorIntegralY_s = 0;
+        errorIntegralTh_s = 0;
+        
         %history of error readings stored as poses
         error_poses = [pose(0, 0, 0)];
         error_times;
@@ -143,6 +150,104 @@ classdef FeedbackController < handle
             obj.lastErrorX = errorX;
             obj.lastErrorY = errorY;
             obj.lastErrorTh = errorTh;
+        end
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        function [u_v, u_w] = getControl_s(obj, s)
+
+            if isempty(obj.error_dists) %initialize
+                obj.error_dists = [0];
+            end % isEmpty(lastError)?
+            s_last = obj.error_dists(end);
+            %% determine reference pose and estimated pose
+            refPose = obj.rt.getPoseAtDist(s);
+            curPose = obj.rob.measTraj.p_f;
+
+            %% determine error values in every dimension
+            %get most recent velocity readings
+            V = obj.rob.measTraj.V_f;
+            
+            %error summing coefficients
+            k_x = 1 / obj.correctiveTime;
+            k_th = 1 / obj.correctiveTime;
+            if V < 0.2 % V-floor for k_y to prevent it from becoming too large
+                k_y = 0;
+            else
+                k_y = 2 / (abs(V) * obj.correctiveTime^2);
+            end % k_y<0.2?
+            
+            wrp = (refPose.poseVec(1:2) - curPose.poseVec(1:2));
+            
+            thr = atan2(sin(curPose.th), cos(curPose.th));
+            errorTh_s = refPose.th - curPose.th;
+            errorTh_s = atan2(sin(errorTh_s),cos(errorTh_s));
+            
+            rrp = [cos(thr),-sin(thr); sin(thr), cos(thr)] \ wrp;
+            
+            errorX_s = rrp(1);
+            errorY_s = rrp(2);
+            errorTh_s = atan2(sin(errorTh_s), cos(errorTh_s)); % normalize angle
+            ds = s - s_last;
+
+            %% compute derivatives and integrals            
+            if(ds == 0)
+                errorDerivativeX_s = 0;
+                errorDerivativeY_s = 0;
+                errorDerivativeTh_s = 0;
+            
+            else
+                errorDerivativeX_s = (errorX_s - obj.lastErrorX_s)/ ds;
+                errorDerivativeY_s = (errorY_s - obj.lastErrorY_s) / ds;
+                errorDerivativeTh_s = (errorTh_s - obj.lastErrorTh_s) / ds;
+            end
+            obj.errorIntegralX_s = obj.errorIntegralX_s + errorX_s*ds;
+            if abs(obj.errorIntegralX_s) > obj.maxErrorIntegralX
+                sign = obj.errorIntegralX_s/abs(obj.errorIntegralX_s);
+                obj.errorIntegralX_s = obj.maxErrorIntegralX_s * sign;
+            end
+            
+            obj.errorIntegralY_s = obj.errorIntegralY_s + errorY_s*ds;
+            if abs(obj.errorIntegralY_s) > obj.maxErrorIntegralY
+                sign = obj.errorIntegralY_s/abs(obj.errorIntegralY_s);
+                obj.errorIntegralY_s = obj.maxErrorIntegralY * sign;
+            end
+
+            obj.errorIntegralTh_s = obj.errorIntegralTh_s + errorTh_s*ds;
+            if abs(obj.errorIntegralTh_s) > obj.maxErrorIntegralTh
+                sign = obj.errorIntegralTh_s/abs(obj.errorIntegralTh_s);
+                obj.errorIntegralTh_s= obj.maxErrorIntegralTh * sign;
+            end
+            
+            ex =obj.k_p * errorX_s + obj.k_d * errorDerivativeX_s + ...
+                obj.k_i * obj.errorIntegralX_s;
+            ey = obj.k_p * errorY_s + obj.k_d * errorDerivativeY_s + ...
+                obj.k_i * obj.errorIntegralY_s;
+            eth = obj.k_p * errorTh_s + obj.k_d * errorDerivativeTh_s + ...
+                obj.k_i * obj.errorIntegralTh_s;
+            % compute actual control linear and rotational velocity
+            u_v = errorX_s*k_x + norm([ex ey]);
+            u_w = errorY_s*k_y + errorTh_s*k_th + eth;
+%             u_v = errorX_s * k_x;
+%             u_w = errorY_s * k_y + errorTh_s*k_th;
+
+            %% ensure below ceiling
+            if abs(u_v) > obj.v_max
+                sign = u_v / abs(u_v);
+                u_v = sign * obj.v_max;
+            end
+
+            if abs(u_w) > obj.w_max
+                sign = u_w / abs(u_w);
+                u_w = sign*obj.w_max;
+            end
+            
+            % update history of error poses and times
+            obj.error_poses(end+1) = pose(errorX_s, errorY_s, errorTh_s);
+            obj.error_dists(end+1) = s;
+
+            % update 'last' variables
+            obj.lastErrorX_s = errorX_s;
+            obj.lastErrorY_s = errorY_s;
+            obj.lastErrorTh_s = errorTh_s;
         end
     end
 end
