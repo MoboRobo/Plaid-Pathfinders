@@ -19,7 +19,10 @@ classdef (Abstract) ReferenceTrajectory < Trajectory
         % Coordinates given an initial position, p0
         function pw = poseToWorld(pr, p0)
             transformationMatrix = p0.bToA()
-            pw = transformationMatrix * pr
+            [oldX; oldY; rlyDontCare] = pr.poseVec
+            [x; y; dontCare] = transformationMatrix * [oldX; oldY; 1]
+            offsetTh = p0.th
+            pw = pose(x, y, pr.th + offsetTh)
         end
         
         
