@@ -83,14 +83,12 @@ classdef mrplSystem < handle
                 ylabel('World Y-Position Relative to Start [m]');
             end
             figure(obj.plot_figure);
+            hold on
                 obj.rob.measTraj.plot();
-                
-                i = 1;
-                while i < length(obj.traj_vec)
-                    traj = obj.traj_vec(i);
+                while traj = obj.traj_vec
                     traj.plot(); %for loop? - can we vectorize this?
-                i = i+1;
                 end
+            hold off
             
             legend('Measured Trajectory', 'Reference Trajectory');
             axis equal

@@ -18,11 +18,11 @@ classdef (Abstract) ReferenceTrajectory < Trajectory
         % Transforms a Pose from Path-Relative Coordinates to World 
         % Coordinates given an initial position, p0
         function pw = poseToWorld(pr, p0)
-            transformationMatrix = p0.bToA()
-            [oldX; oldY; rlyDontCare] = pr.poseVec
-            [x; y; dontCare] = transformationMatrix * [oldX; oldY; 1]
-            offsetTh = p0.th
-            pw = pose(x, y, pr.th + offsetTh)
+            transformationMatrix = p0.bToA();
+            result = (transformationMatrix * [pr.X; pr.Y; 1])';
+            x = result(1); y = result(2);
+            offsetTh = p0.th;
+            pw = pose(x, y, pr.th + offsetTh);
         end
         
         

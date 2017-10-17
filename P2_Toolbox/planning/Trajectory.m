@@ -103,21 +103,24 @@ classdef (Abstract) Trajectory < handle
     methods (Access=public)
         % Plots the trajectory onto the active figure.
         function plot(obj)
+        hold on
             xs = obj.xs();
             ys = obj.ys();
             
             plot(xs,ys);
             
-            pf = obj.getFinalPose();
-            xf = pf.X;
-            yf = pf.Y;
-            
-            r = max([abs(xf) abs(yf)]);
-            if(r ~= 0)
-                k_r = 1.2;
-                xlim([-k_r*r k_r*r]);
-                ylim([-k_r*r k_r*r]);
-            end
+            axis equal;
+        hold off
+%             pf = obj.getFinalPose();
+%             xf = pf.X;
+%             yf = pf.Y;
+%             
+%             r = max([abs(xf) abs(yf)]);
+%             if(r ~= 0)
+%                 k_r = 1.2;
+%                 xlim([-k_r*r k_r*r]);
+%                 ylim([-k_r*r k_r*r]);
+%             end
         end % #plot
     end % Trajectory <-methods
 end % Class Trajectory
