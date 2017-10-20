@@ -22,8 +22,14 @@ classdef FeedbackController < handle
         
         %history of error readings stored as poses
         error_poses = [pose(0, 0, 0)];
-        error_times;
-        error_dists;
+        error_times = slidingFifo(10000, 0);
+        error_dists = slidingFifo(10000, 0);
+        %commanded linear velocities parameterized by time
+        comm_V_t = slidingFifo(10000, struct('comm_v', 0, 't', 0));
+        %commanded rotational velocities parameterized by time
+        comm_W_t = slidingFifo(10000, struct('comm_w', 0, 't', 0));
+        comm_V_s; %commanded linear velocities parameterized by arc length
+        comm_W_s; %commanded rotational velocities parameterized by arc length
     end %FeedbackController<-properties(public, private)
     
     properties(GetAccess=public, SetAccess=public)
@@ -55,11 +61,8 @@ classdef FeedbackController < handle
             obj.rob = rob;
         end
         function [u_v, u_w] = getControl_t(obj, t)
-
-            if isempty(obj.error_times) %initialize
-                obj.error_times = [0];
-            end % isEmpty(lastError)?
-            t_last = obj.error_times(end);
+            
+            t_last = obj.error_times.last();
             %% determine reference pose and estimated pose
             refPose = obj.rt.getPoseAtTime(t);
             curPose = obj.rob.measTraj.p_f;
@@ -143,15 +146,26 @@ classdef FeedbackController < handle
             end
             
             % update history of error poses and times
-            obj.error_poses(end+1) = pose(errorX, errorY, errorTh);
-            obj.error_times(end+1) = t;
-
+            obj.error_poses.add(pose(errorX, errorY, errorTh));
+            obj.error_times.add(t);
+            
+            %update comm_v_t and comm_W_t
+            
+            obj.comm_V_t.add(struct('comm_v', u_v, 't', t));
+            obj.comm_W_t.add(struct('comm_w', u_w, 't', t));
             % update 'last' variables
             obj.lastErrorX = errorX;
             obj.lastErrorY = errorY;
             obj.lastErrorTh = errorTh;
         end
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         function [u_v, u_w] = getControl_s(obj, s)
 
             if isempty(obj.error_dists) %initialize
@@ -245,7 +259,7 @@ classdef FeedbackController < handle
             % update history of error poses and times
             obj.error_poses(end+1) = pose(errorX_s, errorY_s, errorTh_s);
             obj.error_dists(end+1) = s;
-
+            obj.error
             % update 'last' variables
             obj.lastErrorX_s = errorX_s;
             obj.lastErrorY_s = errorY_s;

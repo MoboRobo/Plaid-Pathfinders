@@ -103,7 +103,7 @@ classdef mrplSystem < handle
                 );
             end % delay_plots 
             if obj.debugging.error_plots
-                ep = tf.fbk_controller.error_poses(end);
+                ep = tf.fbk_controller.error_poses.last();
                 es = norm(ep.poseVec(1:2));
                 obj.delay_error_data(end+1) = struct( ...
                     'ex',ep.x, 'ey',ep.Y, 'eth',ep.th, 'es',es, 't',T ...
