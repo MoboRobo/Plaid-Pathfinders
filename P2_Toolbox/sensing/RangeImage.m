@@ -85,11 +85,11 @@ classdef RangeImage < handle
         % used for plotting range with color.
         function pl = plot(obj, colorize)
             if(nargin>1 && colorize)
-                pl = scatter(obj.data.xs, obj.data.xs, 36, obj.data.ranges);
+                pl = scatter(-obj.data.ys, obj.data.xs, 36, obj.data.ranges);
             else
                 xs = obj.data.xs;
                 ys = obj.data.ys;
-                pl = scatter(xs, xs);
+                pl = scatter(-ys, xs);
             end % colorize?
                 axis(2*[-1 1 -1 1])
                 title({'LIDAR Data', '(Robot Reference Frame)'});

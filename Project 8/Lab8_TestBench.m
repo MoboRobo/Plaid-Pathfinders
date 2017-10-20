@@ -10,10 +10,16 @@ function Lab8_TestBench(robot_id)
     %% SETUP MAPPING
     if(strcmp(robot_id,'sim'))
         bounds = 2.5*[0.5 0; 0.5 1; -0.5 1; -0.5 0]; % Inverted U-Shaped Container
-        person_lines = ShapeGen.rect(0.1,0.05);
+        block = ShapeGen.rect(0.038,0.127);
         wm = WorldMap(rob, bounds);
-            person = wm.addObstacle(person_lines); % Person to Follow.
-            person.pose = [0.25 0.5 0]; % Move to Center Screen
+            % Create a Ring of Blocks around Origin.
+            r = 0.75;
+            n = 6;
+            ths = (0 : pi/2/n : pi/2 + pi/2/n); % Go one block beyond first quadrant
+            for th = ths
+                obs = wm.addObstacle(block);
+                obs.pose = [r*cos(th) r*sin(th) th];
+            end
         wm.createMap();
     end
     
@@ -23,6 +29,12 @@ function Lab8_TestBench(robot_id)
     rob.core.startLaser();
     
     pause(1); % Wait for system to enter steady-state
+    
+    while(1)
+        rob.moveAt(0.1,0.2);
+    end
+    
+    pause
     
     function processLaserData(~, evnt)
         r_img = RangeImage(evnt.Ranges);
