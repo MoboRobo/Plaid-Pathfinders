@@ -39,7 +39,7 @@ classdef slidingFifo < GenericDataContainer
                 
                 % N.B. Ensure Vector Homogen. in que.
                 if nargin > 1
-                    obj.que(1) = first_elem;
+                    obj.que = first_elem;
                     obj.que(2:maxElements) = first_elem; % Ensure Class Consistency
                     % ^ TODO: Find way to get class of first_elem and use
                     % empty of that class:
