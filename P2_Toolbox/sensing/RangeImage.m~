@@ -59,6 +59,8 @@ classdef RangeImage < handle
             'xs', 0, ...        % Vector of X-Positions Associated with Each Valid Range Pixel
             'ys', 0 ...         % Vector of Y-Positions Associated with Each Valid Range Pixel
         );
+    
+        plotting_fig;           % Figure to Plot Data into.
         
     end % RangeImage<-properties(public,private)
     
@@ -74,39 +76,31 @@ classdef RangeImage < handle
             [obj.data.ranges, obj.data.angles] = RangeImage.cleanImage(obj.raw);
             [obj.data.xs, obj.data.ys] = RangeImage.arToXy(obj.data.ranges, obj.data.angles);
             
+            obj.plotting_fig = figure();
         end % Constructor
         
         %% Plot:
         % Plots the valid sensor data stored in this instance of
         % RangeImage. Effective drop in for a standard #plot function
-        % (doesn't call figure, subplot, &c.)
+        % as long as obj.plotting_fig is set to the desired figure.
         % colorize - [bool] if true, a z-axis will be plotted for each
         % point representing it's distance from the robot which can be
         % used for plotting range with color.
-        function plot(obj)
-            if(colorize)
-                pl = scatter(-obj.data, xs, 36, rs);
+        function pl = plot(obj, colorize)
+            figure
+            if(nargin>1 && colorize)
+                pl = scatter(-obj.data.ys, obj.data.xs, 36, obj.data.ranges);
             else
+                xs = obj.data.xs;
+                ys = obj.data.ys;
                 pl = scatter(-ys, xs);
             end % colorize?
                 axis(2*[-1 1 -1 1])
-                title('LIDAR Data')
-                xlabel('Negative Y-Position [m]')
-                ylabel('X-Position [m]')
-                set(pl, 'XData', -ys)
-                set(pl, 'YData', xs)
-                if colorize; set(pl, 'ZData', rs); end
+                title({'LIDAR Data', '(Robot Reference Frame)'});
+                xlabel('Y-Position [m]');
+                ylabel('X-Position [m]');
             refreshdata
             drawnow
-            
-            if(colorize)
-                set(pl, 'XData', -ys, 'YData', xs, 'ZData', rs) %Update
-            else
-                set(pl, 'XData', -ys, 'YData', xs) %Update
-            end % colorize?
-            
-            refreshdata
-            drawnow limitrate
         end % #plot
     end % RangeImage<-methods(public)
     
@@ -128,7 +122,7 @@ classdef RangeImage < handle
             end % nargin?
             
             % Process Range Data:
-            valid = r_in>r_min && r_in<r_max;
+            valid = r_in>r_min & r_in<r_max;
             r_clean = r_in(valid);
             
             pixels = length(r_in);
