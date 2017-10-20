@@ -9,8 +9,8 @@ classdef robotKinematicModel < handle
     properties(Constant)
         %W  = 9.25*2.54/100;   % NEATO wheel tread in m
         %W2 = 9.25*2.54/2/100; % NEATO 1/2 wheel tread in m
-        W  = 0.09;              % Raspbot wheel tread in m
-        W2 = 0.045;             % Raspbot 1/2 wheel tread in m
+        W  = 0.08675;              % Raspbot wheel tread in m
+        W2 = 0.08675/2.0;             % Raspbot 1/2 wheel tread in m
         maxWheelVelocity = 0.5 % max of either wheel in m/sec
         
         %rad = .165;             % NEATO robot body radius id 12.75/2 inches

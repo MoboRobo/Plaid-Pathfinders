@@ -55,7 +55,7 @@ classdef Trajectory_TimeCurve < ReferenceTrajectory
             obj.resolution = (tf-t0)/(obj.N_samples-1);%Beware the fence-post
             
             if nargin > 5
-                obj.poses(0) = init_pose;
+                obj.poses(1) = init_pose;
             end % nargin>5?
             
             obj.t_init = t0;

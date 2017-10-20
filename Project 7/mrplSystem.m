@@ -10,8 +10,13 @@ classdef mrplSystem < handle
         
         traj_vec = Trajectory_CubicSpiral.empty;
         plotting_enabled = 1;
-        
-        delay_plots = 1;    % Whether Transient Velocity Plots for Determining should be Made.
+       
+        debugging = struct(...
+            'delay_plots', 0, ...   % Whether Transient Velocity Plots for Determining should be Made.
+            'error_plots', 0 ...    % Whether Transient Error Plots (from FeedbackController) should be Made.
+        );
+            delay_plot_data = struct('tv',0, 'rv',0, 't',0);
+            delay_error_data = struct('ex',0, 'ey',0, 'eth',0, 'es',0, 't',0);
         
         plot_figure;
         errors;
@@ -59,12 +64,6 @@ classdef mrplSystem < handle
             tf = Trajectory_Follower(obj.rob, rt);
             tf.fbk_controller.correctiveTime = obj.k_tau;%* rt.getFinalTime();
             
-            if obj.delay_plots
-                % Transient Data for Reference Trajectory and Robot Velocities
-                delay_plot_data = struct('tv',0, 'rv',0, 't',0);
-            end % delay_plots?
-            
-            
             first_loop = 1;
          	T = 0;
             while (T < tf.rt.getFinalTime()+1)
@@ -76,20 +75,43 @@ classdef mrplSystem < handle
                 T = obj.clock.time();
                 tf.follow_update_t(T);
                 
-                if obj.delay_plots
-                    delay_plot_data(end+1) = struct( ...
-                        'tv', rt.V_t(T), ...
-                        'rv', obj.rob.measTraj.V_f, ...
-                        't', T ...
-                    );
-                end % delay_plots
+                obj.update_plotData();
                 
                 pause(0.01);
             end
             obj.rob.moveAt(0,0);
             obj.rob.core.stop();
             
-            if obj.delay_plots
+            %Store completed trajectory
+            obj.traj_vec(end+1) = rt;
+            %Update plot after completed trajectory
+            if(obj.plotting_enabled)
+               obj.update_plot();
+            end 
+        end
+
+        % Helper Function to Update Data used for Debugging Plots
+        function update_plotData(obj)
+            if obj.debugging.delay_plots
+                obj.delay_plot_data(end+1) = struct( ...
+                    'tv', rt.V_t(T), ...
+                    'rv', obj.rob.measTraj.V_f, ...
+                    't', T ...
+                );
+            end % delay_plots 
+            if obj.debugging.error_plots
+                ep = tf.fbk_controller.error_poses(end);
+                es = norm(ep.poseVec(1:2));
+                obj.delay_error_data(end+1) = struct( ...
+                    'ex',ep.x, 'ey',ep.Y, 'eth',ep.th, 'es',es, 't',T ...
+                );
+            end % error_plots?
+        end % #update_plotData
+        
+        % Update All Desired/Active Plots
+        function update_plot(obj)
+            % DEBUGGING PLOTS:
+            if obj.debugging.delay_plots
                 tvs = [delay_plot_data(:).tv];
                 rvs = [delay_plot_data(:).rv];
                 ts = [delay_plot_data(:).t];
@@ -103,16 +125,31 @@ classdef mrplSystem < handle
                     ylabel('Velocity at Time [m/s]');
                     legend('Reference Trajectory', 'Robot Trajectory');
             end % delay_plots?
+            if obj.debugging.error_plots
+                exs = [delay_error_data(:).ex];
+                eys = [delay_error_data(:).ey];
+                eths = [delay_error_data(:).eth];
+                ess = [delay_error_data(:).es];
+                ts = [delay_error_data(:).t];
+                figure();
+                    hold on
+                        plot(ts,exs);
+                        plot(ts,eys);
+                        plot(ts,eths);
+                        plot(ts,ess);
+                    hold off
+                    title('Transient Error Plots');
+                    xlabel('Time [s]');
+                    ylabel('Error [m]');
+                    legend( ...
+                        'Alongtrack, \deltax', ...
+                        'Crosstrack, \deltay', ...
+                        'Heading, \delta\theta', ...
+                        'Position, \deltas' ...
+                    );
+            end % delay_plots?
             
-            %Store completed trajectory
-            obj.traj_vec(end+1) = rt;
-            %Update plot after completed trajectory
-            if(obj.plotting_enabled)
-               obj.updatePlot();
-            end 
-        end
-
-        function updatePlot(obj)
+            % TRAJECTORY PLOTS:
             if isempty(obj.plot_figure)
                 obj.plot_figure = figure();
             else
@@ -123,6 +160,7 @@ classdef mrplSystem < handle
             xlabel('World X-Position Relative to Start [m]');
             ylabel('World Y-Position Relative to Start [m]');
             
+            %Compute Error:
             last_traj = obj.traj_vec(end);
             tf = last_traj.p_f;
             rf = obj.rob.measTraj.p_f;
@@ -134,18 +172,21 @@ classdef mrplSystem < handle
                 strcat('Error: ', num2str(obj.errors(end)), ' Avg. Errors: ', num2str(avg_error))
             });
             
-                obj.rob.measTraj.plot();
+                % Produce Plots:
+                % Collect output handles in vector so that auxiliary plots
+                % such as tangents/headings will be ignored in legend.
+                plots = obj.rob.measTraj.plot();
                 
                 i = 2;
                 while i <= length(obj.traj_vec)
                     traj = obj.traj_vec(i);
                     if(~traj.is_null)
-                        traj.plot(); %for loop? - can we vectorize this?
+                        plots(end+1) = traj.plot(); %for loop? - can we vectorize this?
                     end
                 i = i+1;
                 end
             
-            legend('Measured Trajectory', 'Reference Trajectory');
+            legend(plots, 'Measured Trajectory', 'Reference Trajectory');
             axis equal
         end
         

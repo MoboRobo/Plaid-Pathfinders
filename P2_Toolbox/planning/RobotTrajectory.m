@@ -104,7 +104,7 @@ classdef RobotTrajectory < Trajectory
         % of the function when the input is under bounds, v_under, and over
         % bounds, v_over.
         function v = getInt(~, xs,vs, x, v_under,v_over)
-            v_ub = vs(0);
+            v_ub = vs(1);
             v_ob = vs(end);
             if nargin>4
                 v_ub = v_under;

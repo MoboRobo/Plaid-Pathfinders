@@ -1,0 +1,6 @@
+function Lab8_TestBench(robot_id)
+    rasp = raspbot(robot_id);
+    rasp.NewMessageFcn = @
+    
+    function processLa
+end

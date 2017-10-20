@@ -83,18 +83,30 @@ classdef RangeImage < handle
         % colorize - [bool] if true, a z-axis will be plotted for each
         % point representing it's distance from the robot which can be
         % used for plotting range with color.
-        function pl = plot(obj)
+        function plot(obj)
             if(colorize)
-                pl = scatter(-obj.data.ys, obj.data.xs, 36, obj.data.ranges);
+                pl = scatter(-obj.data, xs, 36, rs);
             else
-                pl = scatter(-obj.data.ys, obj.data.xs);
+                pl = scatter(-ys, xs);
             end % colorize?
                 axis(2*[-1 1 -1 1])
-                title({'LIDAR Data', '(Robot Reference Frame)'});
-                xlabel('Y-Position [m]');
-                ylabel('X-Position [m]');
+                title('LIDAR Data')
+                xlabel('Negative Y-Position [m]')
+                ylabel('X-Position [m]')
+                set(pl, 'XData', -ys)
+                set(pl, 'YData', xs)
+                if colorize; set(pl, 'ZData', rs); end
             refreshdata
             drawnow
+            
+            if(colorize)
+                set(pl, 'XData', -ys, 'YData', xs, 'ZData', rs) %Update
+            else
+                set(pl, 'XData', -ys, 'YData', xs) %Update
+            end % colorize?
+            
+            refreshdata
+            drawnow limitrate
         end % #plot
     end % RangeImage<-methods(public)
     

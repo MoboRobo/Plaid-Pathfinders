@@ -131,8 +131,8 @@ classdef (Abstract) Trajectory < handle
         hold on
             xs = obj.xs();
             ys = obj.ys();
-            ths = obj.ths();
-            ss = obj.ss();
+%             ths = obj.ths();
+%             ss = obj.ss();
             
             pl = plot(-ys,xs);
             
@@ -140,28 +140,15 @@ classdef (Abstract) Trajectory < handle
                 num_thetas = 30; % Number of Thetas to Plot
                 
                 arc_spacing = obj.s_f / num_thetas; % Arc Distance between each Theta
-                last_theta_s = -arc_spacing; % Arc Dist. at Plotting of Last Theta
+%                 last_theta_s = -arc_spacing; % Arc Dist. at Plotting of Last Theta
                 
-%                 xs = xs(ss>0);
-%                 ys = ys(ss>0);
-%                 ths = ths(ss>0);
-%                 ss = ss(ss>0);
-%                 
 %                 n = 1;
 %                 while n<=num_thetas
 %                     s = n*arc_spacing;
-%                     
-%                     try
-%                         x0 = interp1(ss,xs,s, 'pchip');
-%                         y0 = interp1(ss,ys,s, 'pchip');
-%                         th0 = interp1(ss,ths,s, 'pchip');
-% 
-%                         x1 = x0 + 1.5*arc_spacing*cos(th0);
-%                         y1 = y0 + 1.5*arc_spacing*sin(th0);
-%                         plot(-[y0 y1], [x0 x1], 'g');
-%                     catch error
-%                         % Gridded Interpolant Error
-%                     end
+%                     p0 = obj.p_s(s);
+%                     x1 = p0.X + 1.5*arc_spacing*cos(p0.th);
+%                     y1 = p0.Y + 1.5*arc_spacing*sin(p0.th);
+%                     plot(-[p0.Y y1], [p0.X x1], 'g');
 %                 n = n+1;
 %                 end
                 
