@@ -21,7 +21,7 @@ classdef FeedbackController < handle
         errorIntegralTh_s = 0;
         
         %history of error readings stored as poses
-        error_poses = [pose(0, 0, 0)];
+        error_poses = slidingFifo(10000, pose(0, 0, 0));
         error_times = slidingFifo(10000, 0);
         error_dists = slidingFifo(10000, 0);
         %commanded linear velocities parameterized by time
@@ -168,9 +168,6 @@ classdef FeedbackController < handle
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         function [u_v, u_w] = getControl_s(obj, s)
 
-            if isempty(obj.error_dists) %initialize
-                obj.error_dists = [0];
-            end % isEmpty(lastError)?
             s_last = obj.error_dists(end);
             %% determine reference pose and estimated pose
             refPose = obj.rt.getPoseAtDist(s);
@@ -257,9 +254,8 @@ classdef FeedbackController < handle
             end
             
             % update history of error poses and times
-            obj.error_poses(end+1) = pose(errorX_s, errorY_s, errorTh_s);
-            obj.error_dists(end+1) = s;
-            obj.error
+            obj.error_poses.add(pose(errorX, errorY, errorTh));
+            obj.error_dists.add(s);
             % update 'last' variables
             obj.lastErrorX_s = errorX_s;
             obj.lastErrorY_s = errorY_s;

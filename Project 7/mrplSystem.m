@@ -22,7 +22,8 @@ classdef mrplSystem < handle
     properties(GetAccess = public, SetAccess = public)
      debugging = struct(...
             'delay_plots', 0, ...   % Whether Transient Velocity Plots for Determining should be Made.
-            'error_plots', 0 ...    % Whether Transient Error Plots (from FeedbackController) should be Made.
+            'error_plots', 0, ...    % Whether Transient Error Plots (from FeedbackController) should be Made.
+            'comm_plots', 0 ...     % Whether Transient Comm plots should be made
         );
     end
     properties(GetAccess=private, SetAccess=private)
@@ -89,7 +90,7 @@ classdef mrplSystem < handle
             obj.traj_vec(end+1) = rt;
             %Update plot after completed trajectory
             if(obj.plotting_enabled)
-               obj.update_plot();
+               obj.update_plot(tf);
             end 
         end
 
@@ -101,7 +102,7 @@ classdef mrplSystem < handle
                     'rv', obj.rob.measTraj.V_f, ...
                     't', T ...
                 );
-            end % delay_plots 
+            end % delay_plots
             if obj.debugging.error_plots
                 ep = tf.fbk_controller.error_poses.last();
                 es = norm(ep.poseVec(1:2));
@@ -112,7 +113,7 @@ classdef mrplSystem < handle
         end % #update_plotData
         
         % Update All Desired/Active Plots
-        function update_plot(obj)
+        function update_plot(obj, tf)
             % DEBUGGING PLOTS:
             if obj.debugging.delay_plots
                 delay_plot_data = obj.delay_plot_data
@@ -153,8 +154,27 @@ classdef mrplSystem < handle
                         'Heading, \delta\theta', ...
                         'Position, \deltas' ...
                     );
-            end % delay_plots?
+            end % error_plots?
             
+            if obj.debugging.comm_plots
+                comm_Vs = tf.fbk_controller.comm_V_t.vec()
+                comm_Ws = tf.fbk_controller.comm_W_t.vec()
+                vs = [comm_Vs(:).comm_v];
+                ws = [comm_Ws(:).comm_w];
+                ts = [comm_Vs(:).t];
+                figure();
+                    hold on
+                        plot(ts,vs);
+                        plot(ts,ws);
+                    hold off
+                    title('Transient Command Plots');
+                    xlabel('Time [s]');
+                    ylabel('Command [(m/s)/(rad/s)]');
+                    legend( ...
+                        'Linear Velocity, v', ...
+                        'RotationalVelocity, \deltao' ...
+                    );
+            end % comm_plots?
             % TRAJECTORY PLOTS:
             if isempty(obj.plot_figure)
                 obj.plot_figure = figure();
