@@ -14,11 +14,15 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
         rampLength = 0.05;
     end
     
+    properties (Access = private)
+        
+        poseArray = [];
+        
+    end
     properties(Access = public)
         numSamples = 0;
         distArray = [];
         timeArray = [];
-        poseArray = [];
         curvArray = [];
         vlArray = []
         vrArray = []
@@ -546,6 +550,11 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
                 th = interp1(obj.timeArray,obj.poseArray(3,:),t,'pchip','extrap');
                 p  = pose(x,y,th);
             end
+            
+            if (obj.transformed == 0)
+                %then transform this badboy before we're finished
+                p = obj.poseToWorld(p,obj.init_pose)
+            end
         end  
         
         function parms  = getParms(obj)
@@ -615,6 +624,8 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
             obj.poseArray(1,:) = xs;
             obj.poseArray(2,:) = ys;
             obj.poseArray(3,:) = ths;
+            obj.transformed = 1; %inform callback that the commands have
+                                 %been transformed
         end
         
         % Angular Velocity at Time:

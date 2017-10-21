@@ -120,7 +120,9 @@ classdef Trajectory_TimeCurve < ReferenceTrajectory
                 newY = newPose(2);
                 newTh = offsetTh + oldTh;
                 obj.poses(i) = pose(newX,newY,newTh);
-            end      
+            end
+            obj.transformed = 1; %inform callback that the commands have
+                                 %been transformed
         end
         
         
@@ -190,6 +192,10 @@ classdef Trajectory_TimeCurve < ReferenceTrajectory
         % Pose at Time:
         function p = getPoseAtTime(obj,t)
             p = obj.getPose(t);
+            if (obj.transformed == 0)
+                %then transform this badboy before we're finished
+                p = obj.poseToWorld(p,obj.init_pose)
+            end
         end
         
         %For Inverting Parameterization if Necessary (Computationally

@@ -24,7 +24,8 @@ classdef (Abstract) ReferenceTrajectory < Trajectory
             result = (transformationMatrix * [pr.X; pr.Y; 1])';
             x = result(1); y = result(2);
             offsetTh = p0.th;
-            pw = pose(x, y, pr.th + offsetTh);
+            pw = pose(x, y, ...
+                atan2(sin(pr.th + offsetTh), cos(pr.th + offsetTh)));
         end
         
         

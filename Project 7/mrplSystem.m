@@ -12,8 +12,8 @@ classdef mrplSystem < handle
         plotting_enabled = 1;
        
        
-            delay_plot_data = struct('tv',0, 'rv',0, 't',0);
-            delay_error_data = struct('ex',0, 'ey',0, 'eth',0, 'es',0, 't',0);
+            delay_plot_data = slidingFifo(10000, struct('tv',0, 'rv',0, 't',0));
+            delay_error_data = slidingFifo(10000, struct('ex',0, 'ey',0, 'eth',0, 'es',0, 't',0));
         
         plot_figure;
         errors;
@@ -63,7 +63,9 @@ classdef mrplSystem < handle
             );
             
             rt.init_pose = obj.traj_vec(end).getFinalPose();
-            rt.offsetInitPose();
+            % if you don't call offsetInitPose, Trajectory automatically
+                %transforms each reference pose before handing it to mrpl
+            %rt.offsetInitPose();
 
             tf = Trajectory_Follower(obj.rob, rt);
             tf.fbk_controller.correctiveTime = obj.k_tau;%* rt.getFinalTime();
@@ -97,18 +99,18 @@ classdef mrplSystem < handle
         % Helper Function to Update Data used for Debugging Plots
         function update_plotData(obj, tf, T)
             if obj.debugging.delay_plots
-                obj.delay_plot_data(end+1) = struct( ...
+                obj.delay_plot_data.add(struct( ...
                     'tv', rt.V_t(T), ...
                     'rv', obj.rob.measTraj.V_f, ...
                     't', T ...
-                );
+                ));
             end % delay_plots
             if obj.debugging.error_plots
                 ep = tf.fbk_controller.error_poses.last();
                 es = norm(ep.poseVec(1:2));
-                obj.delay_error_data(end+1) = struct( ...
+                obj.delay_error_data.add(struct( ...
                     'ex',ep.x, 'ey',ep.Y, 'eth',ep.th, 'es',es, 't',T ...
-                );
+                ));
             end % error_plots?
         end % #update_plotData
         
@@ -116,7 +118,7 @@ classdef mrplSystem < handle
         function update_plot(obj, tf)
             % DEBUGGING PLOTS:
             if obj.debugging.delay_plots
-                delay_plot_data = obj.delay_plot_data
+                delay_plot_data = obj.delay_plot_data.vec()
                 tvs = [delay_plot_data(:).tv];
                 rvs = [delay_plot_data(:).rv];
                 ts = [delay_plot_data(:).t];
@@ -132,7 +134,7 @@ classdef mrplSystem < handle
             end % delay_plots?
             
             if obj.debugging.error_plots
-                delay_error_data = obj.delay_error_data
+                delay_error_data = obj.delay_error_data.vec()
                 exs = [delay_error_data(:).ex];
                 eys = [delay_error_data(:).ey];
                 eths = [delay_error_data(:).eth];
