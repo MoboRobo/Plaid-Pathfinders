@@ -2,7 +2,6 @@ classdef FeedbackController < handle
     
     %% properties
     properties (GetAccess = public, SetAccess = private)
-        rt;
         rob;
         
         %error values
@@ -33,6 +32,8 @@ classdef FeedbackController < handle
     end %FeedbackController<-properties(public, private)
     
     properties(GetAccess=public, SetAccess=public)
+        rt; % Reference Trajectory
+        
         % maximum values
         v_max = 0.2;
         w_max = 8;
@@ -94,7 +95,7 @@ classdef FeedbackController < handle
             dt = t - t_last;
 
             %% compute derivatives and integrals            
-            if(dt == 0)
+            if(dt <= 0)
                 errorDerivativeX = 0;
                 errorDerivativeY = 0;
                 errorDerivativeTh = 0;
