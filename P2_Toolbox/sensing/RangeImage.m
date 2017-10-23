@@ -137,7 +137,7 @@ classdef RangeImage < handle
             if nargin>2
                 marginOfLengthError = mle;
             else
-                marginOfLengthError = 0.03; %3 centimeters of leeway
+                marginOfLengthError = 1;% 0.03; %3 centimeters of leeway
             end
             
             len = length(obj.data.ranges); % Number of Valid Range Readings
@@ -244,14 +244,15 @@ classdef RangeImage < handle
                 lambda = eig(inertia);
                 lambda = sqrt(lambda) * 1000.0; % in mm
                 
-                estimatedLength = norm([cloudXs(1)-cloudXs(end), ...
-                                        cloudYs(1)-cloudYs(end)]);
+%                 estimatedLength = norm([cloudXs(1)-cloudXs(end), ...
+%                                         cloudYs(1)-cloudYs(end)]);
+                estimatedLength = sqrt(max(eig([Ixx Ixy; Ixy Iyy])));
                                     
                 % CONDITIONS FOR VALID LINE CANDIDATE:
                 if( lambda(1) < 1.3 ...
                 && (abs(estimatedLength - halfSailLength*2) < marginOfLengthError) ...
                 && origin_shift < halfSailLength/4 )
-                    
+                
                     new_th = atan2(2*Ixy, Iyy-Ixx) / 2.0;
                     % ~"Slightly Underestimate Angle to produce less extreme
                     % angles of approach"~ (use mechanical alignment to
