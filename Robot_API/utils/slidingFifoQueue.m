@@ -1,7 +1,7 @@
 classdef slidingFifoQueue < handle
-    %slidingFifoQueue A quick and dirty FIFO ques done with short vectors
+    %slidingFifoQueue A quick and dirty FIFO queue done with short vectors
     %so that you can run interp1 on the result to interpolate in time.
-    %Intended to be used for modelling delays in real-time system. The
+    %Intended to be used for modelling delays in real-time systems. The
     %length of the queue should be small for performance reasons.
     
     % interp1 requires that the "x" array be monotone and have unique

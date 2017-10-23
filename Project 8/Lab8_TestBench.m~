@@ -1,44 +1,68 @@
 function Lab8_TestBench(robot_id)
+global fig
     %% SETUP ROBOT
     rasp = raspbot(robot_id, [0; 0; pi/2]);
     rob = P2_Robot(rasp);
-    if(~strcmp(robot_id,'sim'))
-        rob.core.togglePlot(); %Turn on map plotting for non-simulated robots
-        RangeImage.INDEX_OFFSET(5);
-    end
     
     %% SETUP MAPPING
     if(strcmp(robot_id,'sim'))
         bounds = 2.5*[0.5 0; 0.5 1; -0.5 1; -0.5 0]; % Inverted U-Shaped Container
-        block = ShapeGen.rect(0.127,0.038);
+        block = ShapeGen.rect(0.038,0.127);
         wm = WorldMap(rob, bounds);
             % Create a Ring of Blocks around Origin.
-            r = 0.75;
-            n = 10;
-            ths = (0 : pi/2/n : pi/2);
+            r_min = 0.42;
+            r_max = 1;
+            n = 6;
+            ths = (0 : pi/2/n : pi/2 + pi/2/n); % Go one block beyond first quadrant
             for th = ths
                 obs = wm.addObstacle(block);
-                obs.pose = [r*cos(th) r*sin(th) th];
+                r_rel = r_min + (r_max-r_min) * (th / (pi/2)); % Create Spiral
+                obs.pose = [r_rel*cos(th) r_rel*sin(th) th];
             end
         wm.createMap();
     end
     
     %% INITIALIZE
-    fig = figure();
+    fig = gcf;
     rob.core.laser.NewMessageFcn = @processLaserData;
     rob.core.startLaser();
     
     pause(1); % Wait for system to enter steady-state
     
-    while(1)
+    clk = Clock();
+    while(clk.time() < 20)
         rob.moveAt(0.1,0.2);
+        clk.time();
+        
+        %% Plot Laser Data
+        if( (isempty(last_plot) || clk.time()>1/hz) && laser_data_avail)
+            
+     pause(0.01); % CPU Relief
     end
     
-    pause
+end
+
+function processLaserData(~, evnt)
+global fig
+persistent period T_last_plot clk
+    % Default Values
+    if isempty(clk)
+        period = 0.1;
+        clk = Clock();
+        T_last_plot = clk.time();
+    end
     
-    function processLaserData(~, evnt)
+    % Update Lidar Plot Every "period" seconds (since /end/ of last plot).
+    T = clk.time();
+    if(T - T_last_plot > 0)
         r_img = RangeImage(evnt.Ranges);
         figure(fig);
-        r_img.plot();
-    end
+        subplot(2,1,2);
+        r_img.plot(1);
+        axis equal
+        grid on
+        grid minor
+        subplot(2,1,1);
+    T_last_plot = clk.time();
+    end % Dt>period?
 end

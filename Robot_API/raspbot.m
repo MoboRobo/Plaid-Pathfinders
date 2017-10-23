@@ -11,6 +11,10 @@ classdef raspbot < handle
 		laser;
 		sim_robot;
 		map;
+        camera;
+        speech_pub;
+%        fileWrite_pub;
+        playFile_pub;
     end
     
     properties (Hidden, GetAccess='private', SetAccess='private')
@@ -18,7 +22,7 @@ classdef raspbot < handle
 		update_timer;
 		stamper;
 		last_update;
-        
+        vel_timer;
         last_vel_time = 0;
 
 		ph = [-1 -1]; %plot handle
@@ -49,7 +53,7 @@ classdef raspbot < handle
         default_gateway = '192.168.0.1';
         retries = 5;
 		
-		sim_freq = 90;		
+		sim_freq = 90;	
 		%Need to update to 5?	
 		% enc_prescaler = 5; % 50Hz enc updates	
 		enc_prescaler = 5; % 30 Hz enc updates
@@ -82,7 +86,7 @@ classdef raspbot < handle
             fname = which('raspbot.m');
             fname = strrep(fname,'raspbot.m','');
             addpath(genpath(fname));
-            
+
             if(nargin > 1)
                 if( all( size(pose) == [3 1] ) )
                     initialPose = pose;
@@ -137,13 +141,17 @@ classdef raspbot < handle
                     throw(MException('RASPBOT:NoNetworkConnection', 'ROS Master not reachable'));
                 end
                 
-                tic;
-                r.last_vel_time = toc;
+                r.vel_timer = tic();
+                r.last_vel_time = toc(r.vel_timer);
                 r.vel_pub=rospublisher('/cmd_vel', rostype.geometry_msgs_Twist);
                 r.laser_pub=rospublisher('/laser',rostype.std_msgs_Int8);
                 r.fork_pub=rospublisher('/forks',rostype.std_msgs_Int8);
                 r.encoders=rossubscriber('/enc');
                 r.laser=rossubscriber('/scan');
+%                 r.camera=rossubscriber('/camera/image/compressed');
+%                 r.speech_pub=rospublisher('/textToSpeech', rostype.std_msgs_String);
+%                r.fileWrite_pub=rospublisher('/fileWrite', 'audio_receiver/audioFile');
+%                 r.playFile_pub=rospublisher('/playFile', rostype.std_msgs_String);
             end
         end
         
@@ -163,12 +171,14 @@ classdef raspbot < handle
 		
 		function forksUp(r)
 			if r.sim
-				warning('No forks in simulation... yet');
+                fprintf('forks up !\n');
+				%warning('No forks in simulation... yet');
 			else
 				if r.ws%.isvalid
 					msg = rosmessage(r.fork_pub);
 					msg.Data = 180;
-					send(r.fork_pub,msg);
+					%obj.context(r.fork_pub,msg);
+                    send(r.fork_pub,msg);
 				else
 					error('Robot Connection is not valid')
 				end
@@ -177,7 +187,8 @@ classdef raspbot < handle
 		
 		function forksDown(r)
 			if r.sim
-				warning('No forks in simulation... yet');
+				fprintf('forks down !\n');
+                %warning('No forks in simulation... yet');
 			else
 				if r.ws%.isvalid
 					msg = rosmessage(r.fork_pub);
@@ -221,6 +232,10 @@ classdef raspbot < handle
         end
         
 		function sendVelocity(r, v_l, v_r)
+            if (isnan(v_l) || isnan(v_r))
+                r.stop();
+                error('You sent a NaN velocity, robot stopping');            
+            end
 			if( abs(v_l) > r.max_vel || abs(v_r) > r.max_vel)
                 %fprintf('raspbot: velocity was limited\n');
 				if(r.limit_wheel_speeds)
@@ -251,8 +266,10 @@ classdef raspbot < handle
                 r.fifoMutex = 0;
 				r.dist_since_cmd = 0;
             else
-                t = toc;
-                if((t - r.last_vel_time) > r.min_vel_period)        
+                t = toc(r.vel_timer);
+                  
+                if((t - r.last_vel_time) > r.min_vel_period)
+                
                     msg = rosmessage(r.vel_pub);
 
                     msg.Linear.X = ((v_l + v_r)/2);
@@ -273,7 +290,12 @@ classdef raspbot < handle
 		
         function stop(r)
             if(r.sim)
-                r.sim_robot.sendVelocity(0.0, 0.0);
+                %fprintf('raspbot: sending stop\n');
+                r.fifoMutex = 1;
+				r.sim_robot.sendVelocity(0.0, 0.0);
+                r.fifoMutex = 0;
+				r.dist_since_cmd = 0;
+                r.vel_cmd = [0.0 0.0];
             else
                 msg = rosmessage(r.vel_pub);
 
@@ -294,7 +316,56 @@ classdef raspbot < handle
 			if( toc(r.last_update) > 1/r.sim_freq)
 				r.simUpdate(0,0);
 			end
-        end		
+        end
+        
+        function say(r, str)
+             if (r.sim)
+                 warning('No speakers in simulation');
+             elseif ischar(str)
+                 msg = rosmessage(r.speech_pub);
+                 msg.Data = str;
+                 send(r.speech_pub,msg);
+             else
+                 warning('Function input must be a string');
+             end
+         end
+         
+%          function play(r, str)
+%              if (r.sim)
+%                  [y, f] = audioread(str);
+%                  sound(y,f);
+%              else
+%                  msg = rosmessage(r.playFile_pub);
+%                  msg.Data = str;
+%                  send(r.playFile_pub,msg);
+%              end
+%          end
+%         
+%          function sendSoundFile(r, localPath, remotePath)
+%             if (r.sim)
+%                 return
+%             elseif isempty(localPath(localPath == '.'))
+%                 warning('Did you remember to add .wav to the local path?')
+%             elseif isempty(remotePath(remotePath == '.'))
+%                 warning('Did you remember to add .wav to the remote path?')
+%             elseif localPath(end-2:end) ~= 'wav'
+%                 warning('File must be a .wav file')
+%             else
+%                 [data, ~] = audioread(localPath, 'native');
+%                 data = int16(data);
+%                 msg = rosmessage(r.fileWrite_pub);
+%                 msg.FileName = filename;
+%                 msg.FileData = data(:,1);
+%                 send(r.fileWrite_pub,msg);
+%             end
+%          end
+         
+         function image = captureImage(r)
+             img = r.camera.LatestMessage;
+             img.Format = 'bgr8; jpeg compressed bgr8';
+             image = readImage(img);
+             imshow(image)
+         end
         
         % Add a map for use in laser simulation
 		function genMap(r, obs)
@@ -328,18 +399,18 @@ classdef raspbot < handle
 			r.sim_robot.updateState();
 			
 			%Need to update to return in terms of metres
-			el = (r.sim_robot.encoders.LatestMessage.Vector.Y- r.last_l);
+			el = (r.sim_robot.encoders.LatestMessage.Vector.X- r.last_l);
 			%el = (r.sim_robot.encoders.LatestMessage.Left - r.last_l)/1000;
 			
 			%Same update needed as above.
-			er = (r.sim_robot.encoders.LatestMessage.Vector.X - r.last_r);
+			er = (r.sim_robot.encoders.LatestMessage.Vector.Y - r.last_r);
 			%er = (r.sim_robot.encoders.LatestMessage.Right - r.last_r)/1000;
 			
 			%Need to update for new API
-			r.last_l = r.sim_robot.encoders.LatestMessage.Vector.Y;
+			r.last_l = r.sim_robot.encoders.LatestMessage.Vector.X;
 			%r.last_l = r.sim_robot.encoders.LatestMessage.Left;
 			
-			r.last_r = r.sim_robot.encoders.LatestMessage.Vector.X;
+			r.last_r = r.sim_robot.encoders.LatestMessage.Vector.Y;
 			%r.last_r = r.sim_robot.encoders.LatestMessage.Right;
 			
 			d = max(abs(el),abs(er));
@@ -367,7 +438,10 @@ classdef raspbot < handle
                             robotKinematicModel.laser_l.*[cos(l_pose(3)); sin(l_pose(3))];
                         
                         [r.laser.LatestMessage.Ranges,~] = ...
-                            r.map.raycast(l_pose,r.laser_range,deg2rad(0:359));
+                              r.map.raycast(l_pose,r.laser_range,deg2rad(-5:354)); 
+%                             r.map.raycast(l_pose,r.laser_range,deg2rad(0:359));
+% Added 5 deg CLOCKWISE offset to simulated LIDAR to reflect the offset  present on the physical robots 
+% Max Hu 9/19/17
                     else
                         r.laser.LatestMessage.Ranges = zeros(360,1);
                     end

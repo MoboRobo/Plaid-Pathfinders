@@ -1,0 +1,12 @@
+Manifest-Version: 1.0
+Export-Package: audio_receiver;version="1.1.01";uses:="org.ros.interna
+ l.message"
+Bundle-Version: 1.1.01
+Tool: Bnd-2.1.0.20130426-122213
+Bundle-Name: audio_receiver
+Bnd-LastModified: 1504121264789
+Created-By: 1.7.0_60 (Oracle Corporation)
+Bundle-ManifestVersion: 2
+Bundle-SymbolicName: org.ros.rosjava_messages.audio_receiver
+Import-Package: org.ros.internal.message
+

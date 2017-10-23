@@ -3,6 +3,7 @@ classdef lineMap < handle
     
     properties (Constant = true)
         sampleResln = 0.05; % cm
+        doIncidence = false; % added by Al Nov 20, 2016
     end
     
     properties (GetAccess = public, SetAccess = private)
@@ -111,30 +112,36 @@ classdef lineMap < handle
             
             % angles of incidence to each line segment
             % currently has positive/ negative ambiguity
-            alpha = zeros(length(p2x),1);
-            for i = 1:length(p2x)
-                params = ParametrizePts2ABC(lc(i,1:2),lc(i+1,1:2));
-                alpha(i) = atanLine2D(params(1),params(2));
-            end
-            incidence_angles = repmat(alpha,1,length(ang_range))-repmat(mod(ang_range+pose(3),pi),length(alpha),1); 
-            incidence_angles(incidence_angles == 0) = pi;
-            incidence_angles = incidence_angles-pi/2*ones(size(incidence_angles)).*sign(incidence_angles);
-                                                
+            if(lineMap.doIncidence)
+                alpha = zeros(length(p2x),1);
+                for i = 1:length(p2x)
+                    params = ParametrizePts2ABC(lc(i,1:2),lc(i+1,1:2));
+                    alpha(i) = atanLine2D(params(1),params(2));
+                end
+                incidence_angles = repmat(alpha,1,length(ang_range))-repmat(mod(ang_range+pose(3),pi),length(alpha),1); 
+                incidence_angles(incidence_angles == 0) = pi;
+                incidence_angles = incidence_angles-pi/2*ones(size(incidence_angles)).*sign(incidence_angles);
+            end                                
             % remove spurious line segments between points not belonging to same
             % object
             ng = cumsum(cellfun(@(x) size(x,1), {obj.objects(:).line_coords}'));
             r(ng(1:end-1),:) = [];
-            incidence_angles(ng(1:end-1),:) = [];
-            
+            if(lineMap.doIncidence)
+                incidence_angles(ng(1:end-1),:) = [];
+            end
             % get minimum range and angle to that segment
             [ranges, min_sub] = min(r);
-            ids = sub2ind(size(incidence_angles),min_sub,1:length(ang_range));
-            incidence_angles = incidence_angles(ids);
-            incidence_angles(isnan(ranges)) = nan;
-            ranges( isnan(ranges) ) = 0;
-            
-            % return absolute value of incidence angles
-            incidence_angles = abs(incidence_angles);
+            if(lineMap.doIncidence)
+                ids = sub2ind(size(incidence_angles),min_sub,1:length(ang_range));
+                incidence_angles = incidence_angles(ids);
+                incidence_angles(isnan(ranges)) = nan;
+                ranges( isnan(ranges) ) = 0;
+
+                % return absolute value of incidence angles
+                incidence_angles = abs(incidence_angles);
+            else
+                incidence_angles = zeros(size(ranges));
+            end
         end
         
         function [ranges,angles] = raycastNoisy(lm, pose, max_range, ang_range,choice)

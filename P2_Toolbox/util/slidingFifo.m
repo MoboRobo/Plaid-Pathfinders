@@ -45,9 +45,11 @@ classdef slidingFifo < GenericDataContainer
                     % empty of that class:
                     obj.numElements = 1;
                 else
-                    obj.que(1:maxElements) = double.empty;
+                    obj.que(1:maxElements) = 0.0; % double by default.
                     obj.numElements = 0;
                 end
+            else
+                error('Class slidingFifo Constructor must be supplied at least one argument');
             end % nargin>0?
         end 
         

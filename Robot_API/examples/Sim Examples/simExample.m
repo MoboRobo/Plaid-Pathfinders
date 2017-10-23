@@ -14,7 +14,6 @@ obstacle.lines = [1.6 1.4; 1.6 1.6; 1.4 1.6; 1.4 1.4; 1.6 1.4];
 % Environments are specified as lineMap instances.
 % lineMap constructor takes an array of lineObject instances as input.
 map = lineMap([walls obstacle]);
-
 % Show the map.
 hf = map.plot();
 
@@ -25,9 +24,10 @@ if ishandle(hf)
 end
 
 % By default robot starts at pose x = 0, y = 0, theta = 0.
-%rob = neato('sim');
+%rob = raspbot('sim');
 % Start at desired pose.
 rob = raspbot('sim',[1; 1.5; 0]);
+
 
 %% Add map to simulator.
 % neato.genMap takes an array of lineObject instances as input. 

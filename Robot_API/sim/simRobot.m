@@ -145,7 +145,7 @@ classdef simRobot < handle
         
         function checkRealTimeMode(obj,mode)
         % Panics if the wrong time is used in a public method. Its almost
-        % cretainly not what they intended.
+        % certainly not what they intended.
             if(obj.realTimeMode ~= mode)
             	err = MException('simRobot:InvalidMode', ...
                     'This Method Cannot be Used in this Mode');

@@ -80,28 +80,49 @@ classdef RangeImage < handle
         % Plots the valid sensor data stored in this instance of
         % RangeImage. Effective drop in for a standard #plot function
         % (doesn't call figure, subplot, &c.)
+        % plot_obj - the data will be plotted with the given object instead
+        % of creating a new one if this argument is provided.
         % colorize - [bool] if true, a z-axis will be plotted for each
         % point representing it's distance from the robot which can be
         % used for plotting range with color.
-        function pl = plot(obj, colorize)
-            if(nargin>1 && colorize)
-                pl = scatter(-obj.data.ys, obj.data.xs, 36, obj.data.ranges);
-            else
-                xs = obj.data.xs;
-                ys = obj.data.ys;
-                pl = scatter(-ys, xs);
-            end % colorize?
-                axis(2*[-1 1 -1 1])
-                title({'LIDAR Data', '(Robot Reference Frame)'});
-                xlabel('Y-Position [m]');
-                ylabel('X-Position [m]');
-            refreshdata
-            drawnow
+        function pl = plot(obj, colorize, plot_obj)
+            xs = obj.data.xs;
+            ys = obj.data.ys;
+            rs = obj.data.ranges;
+            
+            if nargin>1 % Colorize setting provided
+                if(nargin<3) % Create new plot
+                    if colorize
+                        pl = scatter(ys, xs, 36, rs);
+                    else
+                        pl = scatter(ys, xs, 36);
+                    end
+                    set(gca, 'Xdir', 'reverse'); % Ensure Robot Y-Axis Points Left
+                else % Use plot handle given
+                    pl = plot_obj;
+                    if(colorize)
+                        set(pl, 'XData', ys, 'YData', xs, 'CData', rs);
+                    else
+                        set(pl, 'XData', ys, 'YData', xs);
+                    end % colorize?
+                end % nargin<2?
+            else % colorize data not provided and new plot must be made.
+                pl = scatter(ys,xs,36);
+                set(gca, 'Xdir', 'reverse'); % Ensure Robot Y-Axis Points Left
+            end % nargin>1?
         end % #plot
+        
+        % Locates Candidates for Valid Contiguous Line Segments within the
+        % Validated Data Set
+        function findLineCandidate(obj)
+            
+        end
     end % RangeImage<-methods(public)
     
     
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %% METHODS - STATICS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     methods (Static)
         %% Clean Image
         % Cleans the Image data by tossing out values above max_rng and 
@@ -125,7 +146,7 @@ classdef RangeImage < handle
             idx = (1:pixels); %Instruction: linspace(2,pixels,pixels)';
             idx = idx(valid);
             
-            ang = (idx - 1)*(pi/180) - RangeImage.INDEX_OFFSET(); %%%%%%%%%%%%% Check against rot. dir.
+            ang = (idx - 1)*(pi/180) - deg2rad(RangeImage.INDEX_OFFSET());
         end % #cleanImage
         
         %% Index to Bearing
