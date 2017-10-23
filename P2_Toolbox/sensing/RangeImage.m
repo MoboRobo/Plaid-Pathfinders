@@ -137,7 +137,7 @@ classdef RangeImage < handle
             if nargin>2
                 marginOfLengthError = mle;
             else
-                marginOfLengthError = 1;% 0.03; %3 centimeters of leeway
+                marginOfLengthError = 0.03; %5 centimeters of leeway
             end
             
             len = length(obj.data.ranges); % Number of Valid Range Readings
@@ -213,9 +213,9 @@ classdef RangeImage < handle
                 % (probably should also be smaller than 2*w_sail so the
                 % mean isn't shifted over to any outliers causing the
                 % pallet to be rejected. (Also less pts -> faster).
-                search_radius = 1.6*halfSailLength;
+                search_radius = 1.45*halfSailLength + marginOfLengthError/2;
                 [cloudXs, cloudYs] = getPixelsWithin(pixelIndex, search_radius);
-                [cloudXs, cloudYs] = rejectOutliers(cloudXs, cloudYs);
+                %[cloudXs, cloudYs] = rejectOutliers(cloudXs, cloudYs);
                 
                 numPoints = length(cloudXs);
                 if numPoints < minNumPoints
@@ -244,9 +244,9 @@ classdef RangeImage < handle
                 lambda = eig(inertia);
                 lambda = sqrt(lambda) * 1000.0; % in mm
                 
-%                 estimatedLength = norm([cloudXs(1)-cloudXs(end), ...
-%                                         cloudYs(1)-cloudYs(end)]);
-                estimatedLength = sqrt(max(eig([Ixx Ixy; Ixy Iyy])));
+                estimatedLength = norm([cloudXs(1)-cloudXs(end), ...
+                                        cloudYs(1)-cloudYs(end)]);
+%                 estimatedLength = sqrt(max(eig([Ixx Ixy; Ixy Iyy])));
                                     
                 % CONDITIONS FOR VALID LINE CANDIDATE:
                 if( lambda(1) < 1.3 ...
