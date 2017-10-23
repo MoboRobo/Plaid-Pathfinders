@@ -195,8 +195,8 @@ classdef RangeImage < handle
                 n = length(cXs);
                 i = 1;
                 while i<=n
-                    if( cXs > (Q1x-rngX) && cXs < (Q3x+rngX) ...
-                     && cYs > (Q1y-rngY) && cYs < (Q3y+rngY) )
+                    if( cXs(i) > (Q1x-rngX) && cXs(i) < (Q3x+rngX) ...
+                     && cYs(i) > (Q1y-rngY) && cYs(i) < (Q3y+rngY) )
                         bulkXs(end+1) = cXs(i);
                         bulkYs(end+1) = cYs(i);
                     end
@@ -207,8 +207,14 @@ classdef RangeImage < handle
             
             pixelIndex = 1;
             while pixelIndex <= len
-                [cloudXs, cloudYs] = getPixelsWithin(pixelIndex, halfSailLength);
-                rejectOutliers
+                
+                % *Have search window be larger than w_sail so that larger
+                % widths can be observed and rejected.
+                % (probably should also be smaller than 2*w_sail so the
+                % mean isn't shifted over to any outliers causing the
+                % pallet to be rejected. (Also less pts -> faster).
+                [cloudXs, cloudYs] = getPixelsWithin(pixelIndex, 1.6*halfSailLength);
+                [cloudXs, cloudYs] = rejectOutliers(cloudXs, cloudYs);
                 
                 numPoints = length(cloudXs);
                 if numPoints < minNumPoints
@@ -235,6 +241,8 @@ classdef RangeImage < handle
                         marginOfLengthError))
                     
                     new_th = atan2(2*Ixy, Iyy-Ixx) / 2.0;
+                    % "Slightly Underestimate Angle to produce less extreme
+                    % angles of approach
                     new_pose = pose(centerX, centerY, new_th);
                     obj.line_candidates.poses = [obj.line_candidates.poses new_pose];
                     obj.line_candidates.lengths = [obj.line_candidates.lengths estimatedLength];

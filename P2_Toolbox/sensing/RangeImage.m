@@ -195,8 +195,8 @@ classdef RangeImage < handle
                 n = length(cXs);
                 i = 1;
                 while i<=n
-                    if( cXs > (Q1x-rngX) && cXs < (Q3x+rngX) ...
-                     && cYs > (Q1y-rngY) && cYs < (Q3y+rngY) )
+                    if( cXs(i) > (Q1x-rngX) && cXs(i) < (Q3x+rngX) ...
+                     && cYs(i) > (Q1y-rngY) && cYs(i) < (Q3y+rngY) )
                         bulkXs(end+1) = cXs(i);
                         bulkYs(end+1) = cYs(i);
                     end
@@ -207,12 +207,14 @@ classdef RangeImage < handle
             
             pixelIndex = 1;
             while pixelIndex <= len
+                
                 % *Have search window be larger than w_sail so that larger
                 % widths can be observed and rejected.
                 % (probably should also be smaller than 2*w_sail so the
                 % mean isn't shifted over to any outliers causing the
                 % pallet to be rejected. (Also less pts -> faster).
-                [cloudXs, cloudYs] = getPixelsWithin(pixelIndex, 1.6*halfSailLength);
+                search_radius = 1.6*halfSailLength;
+                [cloudXs, cloudYs] = getPixelsWithin(pixelIndex, search_radius);
                 [cloudXs, cloudYs] = rejectOutliers(cloudXs, cloudYs);
                 
                 numPoints = length(cloudXs);
@@ -220,9 +222,18 @@ classdef RangeImage < handle
                     %skip to next iteration
                     break;
                 end
+                
+                originX = getIth(obj.data.xs, pixelIndex, len);
+                originY = getIth(obj.data.ys, pixelIndex, len);
+                
                 centerX = sum(cloudXs) / numPoints;
                 centerY = sum(cloudYs) / numPoints;
-                %get points centered around origin
+                
+                % Amount Center of Data has Shifted from where Search was
+                % Originated.
+                origin_shift = norm([originX-centerX, originY-centerY]);
+                
+                %Center points around origin
                 cloudXs = cloudXs - centerX;
                 cloudYs = cloudYs - centerY;
 
@@ -232,14 +243,22 @@ classdef RangeImage < handle
                 inertia = [Ixx Ixy; Ixy Iyy] / length(cloudXs);
                 lambda = eig(inertia);
                 lambda = sqrt(lambda) * 1000.0; % in mm
+                
                 estimatedLength = norm([cloudXs(1)-cloudXs(end), ...
                                         cloudYs(1)-cloudYs(end)]);
-                
+                                    
                 % CONDITIONS FOR VALID LINE CANDIDATE:
-                if(lambda(1) < 1.3 && (abs(estimatedLength - halfSailLength*2) < ...
-                        marginOfLengthError))
+                if( lambda(1) < 1.3 ...
+                && (abs(estimatedLength - halfSailLength*2) < marginOfLengthError) ...
+                && origin_shift < halfSailLength/4 )
                     
                     new_th = atan2(2*Ixy, Iyy-Ixx) / 2.0;
+                    % ~"Slightly Underestimate Angle to produce less extreme
+                    % angles of approach"~ (use mechanical alignment to
+                    % correct):
+                    underest_scale = 0.08; %round down to nearest ~half degree (little less)
+                    new_th = underest_scale*floor(new_th/underest_scale);
+                    
                     new_pose = pose(centerX, centerY, new_th);
                     obj.line_candidates.poses = [obj.line_candidates.poses new_pose];
                     obj.line_candidates.lengths = [obj.line_candidates.lengths estimatedLength];
@@ -248,6 +267,8 @@ classdef RangeImage < handle
             pixelIndex = pixelIndex+1;
             end
             
+            % Returns the Ith Data from the Array while Ensuring
+            % Wrap-Around
             function elem = getIth(array, i, len)
                 elem = array( mod(i-1, len) + 1);
             end % #getIth

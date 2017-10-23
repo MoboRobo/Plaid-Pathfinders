@@ -12,7 +12,7 @@ global laser_plotting_data
             % Create a Ring of Blocks around Origin.
             r_min = 0.42;
             r_max = 1;
-            n = 6;
+            n = 3;
             ths = (0 : pi/2/n : pi/2 + pi/2/n); % Go one block beyond first quadrant
             for th = ths
                 obs = wm.addObstacle(block);
