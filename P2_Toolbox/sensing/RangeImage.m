@@ -59,6 +59,13 @@ classdef RangeImage < handle
             'xs', 0, ...        % Vector of X-Positions Associated with Each Valid Range Pixel
             'ys', 0 ...         % Vector of Y-Positions Associated with Each Valid Range Pixel
         );
+    
+        
+        % Line (Pallet) Candidates within Valid Range Data:
+        line_candidates = struct( ...
+            'poses', pose(0,0,0), ...   % Poses of Lines in Robot Frame
+            'lengths', 0 ...            % Lengths of Lines
+        );
         
     end % RangeImage<-properties(public,private)
     
@@ -113,9 +120,35 @@ classdef RangeImage < handle
         end % #plot
         
         % Locates Candidates for Valid Contiguous Line Segments within the
-        % Validated Data Set
-        function findLineCandidate(obj)
-            
+        % Validated Data Set. Returns the pose vectors and corresponding
+        % lengths of each detected line segment (pallet).
+        function findLineCandidates(obj)
+            obj.line_candidates.poses = [ [0.1 0.2 pi/4]; [0.2 0.5 pi/2]; [-0.2 -0.1 pi/6] ];
+            obj.line_candidates.lengths = [0.08 0.06 0.03];
+        end
+        
+        % Plots Every Line Candidate within the Validated Data Set (in the 
+        % Robot Frame).
+        function plotLineCandidates(obj)
+            i = 1;
+            n = length(ls);
+            hold on
+            while i<n
+                p = obj.line_candidates.poses(:,i);
+                l = obj.line_candidates.lengths(i);
+
+                th = p(3);
+
+                x0 = p(1) - l*cos(th)/2;
+                x1 = p(1) + l*cos(th)/2;
+
+                y0 = p(1) - l*sin(th)/2;
+                y1 = p(1) + l*sin(th)/2;
+                    plot([y0 y1], [x0 x1]);
+            i = i+1;
+            end
+            hold off
+            set(gca, 'Xdir', 'reverse'); % Ensure Robot Y-Axis Points Left
         end
     end % RangeImage<-methods(public)
     

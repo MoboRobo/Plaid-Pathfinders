@@ -1,5 +1,5 @@
 function Lab8_TestBench(robot_id)
-global fig
+global laser_plotting_data
     %% SETUP ROBOT
     rasp = raspbot(robot_id, [0; 0; pi/2]);
     rob = P2_Robot(rasp);
@@ -22,47 +22,62 @@ global fig
         wm.createMap();
     end
     
-    %% INITIALIZE
-    fig = gcf;
-    rob.core.laser.NewMessageFcn = @processLaserData;
+    %% INITIALIZE        
+    laser_plotting_data = struct( ...
+        'delay_width',0.1, ...  % Min amount of time /between/ lidar plots
+        'last_time',0, ...      % Last time lidar data was plotted.
+...%         'new_data',0, ...       % Flag for Availability of New Lidar Data 
+        'raw_data',0, ...        % Last Captured Raw Lidar Data
+        'colorize',0 ...         % Whether Plotted Data should be Colorized (by range)
+    );
+
+    fig = figure();
+        grid on
+        grid minor
+    
+        laser_plotting_data.colorize = 1;
+        if laser_plotting_data.colorize
+            plot_obj = scatter(0,0,36,0);
+        else
+            plot_obj = scatter(0,0,36);
+        end
+        set(gca, 'Xdir', 'reverse'); % Ensure Robot Y-Axis Points Left
+
+        title({'LIDAR Data', '(Robot Reference Frame)'});
+        xlabel('Y-Position [m]');
+        ylabel('X-Position [m]');
+        axis(1.2*[
+            -RangeImage.MAX_RANGE RangeImage.MAX_RANGE ...
+            -RangeImage.MAX_RANGE RangeImage.MAX_RANGE ...
+        ]);
+        
     rob.core.startLaser();
+    rob.core.laser.NewMessageFcn = @processLaserData;
     
     pause(1); % Wait for system to enter steady-state
     
     clk = Clock();
-    while(clk.time() < 20)
-        rob.moveAt(0.1,0.2);
-        clk.time();
+    while(clk.time() < 30)
+        V = 0.15; rho = 0.5;
+        rob.moveAt(V,V/rho);
         
         %% Plot Laser Data
-        if( (isempty(last_plot) || clk.time()>1/hz) && laser_data_avail)
+        % Update Lidar Plot Every "period" seconds (since /end/ of last plot).
+        if( clk.time() - laser_plotting_data.last_time > laser_plotting_data.delay_width )
+            r_img = RangeImage(laser_plotting_data.raw_data);
+            figure(fig);
+            r_img.plot(laser_plotting_data.colorize, plot_obj);
             
+            findLineCandidates
+            
+        laser_plotting_data.last_time = clk.time();
+        end
      pause(0.01); % CPU Relief
-    end
+    end % while
     
-end
+end % #Lab8_TestBench
 
 function processLaserData(~, evnt)
-global fig
-persistent period T_last_plot clk
-    % Default Values
-    if isempty(clk)
-        period = 0.1;
-        clk = Clock();
-        T_last_plot = clk.time();
-    end
-    
-    % Update Lidar Plot Every "period" seconds (since /end/ of last plot).
-    T = clk.time();
-    if(T - T_last_plot > 0)
-        r_img = RangeImage(evnt.Ranges);
-        figure(fig);
-        subplot(2,1,2);
-        r_img.plot(1);
-        axis equal
-        grid on
-        grid minor
-        subplot(2,1,1);
-    T_last_plot = clk.time();
-    end % Dt>period?
+global laser_plotting_data
+    laser_plotting_data.raw_data = evnt.Ranges;
 end

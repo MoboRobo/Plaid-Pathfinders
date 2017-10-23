@@ -51,7 +51,7 @@ classdef Trajectory_Follower < handle
         % Commands the Robot to assume the Motion it should have at
         % Trajectory Time, t
         function follow_update_t(obj, t)
-            if(obj.fbk_trim)
+            if(obj.fbk_trim && t > 0.15*obj.rt.getFinalTime())
                 u_t = obj.u_comm_t(t);
             else
                 obj.u_fbk_t(t); % Just callin' it (so errors are still computed)

@@ -68,6 +68,9 @@ global laser_plotting_data
             figure(fig);
             r_img.plot(laser_plotting_data.colorize, plot_obj);
             
+            r_img.findLineCandidates();
+            r_img.plotLineCandidates();
+            
         laser_plotting_data.last_time = clk.time();
         end
      pause(0.01); % CPU Relief
