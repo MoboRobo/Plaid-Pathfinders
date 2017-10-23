@@ -33,16 +33,16 @@ classdef P2_Robot < handle
         
         % History of Encoder Readings [m]
         % Formatted as: [[sl_0,sr_0, t_0]; ... ]:
-        hist_enc = [struct('s_l',0, 's_r',0, 't',0)];
+        hist_enc = slidingFifo(10000, struct('s_l',0, 's_r',0, 't',0));
         % History of Robot Wheel Velocities, determined from Sensor Readings.
         % Formatted as: [[vl_0,vr_0]; ... ]
-        hist_estWheelVel = [struct('v_l',0, 'v_r',0)];
+        hist_estWheelVel = slidingFifo(10000, struct('v_l',0, 'v_r',0));
         % Robot Trajectory determined by Encoders (Odometry), RobotTrajectory:
         encTraj;
         
         % History of Velocity Commands Issued to the Robot:
         % Formatted as: [[vl_0,vr_0,V,0,omega,0,t_0]; ... ]
-        hist_commWheelVel = [struct('v_l',0, 'v_r',0)];
+        hist_commWheelVel = slidingFifo(10000, struct('v_l',0, 'v_r',0));
         % Robot Commanded Trajectory (Odometry), RobotTrajectory:
         commTraj;
         
@@ -121,7 +121,7 @@ classdef P2_Robot < handle
             end % nargin>1
             
             evnt = obj.core.encoders.LatestMessage;
-            obj.hist_enc(1) = struct('s_l',evnt.Vector.X, 's_r',evnt.Vector.Y, 't',(evnt.Header.Stamp.Sec + evnt.Header.Stamp.Nsec/1e9));
+            obj.hist_enc.que(1) = struct('s_l',evnt.Vector.X, 's_r',evnt.Vector.Y, 't',(evnt.Header.Stamp.Sec + evnt.Header.Stamp.Nsec/1e9));
             
             obj.encTraj = RobotTrajectory();
             obj.commTraj = RobotTrajectory();
@@ -189,11 +189,11 @@ classdef P2_Robot < handle
         
         % Resets All Robot State Data
         function resetStateData(obj)
-            obj.hist_enc(end+1) = obj.hist_enc(1);
-            obj.hist_estWheelVel(end+1) = obj.hist_estWheelVel(1);
+            obj.hist_enc.add(obj.hist_enc.que(1));
+            obj.hist_estWheelVel.add(obj.hist_estWheelVel(1));
             obj.encTraj.reset();
             
-            obj.hist_commWheelVel = obj.hist_commWheelVel(1);
+            obj.hist_commWheelVel.add(obj.hist_commWheelVel.que(1));
             obj.commTraj.reset();
             
             obj.curr_V = 0;
@@ -211,13 +211,13 @@ classdef P2_Robot < handle
             t = event.Header.Stamp.Sec + event.Header.Stamp.Nsec/1e9;
             
             %Compute Amount of Time Elapsed since Previous Measurement
-            dt = t - obj.hist_enc(end).t;
+            dt = t - obj.hist_enc.last().t;
             
             if(dt > 0)
                 %Compute Translational Velocity of the Robot's since the last
                 %Measurement:
-                v_l = (s_l - obj.hist_enc(end).s_l) / dt;
-                v_r = (s_r - obj.hist_enc(end).s_r) / dt;
+                v_l = (s_l - obj.hist_enc.last().s_l) / dt;
+                v_r = (s_r - obj.hist_enc.last().s_r) / dt;
 
                 %Now that Previous Command is Done (a new command has been issued),
                 %compute IK and robot pose based on how long it was active for.
@@ -225,13 +225,13 @@ classdef P2_Robot < handle
                 
                 obj.encTraj.update(V,omega,t);
                 
-                obj.hist_estWheelVel(end+1) = struct('v_l',v_l, 'v_r',v_r);
+                obj.hist_estWheelVel.add(struct('v_l',v_l, 'v_r',v_r));
                 
                 obj.triggerPositionPlot();
                 
             end % dt>0?
             
-            obj.hist_enc(end+1) = struct('s_l',s_l, 's_r',s_r, 't',t);
+            obj.hist_enc.add(struct('s_l',s_l, 's_r',s_r, 't',t));
         end % #processNewEncoderData
         
         % Sets/Saves a new Robot State from which Odometry is Collected (overwrites 
