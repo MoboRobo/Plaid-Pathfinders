@@ -3,7 +3,7 @@ function [palletPoses palletLengths] = getPalletPoses(obj, laserEncoderData)
     minNumPoints = 3;
     marginOfLengthError = .03; %3 centimeters of leeway
     
-    inBounds = laserEncoderData > .06 && laserEncoderData < 4.0;
+    inBounds = laserEncoderData > .06 & laserEncoderData < 4.0;
     inBoundData = laserEncoderData(inBounds);
     indices = 1:360;
     indices = indices(inBounds);

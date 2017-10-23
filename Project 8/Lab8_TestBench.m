@@ -6,7 +6,7 @@ global laser_plotting_data
     
     %% SETUP MAPPING
     if(strcmp(robot_id,'sim'))
-        bounds = 2.5*[0.5 0; 0.5 1; -0.5 1; -0.5 0]; % Inverted U-Shaped Container
+        bounds = 2*[0.5 0; 0.5 1; -0.5 1; -0.5 0]; % Inverted U-Shaped Container
         block = ShapeGen.rect(0.038,0.127);
         wm = WorldMap(rob, bounds);
             % Create a Ring of Blocks around Origin.
@@ -58,7 +58,7 @@ global laser_plotting_data
     
     clk = Clock();
     while(clk.time() < 30)
-        V = 0.15; rho = 0.5;
+        V = 0; rho = 0.5;
         rob.moveAt(V,V/rho);
         
         %% Plot Laser Data
