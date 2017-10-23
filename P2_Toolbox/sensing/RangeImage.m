@@ -140,8 +140,10 @@ classdef RangeImage < handle
                 marginOfLengthError = 0.03; %3 centimeters of leeway
             end
             
-            len = length(obj.data.ranges);
+            len = length(obj.data.ranges); % Number of Valid Range Readings
             
+            % Returns cloud of pixels within a certain distance of a given
+            % index.
             function [cloudXs, cloudYs] = getPixelsWithin(i, maxDistance)
                 midX = getIth(obj.data.xs, i, len);
                 midY = getIth(obj.data.ys, i, len);
@@ -176,9 +178,43 @@ classdef RangeImage < handle
                 end
             end % #getPixelsWithin
             
+            % Rejects points from given cloud which are not near the bulk
+            % of the points of interest (i.e. bits of a wall or other pallet 
+            % behind the pallet of interest).
+            function [bulkXs, bulkYs] = rejectOutliers(cXs, cYs)
+            % This algorithm just rejects points whose X or Y positions are
+            % more than 1.5*IQR beyond Q1,Q3. This is not super robust as
+            % a large wall segment behind a pallet could shift the mean over
+            % to the wall.
+                Q1x = prctile(cXs,25); Q1y = prctile(cYs,25);
+                Q3x = prctile(cXs,75); Q3y = prctile(cYs,75);
+                rngX = 1.5*iqr(cXs); rngY = 1.5*iqr(cYs);
+                
+                bulkXs = []; bulkYs = [];
+                
+                n = length(cXs);
+                i = 1;
+                while i<=n
+                    if( cXs > (Q1x-rngX) && cXs < (Q3x+rngX) ...
+                     && cYs > (Q1y-rngY) && cYs < (Q3y+rngY) )
+                        bulkXs(end+1) = cXs(i);
+                        bulkYs(end+1) = cYs(i);
+                    end
+                i = i+1;
+                end
+                
+            end % rejectOutliers
+            
             pixelIndex = 1;
             while pixelIndex <= len
-                [cloudXs, cloudYs] = getPixelsWithin(pixelIndex, halfSailLength);
+                % *Have search window be larger than w_sail so that larger
+                % widths can be observed and rejected.
+                % (probably should also be smaller than 2*w_sail so the
+                % mean isn't shifted over to any outliers causing the
+                % pallet to be rejected. (Also less pts -> faster).
+                [cloudXs, cloudYs] = getPixelsWithin(pixelIndex, 1.6*halfSailLength);
+                [cloudXs, cloudYs] = rejectOutliers(cloudXs, cloudYs);
+                
                 numPoints = length(cloudXs);
                 if numPoints < minNumPoints
                     %skip to next iteration
@@ -195,7 +231,7 @@ classdef RangeImage < handle
                 Ixy = - cloudXs * cloudYs';
                 inertia = [Ixx Ixy; Ixy Iyy] / length(cloudXs);
                 lambda = eig(inertia);
-                lambda = sqrt(lambda) * 1000.0;
+                lambda = sqrt(lambda) * 1000.0; % in mm
                 estimatedLength = norm([cloudXs(1)-cloudXs(end), ...
                                         cloudYs(1)-cloudYs(end)]);
                 
