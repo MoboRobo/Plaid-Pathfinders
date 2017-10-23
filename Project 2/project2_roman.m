@@ -60,13 +60,15 @@ while (true)
 end
             
 function [x y th] = irToXyOnArray (i, r)
-th = (i-1+90) * (1/360) * 2* pi
+offset = 5
+th = (i-1 - offset) * (pi / 180)
 x = r .* cos(th)
 y = r .* sin(th)
 end
 
 function [x y th] = irToXy (i, r)
-th = (i-1+90) * (1/360) * 2* pi
-x = r * cos(th)
-y = r * sin(th)
+    offset = 5; %offset in degrees
+    th = (i-1 - offset) * (pi / 180);
+    x = r * cos(th);
+    y = r * sin(th);
 end
