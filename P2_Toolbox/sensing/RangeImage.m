@@ -182,21 +182,24 @@ classdef RangeImage < handle
             % of the points of interest (i.e. bits of a wall or other pallet 
             % behind the pallet of interest).
             function [bulkXs, bulkYs] = rejectOutliers(cXs, cYs)
-            % This algorithm just rejects points whose X or Y positions are
+            % This algorithm just rejects points whose distances are
             % more than 1.5*IQR beyond Q1,Q3. This is not super robust as
             % a large wall segment behind a pallet could shift the mean over
             % to the wall.
-                Q1x = prctile(cXs,25); Q1y = prctile(cYs,25);
-                Q3x = prctile(cXs,75); Q3y = prctile(cYs,75);
-                rngX = 1.5*iqr(cXs); rngY = 1.5*iqr(cYs);
+                % Distances to each point in the cloud:
+                cPs = [cXs; cYs]; % Cloud Points
+                cSs = sqrt(sum(cPs.^2,1));
+                
+                Q1S = prctile(cSs,25);
+                Q3S = prctile(cSs,75);
+                rngS = 1.5*iqr(cSs);
                 
                 bulkXs = []; bulkYs = [];
                 
-                n = length(cXs);
+                n = length(cSs);
                 i = 1;
                 while i<=n
-                    if( cXs(i) > (Q1x-rngX) && cXs(i) < (Q3x+rngX) ...
-                     && cYs(i) > (Q1y-rngY) && cYs(i) < (Q3y+rngY) )
+                    if( cSs(i) > (Q1S-rngS) && cSs(i) < (Q3S+rngS) )
                         bulkXs(end+1) = cXs(i);
                         bulkYs(end+1) = cYs(i);
                     end
@@ -215,7 +218,7 @@ classdef RangeImage < handle
                 % pallet to be rejected. (Also less pts -> faster).
                 search_radius = 1.45*halfSailLength + marginOfLengthError/2;
                 [cloudXs, cloudYs] = getPixelsWithin(pixelIndex, search_radius);
-                %[cloudXs, cloudYs] = rejectOutliers(cloudXs, cloudYs);
+                [cloudXs, cloudYs] = rejectOutliers(cloudXs, cloudYs);
                 
                 numPoints = length(cloudXs);
                 if numPoints < minNumPoints
