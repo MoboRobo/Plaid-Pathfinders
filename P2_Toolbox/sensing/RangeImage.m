@@ -202,7 +202,6 @@ classdef RangeImage < handle
                 % CONDITIONS FOR VALID LINE CANDIDATE:
                 if(lambda(1) < 1.3 && (abs(estimatedLength - halfSailLength*2) < ...
                         marginOfLengthError))
-                    warning(strcat('adding new pose at: ',num2str(centerX),' ',num2str(centerY)))
                     
                     new_th = atan2(2*Ixy, Iyy-Ixx) / 2.0;
                     new_pose = pose(centerX, centerY, new_th);
@@ -220,9 +219,36 @@ classdef RangeImage < handle
         
         % Plots Every Line Candidate within the Validated Data Set (in the 
         % Robot Frame).
-        function plotLineCandidates(obj)
-            i = 1;
+        % Optional Argument: - cp: clears prev plotting of line
+        % candidates
+        function plotLineCandidates(obj, cp)
+        persistent plot_objs % Objects Plotted.
+            
+            clear_prev = 1; % Default value
+            if nargin>1
+                clear_prev = cp;
+            end
+            
+            % Clear Previous Plots (i/a):
+            if( ~isempty(plot_objs) && clear_prev )
+                i = 1;
+                while i<=length(plot_objs)
+                    p = plot_objs(i);
+                    try
+                        delete(p);
+                    catch err
+                        % object deleted elsewhere (likely by plot
+                        % termination
+                    end
+                i = i+1;
+                end
+            end % isempty(plot_objs)&clear_prev?
+            
+            % Pre Allocate
             n = length(obj.line_candidates.lengths);
+            plot_objs(1:n) = 0;
+            
+            i = 1;
             hold on
             while i<=n
                 p = obj.line_candidates.poses(i);
@@ -235,7 +261,7 @@ classdef RangeImage < handle
 
                 y0 = p.Y - l*sin(th)/2;
                 y1 = p.Y + l*sin(th)/2;
-                    plot([y0 y1], [x0 x1]);
+                plot_objs(i) = plot([y0 y1], [x0 x1]);
             i = i+1;
             end
             hold off

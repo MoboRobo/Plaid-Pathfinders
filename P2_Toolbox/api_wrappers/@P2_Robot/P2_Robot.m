@@ -22,8 +22,7 @@ classdef P2_Robot < handle
         on_time; 	% Time (tic) that the robot started
         getTime;    % Lambda Function for Getting Time
                     % (for opt. use of external clocks)
-                                                                           test_prop;
-                                    
+        
         
         %Motion:
         curr_V = 0;     % m/s, Most Recently Commanded Body Velocity
@@ -128,13 +127,12 @@ classdef P2_Robot < handle
             
             obj.measTraj = obj.encTraj;
             
-            obj.processNewEncoderData(obj.core.encoders, evnt);
-            
             obj.init_enc_l = obj.core.encoders.LatestMessage.Vector.X;
             obj.init_enc_r = obj.core.encoders.LatestMessage.Vector.Y;
-
+            
             % Establish Data-Logging and Odometry Callback Functions
             obj.logEncoders();
+            obj.processNewEncoderData(obj.core.encoders, evnt);
             
             %Wait for Sim to Initialize:
             pause(1.5);
@@ -189,11 +187,11 @@ classdef P2_Robot < handle
         
         % Resets All Robot State Data
         function resetStateData(obj)
-            obj.hist_enc.add(obj.hist_enc.que(1));
-            obj.hist_estWheelVel.add(obj.hist_estWheelVel(1));
+            obj.hist_enc.add(obj.hist_enc.first());
+            obj.hist_estWheelVel.add(obj.hist_estWheelVel.first());
             obj.encTraj.reset();
             
-            obj.hist_commWheelVel.add(obj.hist_commWheelVel.que(1));
+            obj.hist_commWheelVel.add(obj.hist_commWheelVel.first());
             obj.commTraj.reset();
             
             obj.curr_V = 0;
@@ -211,13 +209,13 @@ classdef P2_Robot < handle
             t = event.Header.Stamp.Sec + event.Header.Stamp.Nsec/1e9;
             
             %Compute Amount of Time Elapsed since Previous Measurement
-            dt = t - obj.hist_enc.last().t;
+            dt = t - obj.hist_enc.last.t;
             
             if(dt > 0)
                 %Compute Translational Velocity of the Robot's since the last
                 %Measurement:
-                v_l = (s_l - obj.hist_enc.last().s_l) / dt;
-                v_r = (s_r - obj.hist_enc.last().s_r) / dt;
+                v_l = (s_l - obj.hist_enc.last.s_l) / dt;
+                v_r = (s_r - obj.hist_enc.last.s_r) / dt;
 
                 %Now that Previous Command is Done (a new command has been issued),
                 %compute IK and robot pose based on how long it was active for.

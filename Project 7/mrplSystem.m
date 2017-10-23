@@ -67,22 +67,14 @@ classdef mrplSystem < handle
             % if you don't call offsetInitPose, Trajectory automatically
                 %transforms each reference pose before handing it to mrpl
             %rt.offsetInitPose();
-<<<<<<< HEAD
-             
-            tf = Trajectory_Follower(obj.rob, rt);
             
-=======
-
-            tf = Trajectory_Follower.empty;
             if isempty(obj.feedback_controller)
                 tf = Trajectory_Follower(obj.rob, rt);
                 obj.feedback_controller = tf.fbk_controller;
             else
                 tf = Trajectory_Follower(obj.rob, rt, obj.feedback_controller);
             end
->>>>>>> origin/master
             tf.fbk_controller.correctiveTime = obj.k_tau;%* rt.getFinalTime();
-            rf.fbk_controller.fbk_trim = 0;
             
             first_loop = 1;
          	T = 0;
