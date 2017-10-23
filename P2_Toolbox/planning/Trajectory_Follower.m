@@ -31,10 +31,17 @@ classdef Trajectory_Follower < handle
     %% METHODS
     methods
         %% Constructor
-        function obj = Trajectory_Follower(rob, rt)
+        % Optionally: fbkc supplies a feedback controller to use.
+        function obj = Trajectory_Follower(rob, rt, fbkc)
             obj.robot = rob;
             obj.rt = rt;
-            obj.fbk_controller = FeedbackController(rob,rt);
+            if nargin>2
+                fbkc.rt = rt;
+                obj.fbk_controller = fbkc;
+            else
+                obj.fbk_controller = FeedbackController(rob,rt);
+            end % nargin>2?
+                
             
             obj.u_ffwd_t = @(t) [rt.V_t(t) rt.om_t(t)];
             obj.u_fbk_t = @(t) obj.fbk_controller.getControl_t(t-obj.send_delay);
@@ -51,7 +58,8 @@ classdef Trajectory_Follower < handle
         % Commands the Robot to assume the Motion it should have at
         % Trajectory Time, t
         function follow_update_t(obj, t)
-            if(obj.fbk_trim && t > 0.15*obj.rt.getFinalTime())
+            if(obj.fbk_trim && t > 0.25*obj.rt.getFinalTime()) % Don't execute feedback on beginning of loop
+                                                                            warning("feedforward only");
                 u_t = obj.u_comm_t(t);
             else
                 obj.u_fbk_t(t); % Just callin' it (so errors are still computed)

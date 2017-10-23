@@ -3,6 +3,7 @@ classdef mrplSystem < handle
     properties(GetAccess=public, SetAccess=private)
         clock;              % Internal Time Keeping
         rob;                % Instance of P2_Robot being Controlled
+        feedback_controller;    % Persistent Feedback Controller Class
         
         tcs_scale = 1;      % Scale of Cubic Spiral Trajectory Data to be Used
         traj_samples = 201; % Number of Trajectory Samples to Compute in 
@@ -10,7 +11,6 @@ classdef mrplSystem < handle
         
         traj_vec = Trajectory_CubicSpiral.empty;
         plotting_enabled = 1;
-       
        
             delay_plot_data = slidingFifo(10000, struct('tv',0, 'rv',0, 't',0));
             delay_error_data = slidingFifo(10000, struct('ex',0, 'ey',0, 'eth',0, 'es',0, 't',0));
@@ -50,6 +50,7 @@ classdef mrplSystem < handle
                 obj.rob.core.forksDown(); % Prevent Brown-out
             end
             
+            obj.feedback_controller = FeedbackController.empty;
         end
         
         function goTo_Rel(obj,rel_pose)
@@ -67,7 +68,13 @@ classdef mrplSystem < handle
                 %transforms each reference pose before handing it to mrpl
             %rt.offsetInitPose();
 
-            tf = Trajectory_Follower(obj.rob, rt);
+            tf = Trajectory_Follower.empty;
+            if isempty(obj.feedback_controller)
+                tf = Trajectory_Follower(obj.rob, rt);
+                obj.feedback_controller = tf.fbk_controller;
+            else
+                tf = Trajectory_Follower(obj.rob, rt, obj.feedback_controller);
+            end
             tf.fbk_controller.correctiveTime = obj.k_tau;%* rt.getFinalTime();
             
             first_loop = 1;
