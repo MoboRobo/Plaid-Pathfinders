@@ -1,4 +1,4 @@
-function palletPoses = getPalletPoses(obj, laserEncoderData)
+function [palletPoses palletLengths] = getPalletPoses(obj, laserEncoderData)
     %minimum number of points allowable in point cloud
     minNumPoints = 3;
     marginOfLengthError = .03; %3 centimeters of leeway
@@ -64,11 +64,12 @@ function palletPoses = getPalletPoses(obj, laserEncoderData)
         lambda = eig(inertia);
         lambda = sqrt(lambda) * 1000.0;
         estimatedLength = distanceBetween(cloudXs(1), cloudYs(1), ...
-            cloudXs(end), cloudYs(end))
+            cloudXs(end), cloudYs(end));
         if(lambda(1) < 1.3 && (abs(estimatedLength - halfSailLength*2) < ...
                 marginOfLengthError))
             palletPoses = [palletPoses [centerX centerY ...
-                atan2(2*Ixy, Iyy-Ixx) / 2.0]]
+                atan2(2*Ixy, Iyy-Ixx) / 2.0]];
+            palletLengths = [palletLengths estimatedLength];
         end
     end
 
