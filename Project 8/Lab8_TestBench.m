@@ -58,7 +58,7 @@ global laser_plotting_data
     
     clk = Clock();
     while(clk.time() < 30)
-        V = 0.05; rho = 0.5;
+        V = 0.005; rho = 0.5;
         rob.moveAt(V,V/rho);
         
         %% Plot Laser Data
@@ -69,6 +69,7 @@ global laser_plotting_data
             r_img.plot(laser_plotting_data.colorize, plot_obj);
             
             r_img.findLineCandidates();
+            
             r_img.plotLineCandidates();
             
         laser_plotting_data.last_time = clk.time();

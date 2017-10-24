@@ -178,126 +178,8 @@ classdef RangeImage < handle
                 end
             end % #getPixelsWithin
             
-            % Rejects points from given cloud which are not near the bulk
-            % of the points of interest (i.e. bits of a wall or other pallet 
-            % behind the pallet of interest).
-            function [bulkXs, bulkYs] = rejectOutliers(cXs, cYs)
-            % This algorithm just rejects points whose distances are
-            % more than 1.5*IQR beyond Q1,Q3. This is not super robust as
-            % a large wall segment behind a pallet could shift the mean over
-            % to the wall.
-                % Distances to each point in the cloud:
-                cPs = [cXs; cYs]; % Cloud Points
-                cSs = sqrt(sum(cPs.^2,1));
-                
-                Q1S = prctile(cSs,25);
-                Q3S = prctile(cSs,75);
-                rngS = 1.5*iqr(cSs);
-                
-                bulkXs = []; bulkYs = [];
-                
-                n = length(cSs);
-                i = 1;
-                while i<=n
-                    if( cSs(i) > (Q1S-rngS) && cSs(i) < (Q3S+rngS) )
-                        bulkXs(end+1) = cXs(i);
-                        bulkYs(end+1) = cYs(i);
-                    end
-                i = i+1;
-                end
-                
-            end % rejectOutliers
-            
-            pixelIndex = 1;
-            while pixelIndex <= len
-                
-                % *Have search window be larger than w_sail so that larger
-                % widths can be observed and rejected.
-                % (probably should also be smaller than 2*w_sail so the
-                % mean isn't shifted over to any outliers causing the
-                % pallet to be rejected. (Also less pts -> faster).
-                search_radius = 1.45*halfSailLength + marginOfLengthError/2;
-                [cloudXs, cloudYs] = getPixelsWithin(pixelIndex, search_radius);
-                [cloudXs, cloudYs] = rejectOutliers(cloudXs, cloudYs);
-                
-                numPoints = length(cloudXs);
-                if numPoints < minNumPoints
-                    %skip to next iteration
-                    break;
-                end
-                
-                originX = getIth(obj.data.xs, pixelIndex, len);
-                originY = getIth(obj.data.ys, pixelIndex, len);
-                
-                centerX = sum(cloudXs) / numPoints;
-                centerY = sum(cloudYs) / numPoints;
-                
-                % Amount Center of Data has Shifted from where Search was
-                % Originated.
-                origin_shift = norm([originX-centerX, originY-centerY]);
-                
-                %Center points around origin
-                cloudXs = cloudXs - centerX;
-                cloudYs = cloudYs - centerY;
-
-                Ixx = cloudXs * cloudXs';
-                Iyy = cloudYs * cloudYs';
-                Ixy = - cloudXs * cloudYs';
-                inertia = [Ixx Ixy; Ixy Iyy] / length(cloudXs);
-                lambda = eig(inertia);
-                lambda = sqrt(lambda) * 1000.0; % in mm
-                
-                estimatedLength = norm([cloudXs(1)-cloudXs(end), ...
-                                        cloudYs(1)-cloudYs(end)]);
-%                 estimatedLength = sqrt(max(eig([Ixx Ixy; Ixy Iyy])));
-                                    
-                % CONDITIONS FOR VALID LINE CANDIDATE:
-                if( lambda(1) < 1.3 ...
-                && (abs(estimatedLength - halfSailLength*2) < marginOfLengthError) ...
-                && origin_shift < halfSailLength/4 )
-                
-                    new_th = atan2(2*Ixy, Iyy-Ixx) / 2.0;
-                    % ~"Slightly Underestimate Angle to produce less extreme
-                    % angles of approach"~ (use mechanical alignment to
-                    % correct):
-                    underest_scale = 0.08; %round down to nearest ~half degree (little less)
-                    new_th = underest_scale*floor(new_th/underest_scale);
-                    
-                    new_pose = pose(centerX, centerY, new_th);
-                    obj.line_candidates.poses = [obj.line_candidates.poses new_pose];
-                    obj.line_candidates.lengths = [obj.line_candidates.lengths estimatedLength];
-                end
-                
-            pixelIndex = pixelIndex+1;
-            end
-            
-            % Returns the Ith Data from the Array while Ensuring
-            % Wrap-Around
-            function elem = getIth(array, i, len)
-                elem = array( mod(i-1, len) + 1);
-            end % #getIth
-        end
-        
-        function findLineCandidates_altered(obj, l, mle)
-%             [obj.line_candidates.poses, obj.line_candidates.lengths] = getPalletPoses(obj, obj.raw);
-
-            %minimum number of points allowable in point cloud
-            minNumPoints = 3;
-            
-            if nargin>1
-                halfSailLength = l/2;
-            else
-                halfSailLength = 0.0635; %in meters
-            end
-            if nargin>2
-                marginOfLengthError = mle;
-            else
-                marginOfLengthError = 0.03; %3 centimeters of leeway
-            end
-            
-            len = length(obj.data.ranges);
-            
-            function [cloudXs, cloudYs] = getPixelsWithin(i, maxDistance)
+            %Gets a Segment of Continuous Pixels
+            function [cloudXs, cloudYs] = getContinuousPixels(i)
                 rawLen = length(obj.raw);
                 midX = getIth(obj.data.xs, i, len);
                 midY = getIth(obj.data.ys, i, len);
@@ -341,17 +223,67 @@ classdef RangeImage < handle
                 end
             end % #getPixelsWithin
             
+            % OBSOLETE:
+            % Rejects points from given cloud which are not near the bulk
+            % of the points of interest (i.e. bits of a wall or other pallet 
+            % behind the pallet of interest).
+            function [bulkXs, bulkYs] = rejectOutliers(cXs, cYs)
+            % This algorithm just rejects points whose distances are
+            % more than 1.5*IQR beyond Q1,Q3. This is not super robust as
+            % a large wall segment behind a pallet could shift the mean over
+            % to the wall.
+                % Distances to each point in the cloud:
+                cPs = [cXs; cYs]; % Cloud Points
+                cSs = sqrt(sum(cPs.^2,1));
+                
+                Q1S = prctile(cSs,25);
+                Q3S = prctile(cSs,75);
+                rngS = 1.5*iqr(cSs);
+                
+                bulkXs = []; bulkYs = [];
+                
+                n = length(cSs);
+                i = 1;
+                while i<=n
+                    if( cSs(i) > (Q1S-rngS) && cSs(i) < (Q3S+rngS) )
+                        bulkXs(end+1) = cXs(i);
+                        bulkYs(end+1) = cYs(i);
+                    end
+                i = i+1;
+                end
+                
+            end % rejectOutliers
+            
             pixelIndex = 1;
             while pixelIndex <= len
-                [cloudXs, cloudYs] = getPixelsWithin(pixelIndex, halfSailLength);
+                
+                % *Have search window be larger than w_sail so that larger
+                % widths can be observed and rejected.
+                % (probably should also be smaller than 2*w_sail so the
+                % mean isn't shifted over to any outliers causing the
+                % pallet to be rejected. (Also less pts -> faster).
+%                 search_radius = 1.45*halfSailLength + marginOfLengthError/2;
+%                 [cloudXs, cloudYs] = getPixelsWithin(pixelIndex, search_radius);
+                %[cloudXs, cloudYs] = rejectOutliers(cloudXs, cloudYs);
+                [cloudXs, cloudYs] = getContinuousPixels(pixelIndex);
+                
                 numPoints = length(cloudXs);
                 if numPoints < minNumPoints
                     %skip to next iteration
                     break;
                 end
+                
+%                 originX = getIth(obj.data.xs, pixelIndex, len);
+%                 originY = getIth(obj.data.ys, pixelIndex, len);
+                
                 centerX = sum(cloudXs) / numPoints;
                 centerY = sum(cloudYs) / numPoints;
-                %get points centered around origin
+                
+                % Amount Center of Data has Shifted from where Search was
+                % Originated.
+%                 origin_shift = norm([originX-centerX, originY-centerY]);
+                
+                %Center points around origin
                 cloudXs = cloudXs - centerX;
                 cloudYs = cloudYs - centerY;
 
@@ -360,16 +292,25 @@ classdef RangeImage < handle
                 Ixy = - cloudXs * cloudYs';
                 inertia = [Ixx Ixy; Ixy Iyy] / length(cloudXs);
                 lambda = eig(inertia);
-                lambda = sqrt(lambda) * 1000.0;
+                lambda = sqrt(lambda) * 1000.0; % in mm
+                
                 estimatedLength = norm([cloudXs(1)-cloudXs(end), ...
                                         cloudYs(1)-cloudYs(end)]);
-                
+%                 estimatedLength = sqrt(max(eig([Ixx Ixy; Ixy Iyy])));
+                                    
                 % CONDITIONS FOR VALID LINE CANDIDATE:
-                if(lambda(1) < 1.3 && (abs(estimatedLength - halfSailLength*2) < ...
-                        marginOfLengthError))
-                    warning(strcat('adding new pose at: ',num2str(centerX),' ',num2str(centerY)))
-                    
+                if( lambda(1) < 1.3 ...
+                && (abs(estimatedLength - halfSailLength*2) < marginOfLengthError) ...
+                )
+%                 && origin_shift < halfSailLength/4 )
+                
                     new_th = atan2(2*Ixy, Iyy-Ixx) / 2.0;
+                    % ~"Slightly Underestimate Angle to produce less extreme
+                    % angles of approach"~ (use mechanical alignment to
+                    % correct):
+                    underest_scale = 0.08; %round down to nearest ~half degree (little less)
+                    new_th = underest_scale*floor(new_th/underest_scale);
+                    
                     new_pose = pose(centerX, centerY, new_th);
                     obj.line_candidates.poses = [obj.line_candidates.poses new_pose];
                     obj.line_candidates.lengths = [obj.line_candidates.lengths estimatedLength];
@@ -378,6 +319,8 @@ classdef RangeImage < handle
             pixelIndex = pixelIndex+1;
             end
             
+            % Returns the Ith Data from the Array while Ensuring
+            % Wrap-Around
             function elem = getIth(array, i, len)
                 elem = array( mod(i-1, len) + 1);
             end % #getIth
