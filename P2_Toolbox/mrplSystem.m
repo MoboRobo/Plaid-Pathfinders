@@ -79,6 +79,7 @@ classdef mrplSystem < handle
             % Loop until valid line candidate is found
                 r_img = obj.rob.hist_laser.last(); % Get Latest Image.
                 r_img.findLineCandidates(); % (does what it says on the tin)
+                pause(0.01); % Relief for Callback to Update
             end
             
             p_los = r_img.line_candidates.poses; % Poses of all Valid Line Objects
@@ -297,27 +298,28 @@ classdef mrplSystem < handle
     
     methods(Static)
         function acqPose = acquisitionPose(objPose,...
-            robFrontOffset, objFaceOffset, moreOffset)
-        p__r_s = pose(0, 0, 0);
-        T__r_s = p__r_s.bToA();
-        p__s_o = objPose;
-        T__s_o = p__s_o.bToA();
-
-        overDrive = .01;
-        totalDist = robFrontOffset + objFaceOffset + moreOffset...
-            - overDrive;
-        x1 = objPose.x;
-        y1 = objPose.y;
-        th1 = objPose.th;
-        x_ = x1 - totalDist * cos(th1); y_ = y1 - totalDist*sin(th1);
-        th_ = th1;
-        t__o_g = pose(x_, y_, th_);
-        T__o_g = t__o_g.bToA();
-
-        finalTransformation = T__r_s * T__s_o * T__o_g;
-
-        result = (finalTransformation * [objPose.X; objPose.Y; 1])';
-        x = result(1); y = result(2);
+            robFrontOffset, objFaceOffset, moreOffset, lateralFudge)
+            totalDist = robFrontOffset + objFaceOffset + moreOffset;
+            x1 = objPose.x;
+            y1 = objPose.y;
+            th1 = objPose.th;
+            x = x1 - totalDist * cos(th1); y = y1 - totalDist*sin(th1)+lateralFudge;
+%             
+%         p__r_s = pose(0, 0, 0);
+%         T__r_s = p__r_s.bToA();
+%         p__s_o = objPose;
+%         T__s_o = p__s_o.aToB();
+% 
+%         totalDist = robFrontOffset + objFaceOffset + moreOffset;
+%         Dx_ = - totalDist; Dy_ = 0;
+%         D_th_ = 0;
+%         t__o_g = pose(Dx_, Dy_, D_th_);
+%         T__o_g = t__o_g.aToB();
+% 
+%         finalTransformation = T__r_s * T__s_o * T__o_g;
+% 
+%         result = (finalTransformation * [objPose.X; objPose.Y; 1])';
+%         x = result(1); y = result(2);
         acqPose = pose(x, y, objPose.th);
     end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

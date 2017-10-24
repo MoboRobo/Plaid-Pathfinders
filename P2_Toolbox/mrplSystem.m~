@@ -74,10 +74,13 @@ classdef mrplSystem < handle
             
             
             r_img = obj.rob.hist_laser.last(); % Get Latest Image.
-            while(length(r_img.line_candidates.lengths) == 1
-               && length(r_img.line_candidates.lengths) == 1)
-            r_img = obj.rob.hist_laser.last(); % Get Latest Image.
-            r_img.findLineCandidates(); % (does what it says on the tin)
+            while(length(r_img.line_candidates.lengths) == 1 ...
+               && r_img.line_candidates.lengths(1) == 0)
+            % Loop until valid line candidate is found
+                r_img = obj.rob.hist_laser.last(); % Get Latest Image.
+                r_img.findLineCandidates(); % (does what it says on the tin)
+            end
+            
             p_los = r_img.line_candidates.poses; % Poses of all Valid Line Objects
             % Get Nearest Line Object Pose to Robot in Robot Frame:
             
@@ -295,26 +298,29 @@ classdef mrplSystem < handle
     methods(Static)
         function acqPose = acquisitionPose(objPose,...
             robFrontOffset, objFaceOffset, moreOffset)
-        p__r_s = pose(0, 0, 0);
-        T__r_s = p__r_s.bToA();
-        p__s_o = objPose;
-        T__s_o = p__s_o.bToA();
-
-        overDrive = .01;
-        totalDist = robFrontOffset + objFaceOffset + moreOffset...
-            - overDrive;
-        x1 = objPose.x;
-        y1 = objPose.y;
-        th1 = objPose.th;
-        x_ = x1 - totalDist * cos(th1); y_ = y1 - totalDist*sin(th1);
-        th_ = th1;
-        t__o_g = pose(x_, y_, th_);
-        T__o_g = t__o_g.bToA();
-
-        finalTransformation = T__r_s * T__s_o * T__o_g;
-
-        result = (finalTransformation * [objPose.X; objPose.Y; 1])';
-        x = result(1); y = result(2);
+         totalDist = robFrontOffset + objFaceOffset + moreOffset;
+%         x1 = objPose.x;
+%         y1 = objPose.y;
+%         th1 = objPose.th;
+%         x_ = - totalDist * cos(th1); y_ = - totalDist*sin(th1);
+%         p__r_s = pose(0, 0, 0);
+%         T__r_s = p__r_s.bToA();
+%         p__s_o = objPose;
+%         T__s_o = p__s_o.bToA();
+% 
+%         totalDist = robFrontOffset + objFaceOffset + moreOffset;
+%         x1 = objPose.x;
+%         y1 = objPose.y;
+%         th1 = objPose.th;
+%         x_ = - totalDist * cos(th1); y_ = - totalDist*sin(th1);
+%         th_ = 0;
+%         t__o_g = pose(x_, y_, th_);
+%         T__o_g = t__o_g.bToA();
+% 
+%         finalTransformation = T__r_s * T__s_o * T__o_g;
+% 
+%         result = (finalTransformation * [objPose.X; objPose.Y; 1])';
+%         x = result(1); y = result(2);
         acqPose = pose(x, y, objPose.th);
     end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
