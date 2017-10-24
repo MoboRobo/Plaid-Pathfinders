@@ -82,7 +82,7 @@ classdef mrplSystem < handle
             % robot frame.
                 p = p_los(i); % Pose being tested
                 s = norm([p.X p.Y]);
-                if s < min_s
+                if s < min_s && s~=0
                     p_nlo_r = p;
                     min_s = s;
                 end

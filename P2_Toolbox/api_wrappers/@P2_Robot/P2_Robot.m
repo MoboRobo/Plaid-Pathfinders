@@ -46,7 +46,7 @@ classdef P2_Robot < handle
         commTraj;
         
         % History of lidar laser RangeImages.
-        hist_laser = slidingFifo(100, RangeImage(zeros(1:360)));
+        hist_laser = slidingFifo(100, RangeImage(zeros(1,360)));
         % Whether the lidar laser is on.
         laser_state = 0;
         
@@ -190,7 +190,7 @@ classdef P2_Robot < handle
                 %Reset Lidar History:
                 obj.hist_laser = slidingFifo( ...
                     obj.hist_laser.maxElements, ...
-                    RangeImage.empty ...
+                    RangeImage(zeros(1,360)) ...
                 );
                 
                 obj.core.startLaser();
@@ -223,7 +223,7 @@ classdef P2_Robot < handle
             obj.hist_commWheelVel.add(obj.hist_commWheelVel.first());
             obj.commTraj.reset();
             
-            obj.hist_laser = slidingFifo(100, RangeImage.empty);
+            obj.hist_laser = slidingFifo(100, RangeImage(zeros(1,360)));
             
             obj.curr_V = 0;
             obj.curr_omega = 0;

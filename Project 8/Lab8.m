@@ -3,6 +3,9 @@ function Lab8(robot_id)
      
      mrpl.plottingOn(); % Turn on Plotting
      
+     pause(5); % Wait for Lidar to init.
+     
+     mrpl.getNearestLineObject.poseVec
      mrpl.goTo_Rel( mrpl.getNearestLineObject() );
      
      mrpl.rob.core.forksUp();
