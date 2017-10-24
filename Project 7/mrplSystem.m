@@ -34,6 +34,11 @@ classdef mrplSystem < handle
 
 %% METHODS
     methods
+        
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% - SETUP
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
         %% Constructor:
         function obj = mrplSystem(robot_id, startPose)
             %% Setup Internal Data Classes:
@@ -53,6 +58,39 @@ classdef mrplSystem < handle
             obj.feedback_controller = FeedbackController.empty;
         end
         
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% - MOTION CONTROL
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        
+
+        %% Get Nearest Line Object Pose
+        % Returns the Pose of the Nearest Valid Line Object in the Current
+        % Lidar RangeImage in the Robot Frame
+        function p_nlo_r = getNearestLineObject(obj)
+            obj.rob.laserOn(); % Ensure lasers are on.
+            r_img = obj.rob.hist_laser.last; % Get Latest Image.
+            
+            r_img.findLineCandidates(); % (does what it says on the tin)
+            p_los = r_img.line_candidates.poses; % Poses of all Valid Line Objects
+            % Get Nearest Line Object Pose to Robot in Robot Frame:
+            
+            i = 1;
+            n = length(p_los);
+            min_s = Inf; % Current Minimum Pose Distance
+            while i<=n
+            % Loop through all p_los to id which has least distance in
+            % robot frame.
+                p = p_los(i); % Pose being tested
+                s = norm([p.X p.Y]);
+                if s < min_s
+                    p_nlo_r = p;
+                    min_s = s;
+                end
+            i = i+1;
+            end
+        end
+
+        %% Go To Relative Position
         function goTo_Rel(obj,rel_pose)
             x = rel_pose.x;
             y = rel_pose.y;
@@ -102,7 +140,15 @@ classdef mrplSystem < handle
             end 
         end
 
-        % Helper Function to Update Data used for Debugging Plots
+        
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% - PLOTTING
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        
+        
+        %% Update Plot Data:
+        % Helper Function to Update Data used for Debugging Plots (during
+        % loop).
         function update_plotData(obj, tf, T)
             if obj.debugging.delay_plots
                 obj.delay_plot_data.add(struct( ...
@@ -120,6 +166,7 @@ classdef mrplSystem < handle
             end % error_plots?
         end % #update_plotData
         
+        %% Update Plot:
         % Update All Desired/Active Plots
         function update_plot(obj, tf)
             % DEBUGGING PLOTS:
@@ -140,7 +187,7 @@ classdef mrplSystem < handle
             end % delay_plots?
             
             if obj.debugging.error_plots
-                delay_error_vecdata = obj.delay_error_data.vec
+                delay_error_vecdata = obj.delay_error_data.vec;
                 exs = [delay_error_vecdata(:).ex];
                 eys = [delay_error_vecdata(:).ey];
                 eths = [delay_error_vecdata(:).eth];
@@ -165,8 +212,8 @@ classdef mrplSystem < handle
             end % error_plots?
             
             if obj.debugging.comm_plots
-                comm_Vs = tf.fbk_controller.comm_V_t.vec()
-                comm_Ws = tf.fbk_controller.comm_W_t.vec()
+                comm_Vs = tf.fbk_controller.comm_V_t.vec();
+                comm_Ws = tf.fbk_controller.comm_W_t.vec();
                 vs = [comm_Vs(:).comm_v];
                 ws = [comm_Ws(:).comm_w];
                 ts = [comm_Vs(:).t];
@@ -224,13 +271,23 @@ classdef mrplSystem < handle
             axis equal
         end
         
+        %% Plotting On/Off
         function plottingOn(obj)
             obj.plotting_enabled = 1;
         end
         function plottingOff(obj)
             obj.plotting_enabled = 0;
         end
-    end
+        
+    end % mrplSystem <- methods
     
+    methods(Static)
+        
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% - DATA MANIPULATION
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        
+
+    end % mrplSystem <- methods(static)
     
 end

@@ -13,11 +13,11 @@ classdef slidingFifo < GenericDataContainer
     properties(Constant)
     end
     
-    properties(Access = private)
+    properties(GetAccess=public, SetAccess=private)
         maxElements;
     end
     
-    properties(Access = public)
+    properties(Access=public)
         que;
         numElements; % Number of Elements Currently Populated
     end
