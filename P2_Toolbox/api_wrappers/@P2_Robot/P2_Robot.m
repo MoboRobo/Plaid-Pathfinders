@@ -46,7 +46,7 @@ classdef P2_Robot < handle
         commTraj;
         
         % History of lidar laser RangeImages.
-        hist_laser = slidingFifo(100, RangeImage.empty);
+        hist_laser = slidingFifo(100, RangeImage(zeros(1:360)));
         % Whether the lidar laser is on.
         laser_state = 0;
         
