@@ -67,7 +67,11 @@ classdef mrplSystem < handle
         % Returns the Pose of the Nearest Valid Line Object in the Current
         % Lidar RangeImage in the Robot Frame
         function p_nlo_r = getNearestLineObject(obj)
-            obj.rob.laserOn(); % Ensure lasers are on.
+            if(~obj.rob.laser_state) % If lasers are off
+                obj.rob.laserOn(); % Turn Lasers on
+                pause(1); % Wait for Lasers to generate RangeImages.
+            end
+            
             r_img = obj.rob.hist_laser.last(); % Get Latest Image.
             
             r_img.findLineCandidates(); % (does what it says on the tin)
