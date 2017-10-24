@@ -119,6 +119,7 @@ classdef P2_Robot < handle
                 obj.getTime = @()toc(obj.on_time);
             end % nargin>1
             
+            obj.waitForReady();
             evnt = obj.core.encoders.LatestMessage;
             obj.hist_enc.que(1) = struct('s_l',evnt.Vector.X, 's_r',evnt.Vector.Y, 't',(evnt.Header.Stamp.Sec + evnt.Header.Stamp.Nsec/1e9));
             

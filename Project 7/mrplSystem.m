@@ -53,6 +53,10 @@ classdef mrplSystem < handle
             obj.feedback_controller = FeedbackController.empty;
         end
         
+        function turn_stationary(obj, th)
+            Stationary_Turn(obj.rob, th);
+        end
+        
         function goTo_Rel(obj,rel_pose)
             x = rel_pose.x;
             y = rel_pose.y;
