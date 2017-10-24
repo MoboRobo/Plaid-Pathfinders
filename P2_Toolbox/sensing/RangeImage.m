@@ -298,7 +298,7 @@ classdef RangeImage < handle
             len = length(obj.data.ranges);
             
             function [cloudXs, cloudYs] = getPixelsWithin(i, maxDistance)
-                rawLen = length(obj.raw)
+                rawLen = length(obj.raw);
                 midX = getIth(obj.data.xs, i, len);
                 midY = getIth(obj.data.ys, i, len);
                 midTh = getIth(obj.data.angles, i, len);
@@ -310,7 +310,7 @@ classdef RangeImage < handle
                 while (1)
                     %get current radius to figure maxDist
                     curRadius = getIth(obj.data.ranges, i-offset, len);
-                    maxDistance = (curRadius*2*pi / double(rawLen)) * 1.5
+                    maxDistance = (curRadius*2*pi / double(rawLen)) * 1.5;
                     curX = getIth(obj.data.xs, i - offset, len);
                     curY = getIth(obj.data.ys, i - offset, len);
                     curTh = getIth(obj.data.angles, i - offset, len);
@@ -327,7 +327,7 @@ classdef RangeImage < handle
                 %rightSide
                 while(1)
                     curRadius = getIth(obj.data.ranges, i+offset, len);
-                    maxDistance = (curRadius*2*pi / double(rawLen)) * 1.5
+                    maxDistance = (curRadius*2*pi / double(rawLen)) * 1.5;
                     curX = getIth(obj.data.xs, i + offset, len);
                     curY = getIth(obj.data.ys, i + offset, len);
                     curTh = getIth(obj.data.angles, i + offset, len);
