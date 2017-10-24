@@ -2,7 +2,7 @@ function [palletPoses palletLengths] = getPalletPoses(obj, laserEncoderData)
     %minimum number of points allowable in point cloud
     minNumPoints = 3;
     marginOfLengthError = .03; %3 centimeters of leeway
-    badPixelsAllowed = 2;
+  
     inBounds = laserEncoderData > .06 & laserEncoderData < 4.0;
     inBoundData = laserEncoderData(inBounds);
     indices = 1:360;
@@ -23,7 +23,7 @@ function [palletPoses palletLengths] = getPalletPoses(obj, laserEncoderData)
             curY = getIth(yCoords, i - offset, len);
             curTh = getIth(ths, i - offset, len);
             if ( distanceBetween(curX, curY,midX, midY)  > maxDistance )
-                badPoints = badPoints + 1;
+                break;
             end
             cloudXs = [curX cloudXs];
             cloudYs = [curY cloudYs];
