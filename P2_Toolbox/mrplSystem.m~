@@ -74,13 +74,10 @@ classdef mrplSystem < handle
             
             
             r_img = obj.rob.hist_laser.last(); % Get Latest Image.
-            while(length(r_img.line_candidates.lengths) == 1 ...
-               && r_img.line_candidates.lengths(1) == 0)
-            % Loop until valid line candidate is found
-                r_img = obj.rob.hist_laser.last(); % Get Latest Image.
-                r_img.findLineCandidates(); % (does what it says on the tin)
-            end
-            
+            while(length(r_img.line_candidates.lengths) == 1
+               && length(r_img.line_candidates.lengths) == 1)
+            r_img = obj.rob.hist_laser.last(); % Get Latest Image.
+            r_img.findLineCandidates(); % (does what it says on the tin)
             p_los = r_img.line_candidates.poses; % Poses of all Valid Line Objects
             % Get Nearest Line Object Pose to Robot in Robot Frame:
             
