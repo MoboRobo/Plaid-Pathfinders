@@ -45,7 +45,10 @@ classdef P2_Robot < handle
         % Robot Commanded Trajectory (Odometry), RobotTrajectory:
         commTraj;
         
-        hist_laser = [zeros(1,360)]; % m, History of LIDAR Range Reading Vectors
+        % History of lidar laser RangeImages.
+        hist_laser = slidingFifo(100, RangeImage.empty);
+        % Whether the lidar laser is on.
+        laser_state = 0;
         
         % Measured Trajectory, Points to Handle of whichever Trajectory
         % (Encoder, Lidar, Fusion, etc.) should represent the Robot's
@@ -178,6 +181,31 @@ classdef P2_Robot < handle
             om = (v_r-v_l) ./ obj.WHEEL_TREAD;
         end % #computeIK
         
+        %% SENSING
+        function processNewLaserData(obj, ~, event)
+            obj.hist_laser.add(RangeImage(event.Ranges));
+        end
+        function laserOn(obj)
+            if ~obj.laser_state
+                %Reset Lidar History:
+                obj.hist_laser = slidingFifo( ...
+                    obj.hist_laser.maxElements, ...
+                    RangeImage.empty ...
+                );
+                
+                obj.core.startLaser();
+                obj.core.laser.NewMessageFcn = @obj.processNewLaserData;
+                obj.laser_state = 1;
+            
+            end
+        end
+        function laserOff(obj)
+            if obj.laser_state
+                obj.laser_state = 0;
+                obj.core.stopLaser();
+            end
+        end
+        
         %% ODOMETRY
         % Basic position tracking (time and encoder deltas, etc.)
         
@@ -194,6 +222,8 @@ classdef P2_Robot < handle
             
             obj.hist_commWheelVel.add(obj.hist_commWheelVel.first());
             obj.commTraj.reset();
+            
+            obj.hist_laser = slidingFifo(100, RangeImage.empty);
             
             obj.curr_V = 0;
             obj.curr_omega = 0;
@@ -233,24 +263,29 @@ classdef P2_Robot < handle
             obj.hist_enc.add(struct('s_l',s_l, 's_r',s_r, 't',t));
         end % #processNewEncoderData
         
+        % DEPRECATED
         % Sets/Saves a new Robot State from which Odometry is Collected (overwrites 
         % previous).
         % Returns vector containing new state variables.
         state = startTrip(obj)
         
+        % DEPRECATED
         % Time Elapsed since Start of Trip
         function t = tripTime(obj)
             t = toc(obj.trip_startTime);
         end
         
+        % DEPRECATED
         % Change in Left Encoder Distance since Start of Trip
         function d = leftTripDist(obj)
             d = obj.core.encoders.LatestMessage.Vector.X - obj.init_enc_l;
         end
+        % DEPRECATED
         % Change in Right Encoder Distance since Start of Trip
         function d = rightTripDist(obj)
             d = obj.core.encoders.LatestMessage.Vector.Y - obj.init_enc_r;
         end % #rightTripDist
+        % DEPRECATED
         % Change in Average Encoder Distance since Start of Trip
         function d = avgTripDist(obj)
             d = (obj.leftTripDist() + obj.rightTripDist()) / 2;

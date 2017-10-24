@@ -75,7 +75,12 @@ classdef RangeImage < handle
         % Store relevant data from raw lidar sensor data
         function obj = RangeImage(raw_data)
             % Store Input Data:
-            obj.raw = raw_data;
+            % Ensure Raw Data is Row Vector (fixes Robot_API bug):a
+            if ~isrow(raw_data)
+                obj.raw = raw_data';
+            else
+                obj.raw = raw_data;
+            end
             
             % Process and Store Sensible Information from Raw Data:
             [obj.data.ranges, obj.data.angles] = RangeImage.cleanImage(obj.raw);
@@ -124,8 +129,9 @@ classdef RangeImage < handle
         % vectors and corresponding lengths of each detected line segment 
         % (pallet).
         function findLineCandidates(obj, l,mle)
-%             [obj.line_candidates.poses, obj.line_candidates.lengths] = getPalletPoses(obj, obj.raw);
-
+        %[obj.line_candidates.poses, obj.line_candidates.lengths] = getPalletPoses(obj, obj.raw);
+        
+        
             %minimum number of points allowable in point cloud
             minNumPoints = 3;
             
@@ -144,7 +150,7 @@ classdef RangeImage < handle
             
             % Returns cloud of pixels within a certain distance of a given
             % index.
-            function [cloudXs, cloudYs] = getPixelsWithin(i, maxDistance)
+            function [cloudXs, cloudYs, startI, endI] = getPixelsWithin(i, maxDistance)
                 midX = getIth(obj.data.xs, i, len);
                 midY = getIth(obj.data.ys, i, len);
                 midTh = getIth(obj.data.angles, i, len);
@@ -179,7 +185,8 @@ classdef RangeImage < handle
             end % #getPixelsWithin
             
             %Gets a Segment of Continuous Pixels
-            function [cloudXs, cloudYs] = getContinuousPixels(i)
+            function [cloudXs, cloudYs, startI, endI] = getContinuousPixels(i)
+                startI = i; endI = i;
                 rawLen = length(obj.raw);
                 midX = getIth(obj.data.xs, i, len);
                 midY = getIth(obj.data.ys, i, len);
@@ -202,6 +209,7 @@ classdef RangeImage < handle
                     prevX = curX; prevY = curY;
                     cloudXs = [curX cloudXs];
                     cloudYs = [curY cloudYs];
+                    startI = i - offset;
                     offset = offset+1;
                 end
                 offset = 1;
@@ -220,6 +228,7 @@ classdef RangeImage < handle
                     cloudXs(end+1) = curX;
                     cloudYs(end+1) = curY;
                     offset = offset+1;
+                    endI = i + offset;
                 end
             end % #getPixelsWithin
             
@@ -265,7 +274,7 @@ classdef RangeImage < handle
 %                 search_radius = 1.45*halfSailLength + marginOfLengthError/2;
 %                 [cloudXs, cloudYs] = getPixelsWithin(pixelIndex, search_radius);
                 %[cloudXs, cloudYs] = rejectOutliers(cloudXs, cloudYs);
-                [cloudXs, cloudYs] = getContinuousPixels(pixelIndex);
+                [cloudXs, cloudYs, sI, eI] = getContinuousPixels(pixelIndex);
                 
                 numPoints = length(cloudXs);
                 if numPoints < minNumPoints
@@ -315,8 +324,9 @@ classdef RangeImage < handle
                     obj.line_candidates.poses = [obj.line_candidates.poses new_pose];
                     obj.line_candidates.lengths = [obj.line_candidates.lengths estimatedLength];
                 end
-                
-            pixelIndex = pixelIndex+1;
+            %pixelIndex = pixelIndex+1;
+            
+            pixelIndex = max(pixelIndex+1, eI+1);
             end
             
             % Returns the Ith Data from the Array while Ensuring

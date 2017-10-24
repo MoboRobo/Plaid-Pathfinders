@@ -20,6 +20,17 @@ classdef (Abstract) Trajectory < handle
             end % nargin>0?
             ret = val;
         end % #plot_thetas
+        
+        % Transforms a Pose from Path-Relative Coordinates to World 
+        % Coordinates given an initial position, p0
+        function pw = poseToWorld(pr, p0)
+            transformationMatrix = p0.bToA();
+            result = (transformationMatrix * [pr.X; pr.Y; 1])';
+            x = result(1); y = result(2);
+            offsetTh = p0.th;
+            pw = pose(x, y, ...
+                atan2(sin(pr.th + offsetTh), cos(pr.th + offsetTh)));
+        end
     end % Trajectory <- methods(sealed,static)
     
     methods(Abstract)

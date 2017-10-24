@@ -57,8 +57,8 @@ global laser_plotting_data
     pause(1); % Wait for system to enter steady-state
     
     clk = Clock();
-    while(clk.time() < 30)
-        V = 0.005; rho = 0.5;
+    while(clk.time() < 91)
+        V = 0.00; rho = 0.01;
         rob.moveAt(V,V/rho);
         
         %% Plot Laser Data

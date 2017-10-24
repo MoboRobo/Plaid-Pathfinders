@@ -15,22 +15,6 @@ classdef (Abstract) ReferenceTrajectory < Trajectory
         N_samples;      % Number of Samples in the Trajectory
     end % ReferenceTrajectory <-properties(Abstract)
     
-    methods(Static)
-       
-        % Transforms a Pose from Path-Relative Coordinates to World 
-        % Coordinates given an initial position, p0
-        function pw = poseToWorld(pr, p0)
-            transformationMatrix = p0.bToA();
-            result = (transformationMatrix * [pr.X; pr.Y; 1])';
-            x = result(1); y = result(2);
-            offsetTh = p0.th;
-            pw = pose(x, y, ...
-                atan2(sin(pr.th + offsetTh), cos(pr.th + offsetTh)));
-        end
-        
-        
-    end % ReferenceTrajectory <-methods(Static)
-    
     methods(Abstract)
         
         % Compute Everything Necessary to Create a Follow-able Path
