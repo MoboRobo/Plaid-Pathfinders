@@ -278,6 +278,111 @@ classdef RangeImage < handle
             end % #getIth
         end
         
+        function findLineCandidates_altered(obj, l, mle)
+%             [obj.line_candidates.poses, obj.line_candidates.lengths] = getPalletPoses(obj, obj.raw);
+
+            %minimum number of points allowable in point cloud
+            minNumPoints = 3;
+            
+            if nargin>1
+                halfSailLength = l/2;
+            else
+                halfSailLength = 0.0635; %in meters
+            end
+            if nargin>2
+                marginOfLengthError = mle;
+            else
+                marginOfLengthError = 0.03; %3 centimeters of leeway
+            end
+            
+            len = length(obj.data.ranges);
+            
+            function [cloudXs, cloudYs] = getPixelsWithin(i, maxDistance)
+                rawLen = length(obj.raw)
+                midX = getIth(obj.data.xs, i, len);
+                midY = getIth(obj.data.ys, i, len);
+                midTh = getIth(obj.data.angles, i, len);
+                cloudXs = [midX];
+                cloudYs = [midY];
+                %leftSide
+                offset = 1;
+                prevX = midX; prevY = midY;
+                while (1)
+                    %get current radius to figure maxDist
+                    curRadius = getIth(obj.data.ranges, i-offset, len);
+                    maxDistance = (curRadius*2*pi / (rawLen) * 1.5
+                    curX = getIth(obj.data.xs, i - offset, len);
+                    curY = getIth(obj.data.ys, i - offset, len);
+                    curTh = getIth(obj.data.angles, i - offset, len);
+                    if ( norm([curX-prevX, curY-prevY]) > maxDistance )
+                        break;
+                    end
+                    prevX = curX; prevY = curY;
+                    cloudXs = [curX cloudXs];
+                    cloudYs = [curY cloudYs];
+                    offset = offset+1;
+                end
+                offset = 1;
+                prevX = midX; prevY = midY;
+                %rightSide
+                while(1)
+                    curRadius = getIth(obj.data.ranges, i+offset, len);
+                    maxDistance = (curRadius*2*pi / 360.0) * 1.5
+                    curX = getIth(obj.data.xs, i + offset, len);
+                    curY = getIth(obj.data.ys, i + offset, len);
+                    curTh = getIth(obj.data.angles, i + offset, len);
+                    if ( norm([curX-prevX, curY-prevY]) > maxDistance )
+                        break
+                    end
+                    prevX = curX; prevY = curY;
+                    cloudXs(end+1) = curX;
+                    cloudYs(end+1) = curY;
+                    offset = offset+1;
+                end
+            end % #getPixelsWithin
+            
+            pixelIndex = 1;
+            while pixelIndex <= len
+                [cloudXs, cloudYs] = getPixelsWithin(pixelIndex, halfSailLength);
+                numPoints = length(cloudXs);
+                if numPoints < minNumPoints
+                    %skip to next iteration
+                    break;
+                end
+                centerX = sum(cloudXs) / numPoints;
+                centerY = sum(cloudYs) / numPoints;
+                %get points centered around origin
+                cloudXs = cloudXs - centerX;
+                cloudYs = cloudYs - centerY;
+
+                Ixx = cloudXs * cloudXs';
+                Iyy = cloudYs * cloudYs';
+                Ixy = - cloudXs * cloudYs';
+                inertia = [Ixx Ixy; Ixy Iyy] / length(cloudXs);
+                lambda = eig(inertia);
+                lambda = sqrt(lambda) * 1000.0;
+                estimatedLength = norm([cloudXs(1)-cloudXs(end), ...
+                                        cloudYs(1)-cloudYs(end)]);
+                
+                % CONDITIONS FOR VALID LINE CANDIDATE:
+                if(lambda(1) < 1.3 && (abs(estimatedLength - halfSailLength*2) < ...
+                        marginOfLengthError))
+                    warning(strcat('adding new pose at: ',num2str(centerX),' ',num2str(centerY)))
+                    
+                    new_th = atan2(2*Ixy, Iyy-Ixx) / 2.0;
+                    new_pose = pose(centerX, centerY, new_th);
+                    obj.line_candidates.poses = [obj.line_candidates.poses new_pose];
+                    obj.line_candidates.lengths = [obj.line_candidates.lengths estimatedLength];
+                end
+                
+            pixelIndex = pixelIndex+1;
+            end
+            
+            function elem = getIth(array, i, len)
+                elem = array( mod(i-1, len) + 1);
+            end % #getIth
+        end
+        
         % Plots Every Line Candidate within the Validated Data Set (in the 
         % Robot Frame).
         % Optional Argument: - cp: clears prev plotting of line
