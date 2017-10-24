@@ -289,7 +289,29 @@ classdef mrplSystem < handle
     end % mrplSystem <- methods
     
     methods(Static)
-        
+                function acqPoseVec = acquisitionPose(objPoseVec,...
+                robFrontOffset, objFaceOffset, moreOffset)
+            t^r_s = pose(0, 0, 0);
+            T^r_s = t^r_s.bToA();
+            t^s_o = objPoseVec;
+            T^s_o = t^s_o.bToA();
+            
+            overDrive = .01;
+            totalDist = robFrontOffset + objFaceOffset + moreOffset...
+                - overDrive;
+            x1 = objPoseVec.x;
+            y1 = objPoseVec.y;
+            th1 = objPoseVec.th;
+            x' = x1 - totalDist * cos(th1); y' = y1 - totalDist*sin(th1);
+            th' = th1;
+            t^o_g = pose(x', y', th');
+            T^o_g = t^o_g.bToA();
+            
+            finalTransformation = T^r_s * T^s_o * T^o_g
+            
+            result =finalTransformation* robPose.poseVec;
+            acqPoseVec = pose(result);
+        end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% - DATA MANIPULATION
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
