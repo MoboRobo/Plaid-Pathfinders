@@ -317,7 +317,7 @@ classdef RangeImage < handle
                     % ~"Slightly Underestimate Angle to produce less extreme
                     % angles of approach"~ (use mechanical alignment to
                     % correct):
-                    underest_scale = 0.08; %round down to nearest ~half degree (little less)
+                    underest_scale = 0.04; %round down to nearest ~quarter degree (little less)
                     new_th = underest_scale*floor(new_th/underest_scale);
                     
                     new_pose = pose(centerX, centerY, new_th);

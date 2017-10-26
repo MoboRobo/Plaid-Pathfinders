@@ -65,13 +65,13 @@ classdef Trajectory_TimeCurve < ReferenceTrajectory
         
         %% Compute
         % Computes the trajectory from time t0 to tf.
-        function compute(obj,t0,tf)
-            obj.times = (t0 : obj.resolution : tf);
+        function compute(obj)
+            obj.times = (obj.t_init : obj.resolution : obj.t_fin);
             
             %Compute First Point:
             obj.profile(1) = struct( ...
-                'V', obj.V_func(obj,t0), ...
-                'om', obj.om_func(obj,t0) ...
+                'V', obj.V_func(obj,obj.t_init), ...
+                'om', obj.om_func(obj,obj.t_init) ...
             );
         
             i = 2;
@@ -100,22 +100,22 @@ classdef Trajectory_TimeCurve < ReferenceTrajectory
         
         
         function transMat = getTransformMat(obj)
-            transMat = obj.init_pose.bToA()
+            transMat = obj.init_pose.bToA();
         end
         % Transforms Every Pose in the Data-Set to World Coordinates based
         % on the Object's "init_pose" property.
         function offsetInitPose(obj)
-            transformMat = obj.getTransformMat()
-            offsetTh = obj.init_pose.th
+            transformMat = obj.getTransformMat();
+            offsetTh = obj.init_pose.th;
             %iterate through all x, y, and th in poseArray and transform
             %   them
-            for i=1:obj.numSamples
+            for i=1:length(obj.times)
                 oldTh = obj.poses(i).th;
                 oldX = obj.poses(i).x;
                 oldY = obj.poses(i).y;
-                oldPose = [oldX; oldY; 1]
+                oldPose = [oldX; oldY; 1];
                 
-                newPose = transformMat * oldPose
+                newPose = transformMat * oldPose;
                 newX = newPose(1);
                 newY = newPose(2);
                 newTh = offsetTh + oldTh;
@@ -194,7 +194,7 @@ classdef Trajectory_TimeCurve < ReferenceTrajectory
             p = obj.getPose(t);
             if (obj.transformed == 0)
                 %then transform this badboy before we're finished
-                p = obj.poseToWorld(p,obj.init_pose)
+                p = obj.poseToWorld(p,obj.init_pose);
             end
         end
         

@@ -510,15 +510,43 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
         end
         
         function p  = getFinalPose(obj)
-            p  = pose(obj.poseArray(:,obj.numSamples));  
+            if ~obj.is_null
+                if obj.numSamples > 0
+                    p  = pose(obj.poseArray(:,obj.numSamples));
+                else
+                    try
+                        p = init_pose;
+                    catch
+                        p = pose(0,0,0);
+                    end
+                end
+            else
+                p = pose(0,0,0);
+            end
         end
         
         function time  = getTrajectoryDuration(obj)
-            time  = obj.timeArray(:,obj.numSamples);  
+            if ~obj.is_null
+                if obj.numSamples > 0
+                    time  = obj.timeArray(:,obj.numSamples);
+                else
+                    time = 0;
+                end
+            else
+                time = 0;
+            end
         end
         
         function dist  = getTrajectoryDistance(obj)
-            dist  = obj.distArray(:,obj.numSamples);  
+            if ~obj.is_null
+                if obj.numSamples > 0
+                    dist  = obj.distArray(:,obj.numSamples);
+                else
+                    dist = 0;
+                end
+            else
+                dist = 0;
+            end
         end
         
         function V  = getVAtTime(obj,t)

@@ -9,7 +9,7 @@ classdef mrplSystem < handle
         traj_samples = 201; % Number of Trajectory Samples to Compute in 
                             % Trajectory Planning
         
-        traj_vec = Trajectory_CubicSpiral.empty;
+        traj_vec = MakeNullInstance_TCS();
         plotting_enabled = 1;
        
             delay_plot_data = slidingFifo(10000, struct('tv',0, 'rv',0, 't',0));
@@ -21,7 +21,7 @@ classdef mrplSystem < handle
     
     properties(GetAccess = public, SetAccess = public)
      debugging = struct(...
-            'delay_plots', 1, ...   % Whether Transient Velocity Plots for Determining should be Made.
+            'delay_plots', 0, ...   % Whether Transient Velocity Plots for Determining should be Made.
             'error_plots', 0, ...    % Whether Transient Error Plots (from FeedbackController) should be Made.
             'comm_plots', 0 ...     % Whether Transient Comm plots should be made
         );
@@ -44,8 +44,7 @@ classdef mrplSystem < handle
             %% Setup Internal Data Classes:
             obj.clock = Clock();
             %% Set Initial NullTrajectory: 
-            obj.traj_vec = Trajectory_CubicSpiral.planTrajectory(0,0,0,1,2,1);
-            obj.traj_vec.is_null = 1;
+            obj.traj_vec = MakeNullInstance_TCS();
             %% Setup Robot
             rasp = raspbot(robot_id, [startPose.X; startPose.Y; startPose.th+pi/2.0]);
             obj.rob = P2_Robot( rasp, @()(obj.clock.time()) );
@@ -105,6 +104,40 @@ classdef mrplSystem < handle
         function turn_stationary(obj, th)
             Stationary_Turn(obj.rob, th);
         end
+        
+        
+        function goTo_X_Small(obj, x_rel)
+            %Anonymous function handle for velocity profile:
+            vref = @(~,t)u_ref_trap(t,obj.rob.MAX_ACCEL,0.5*obj.rob.MAX_SPEED,x_rel,0,0);
+            omref = @(~,t)0;
+            t_f = u_ref_trap(0,obj.rob.MAX_ACCEL,0.5*obj.rob.MAX_SPEED,x_rel,0,1);
+            
+            ttc = Trajectory_TimeCurve(vref,omref, 0, t_f, obj.traj_samples);
+            ttc.init_pose = obj.traj_vec(end).getFinalPose();
+            ttc.offsetInitPose();
+            
+            tf = Trajectory_Follower(obj.rob, ttc);
+               
+            obj.time_loop(tf, 1);
+            
+            % Until Mix-Ins are implemented for Trajectory Class Hierarchy,
+            % Set traj_vec terminal TTC to equivalent TCS (to preserve
+            % homogeneity).
+            eq_tcs = Trajectory_CubicSpiral.planTrajectory( ...
+                x_rel, 0, 0, 1, ...
+                obj.traj_samples, obj.tcs_scale ...
+            );
+            eq_tcs.init_pose = obj.traj_vec(end).getFinalPose();
+            eq_tcs.offsetInitPose();
+            obj.traj_vec(end+1) = eq_tcs;
+            
+            %Update plot after completed trajectory
+            if(obj.plotting_enabled)
+               obj.update_plot(tf);
+            end
+            
+        end % #goTo_X_Small
+        
         %% Go To Relative Position
         function goTo_Rel(obj,rel_pose)
             x = rel_pose.x;
@@ -119,7 +152,7 @@ classdef mrplSystem < handle
             rt.init_pose = obj.traj_vec(end).getFinalPose();
             % if you don't call offsetInitPose, Trajectory automatically
                 %transforms each reference pose before handing it to mrpl
-            %rt.offsetInitPose();
+            rt.offsetInitPose();
             
             if isempty(obj.feedback_controller)
                 tf = Trajectory_Follower(obj.rob, rt);
@@ -129,9 +162,25 @@ classdef mrplSystem < handle
             end
             tf.fbk_controller.correctiveTime = obj.k_tau;%* rt.getFinalTime();
             
+            obj.time_loop(tf, 1);
+             
+            %Store completed trajectory
+            obj.traj_vec(end+1) = tf.rt;
+            %Update plot after completed trajectory
+            if(obj.plotting_enabled)
+               obj.update_plot(tf);
+            end
+            
+        end % #goTo_Rel
+
+        % Helper Function Executing a loop commanding the robot to follow
+        % the given trajectory follower until the t_buffer seconds after 
+        % the tf's reference trajectory's final time.
+        function time_loop(obj, tf, t_buffer)
             first_loop = 1;
          	T = 0;
-            while (T < tf.rt.getFinalTime()+1)
+            done = 0;
+            while (~done)
                 if(first_loop)
                     obj.clock = Clock();
                     first_loop = 0;
@@ -140,21 +189,20 @@ classdef mrplSystem < handle
                 T = obj.clock.time();
                 tf.follow_update_t(T);
                 
-                obj.update_plotData(tf, T);
+                if(obj.plotting_enabled)
+                    obj.update_plotData(tf, T);
+                end
+                
+                if(T < tf.rt.getFinalTime()+t_buffer)
+                    done = 1;
+                    obj.rob.moveAt(0,0); % Stop Immediately
+                end
                 
                 pause(0.01);
             end
             obj.rob.moveAt(0,0);
             obj.rob.core.stop();
-            
-            %Store completed trajectory
-            obj.traj_vec(end+1) = rt;
-            %Update plot after completed trajectory
-            if(obj.plotting_enabled)
-               obj.update_plot(tf);
-            end 
         end
-
         
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% - PLOTTING

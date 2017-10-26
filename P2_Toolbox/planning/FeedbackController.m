@@ -45,6 +45,9 @@ classdef FeedbackController < handle
         %correctiveTime (time in which errors should be corrected)
         correctiveTime = .3;
         
+        % Whether this is controlling a pure turn (no k_x,k_y):
+        isPureTurn = 0;
+        
         % PID Layer:
         %PID coefficients (0,0,0 -> off by default)
         k_p = 0;
@@ -130,8 +133,13 @@ classdef FeedbackController < handle
             eth = obj.k_p * errorTh + obj.k_d * errorDerivativeTh + ...
                 obj.k_i * obj.errorIntegralTh;
             % compute actual control linear and rotational velocity
-            u_v = errorX*k_x + norm([ex ey]);
-            u_w = errorY*k_y + errorTh*k_th + eth;
+            if(obj.isPureTurn)
+                u_v = 0;
+                u_w = errorTh*k_th + eth;
+            else
+                u_v = errorX*k_x + norm([ex ey]);
+                u_w = errorY*k_y + errorTh*k_th + eth;
+            end
 %             u_v = errorX * k_x;
 %             u_w = errorY * k_y + errorTh*k_th;
 
@@ -236,8 +244,13 @@ classdef FeedbackController < handle
             eth = obj.k_p * errorTh_s + obj.k_d * errorDerivativeTh_s + ...
                 obj.k_i * obj.errorIntegralTh_s;
             % compute actual control linear and rotational velocity
-            u_v = errorX_s*k_x + norm([ex ey]);
-            u_w = errorY_s*k_y + errorTh_s*k_th + eth;
+            if(obj.isPureTurn)
+                u_v = 0;
+                u_w = errorTh_s*k_th + eth;
+            else
+                u_v = errorX_s*k_x + norm([ex ey]);
+                u_w = errorY_s*k_y + errorTh_s*k_th + eth;
+            end
 %             u_v = errorX_s * k_x;
 %             u_w = errorY_s * k_y + errorTh_s*k_th;
 
