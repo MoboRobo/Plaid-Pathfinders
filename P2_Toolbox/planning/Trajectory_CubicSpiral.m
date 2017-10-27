@@ -29,7 +29,7 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
         VArray = [];
         wArray = [];
         
-        V_max = 0.35;% Maximum Wheel Velocity
+        V_max = 0.2;% Maximum Wheel Velocity
     end
     
     % Inherited Abstract Methods (from ReferenceTrajectory)
