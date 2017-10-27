@@ -3,8 +3,10 @@
 % Computes and Logs the Commanded Pose into hist_commPose.
 % (wrapper for the RaspBot setVelocity Command.
 function sendVelocity(obj, v_l, v_r)
-    if (v_l == nan || v_r == nan)
-        warning('sending nan velocity!!!');
+    if (isnan(v_l) || isnan(v_r))
+        ME = MException('MyComponent:noSuchVariable', ...
+        'sending a nan!');
+        throw(ME);
     end
     obj.core.sendVelocity(v_l, v_r);
     
