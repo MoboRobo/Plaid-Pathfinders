@@ -131,7 +131,7 @@ classdef RangeImage < handle
         function findLineCandidates(obj, l,mle)
         %[obj.line_candidates.poses, obj.line_candidates.lengths] = getPalletPoses(obj, obj.raw);
         
-        
+            initialNumSkippedPoints = 0;
             %minimum number of points allowable in point cloud
             minNumPoints = 3;
             
@@ -196,38 +196,55 @@ classdef RangeImage < handle
                 %leftSide
                 offset = 1;
                 prevX = midX; prevY = midY;
+                numSkippedPoints = initialNumSkippedPoints
+                curRadius = getIth(obj.data.ranges, i-offset, len);
                 while (1)
                     %get current radius to figure maxDist
-                    curRadius = getIth(obj.data.ranges, i-offset, len);
                     maxDistance = (curRadius*2*pi / double(rawLen)) * 1.5;
                     curX = getIth(obj.data.xs, i - offset, len);
                     curY = getIth(obj.data.ys, i - offset, len);
                     curTh = getIth(obj.data.angles, i - offset, len);
-                    if ( norm([curX-prevX, curY-prevY]) > maxDistance )
-                        break;
+                    if ( norm([curX-prevX, curY-prevY]) > maxDistance)
+                        if (numSkippedPoints == 0)
+                            break;
+                        else
+                            numSkippedPoints = numSkippedPoints -1;
+                            curRadius = curRadius*2;
+                            continue;
+                        end
                     end
                     prevX = curX; prevY = curY;
                     cloudXs = [curX cloudXs];
                     cloudYs = [curY cloudYs];
                     startI = i - offset;
                     offset = offset+1;
+                    curRadius = getIth(obj.data.ranges, i-(offset), len);
                 end
                 offset = 1;
                 prevX = midX; prevY = midY;
                 %rightSide
+                numSkippedPoints = initialNumSkippedPoints
+                curRadius = getIth(obj.data.ranges, i+offset, len)
                 while(1)
-                    curRadius = getIth(obj.data.ranges, i+offset, len);
                     maxDistance = (curRadius*2*pi / double(rawLen)) * 1.5;
                     curX = getIth(obj.data.xs, i + offset, len);
                     curY = getIth(obj.data.ys, i + offset, len);
                     curTh = getIth(obj.data.angles, i + offset, len);
-                    if ( norm([curX-prevX, curY-prevY]) > maxDistance )
-                        break
+                    if ( norm([curX-prevX, curY-prevY]) > maxDistance)
+                        if (numSkippedPoints == 0)
+                            break;
+                        else
+                            numSkippedPoints = numSkippedPoints -1;
+                            curRadius = curRadius*2;
+                            continue;
+                        end
                     end
+                    
                     prevX = curX; prevY = curY;
                     cloudXs(end+1) = curX;
                     cloudYs(end+1) = curY;
                     offset = offset+1;
+                    curRadius = getIth(obj.data.ranges, i+(offset), len);
                     endI = i + offset;
                 end
             end % #getPixelsWithin
