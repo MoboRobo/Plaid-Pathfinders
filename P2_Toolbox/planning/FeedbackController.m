@@ -78,11 +78,12 @@ classdef FeedbackController < handle
             %error summing coefficients
             k_x = 1 / obj.correctiveTime;
             k_th = 1 / obj.correctiveTime;
-            if V < 0.2 % V-floor for k_y to prevent it from becoming too large
+            if V < 0.03 % V-floor for k_y to prevent it from becoming too large
                 k_y = 0;
+                warning('Low Velocity');
             else
                 k_y = 2 / (abs(V) * obj.correctiveTime^2);
-            end % k_y<0.2?
+            end % k_y<0.03?
             
             wrp = (refPose.poseVec(1:2) - curPose.poseVec(1:2));
             
@@ -136,23 +137,13 @@ classdef FeedbackController < handle
             if(obj.isPureTurn)
                 u_v = 0;
                 u_w = errorTh*k_th + eth;
+                warning('Is Pure Turn');
             else
                 u_v = errorX*k_x + norm([ex ey]);
                 u_w = errorY*k_y + errorTh*k_th + eth;
             end
 %             u_v = errorX * k_x;
 %             u_w = errorY * k_y + errorTh*k_th;
-
-            %% ensure below ceiling
-            if abs(u_v) > obj.v_max
-                sign = u_v / abs(u_v);
-                u_v = sign * obj.v_max;
-            end
-
-            if abs(u_w) > obj.w_max
-                sign = u_w / abs(u_w);
-                u_w = sign*obj.w_max;
-            end
             
             % update history of error poses and times
             obj.error_poses.add(pose(errorX, errorY, errorTh));
@@ -189,11 +180,12 @@ classdef FeedbackController < handle
             %error summing coefficients
             k_x = 1 / obj.correctiveTime;
             k_th = 1 / obj.correctiveTime;
-            if V < 0.2 % V-floor for k_y to prevent it from becoming too large
+            if V < 0.03 % V-floor for k_y to prevent it from becoming too large
                 k_y = 0;
+                warning('Low Velocity');
             else
                 k_y = 2 / (abs(V) * obj.correctiveTime^2);
-            end % k_y<0.2?
+            end % k_y<0.03?
             
             wrp = (refPose.poseVec(1:2) - curPose.poseVec(1:2));
             

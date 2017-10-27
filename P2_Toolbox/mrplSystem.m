@@ -6,7 +6,7 @@ classdef mrplSystem < handle
         feedback_controller;    % Persistent Feedback Controller Class
         
         tcs_scale = 1;      % Scale of Cubic Spiral Trajectory Data to be Used
-        traj_samples = 201; % Number of Trajectory Samples to Compute in 
+        traj_samples = 551; % Number of Trajectory Samples to Compute in 
                             % Trajectory Planning
         
         traj_vec = MakeNullInstance_TCS();
@@ -156,8 +156,8 @@ classdef mrplSystem < handle
             % Set traj_vec terminal TTC to equivalent TCS (to preserve
             % homogeneity).
             eq_tcs = Trajectory_CubicSpiral([0 0 0], 3);
-            pf = obj.tobj.traj_vec(end).getFinalPose();
-            eq_tcs.init_pose = [pf.X pf.Y pf.th+th_rel];
+            pf = obj.traj_vec(end).getFinalPose();
+            eq_tcs.init_pose = pose(pf.X, pf.Y, pf.th+th_rel);
             eq_tcs.offsetInitPose();
             obj.traj_vec(end+1) = eq_tcs;
             

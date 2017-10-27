@@ -394,6 +394,7 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
             % Plan the highest possible velocity for the path where no
             % wheel may exceed Vmax in absolute value.
             obj.V_max = Vmax; % Update Class Property
+            run_kelly = 1; % Whether to Run the Al.Kelly Profile
             
             for i=1:obj.numSamples
 %                 Vbase = Vmax;
@@ -402,15 +403,18 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
                 sf = obj.distArray(obj.numSamples);
                 Vbase = u_ref_trap_s(s, P2_Robot.MAX_ACCEL, Vmax, sf, 0, 0);
                 % Al. Kelly Algorithm:
-%                 if(abs(sf) > 2.0*obj.rampLength) % no ramp for short trajectories
-%                     sUp = abs(s);
-%                     sDn = abs(sf-s);
-%                     if(sUp < obj.rampLength) % ramp up
-%                         Vbase = Vbase * sUp/obj.rampLength;
-%                     elseif(sDn < 0.05) % ramp down
-%                         Vbase = Vbase * sDn/obj.rampLength;
-%                     end
-%                 end
+                if run_kelly
+                    Vbase = Vmax;
+                    if(abs(sf) > 2.0*obj.rampLength) % no ramp for short trajectories
+                        sUp = abs(s);
+                        sDn = abs(sf-s);
+                        if(sUp < obj.rampLength) % ramp up
+                            Vbase = Vbase * sUp/obj.rampLength;
+                        elseif(sDn < 0.05) % ramp down
+                            Vbase = Vbase * sDn/obj.rampLength;
+                        end
+                    end
+                end
                 % Now proceed with base velocity 
                 %disp(Vbase);
                 V = Vbase*obj.sgn; % Drive forward or backward as desired.

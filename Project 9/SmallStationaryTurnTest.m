@@ -3,9 +3,11 @@ function SmallStationaryTurnTest(robot_id)
      
      mrpl.plottingOn(); % Turn on Plotting
      
+     mrpl.debugging.error_plots = 1;
+     
      pause(2); % Wait for Robot to Initialize
      
-     mrpl.goTo_th_Small(pi/2);
+     mrpl.goTo_th_Small(pi);
      
      pause % Avoid GC
 end
