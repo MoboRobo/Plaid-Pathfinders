@@ -223,8 +223,8 @@ classdef RangeImage < handle
                 offset = 1;
                 prevX = midX; prevY = midY;
                 %rightSide
-                numSkippedPoints = initialNumSkippedPoints
-                curRadius = getIth(obj.data.ranges, i+offset, len)
+                numSkippedPoints = initialNumSkippedPoints;
+                curRadius = getIth(obj.data.ranges, i+offset, len);
                 while(1)
                     maxDistance = (curRadius*2*pi / double(rawLen)) * 1.5;
                     curX = getIth(obj.data.xs, i + offset, len);
