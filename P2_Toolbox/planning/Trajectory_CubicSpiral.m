@@ -29,7 +29,7 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
         VArray = [];
         wArray = [];
         
-        V_max = 0.2;% Maximum Wheel Velocity
+        V_max = 0.35;% Maximum Wheel Velocity
     end
     
     % Inherited Abstract Methods (from ReferenceTrajectory)
@@ -396,33 +396,35 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
             obj.V_max = Vmax; % Update Class Property
             
             for i=1:obj.numSamples
-                Vbase = Vmax;
+%                 Vbase = Vmax;
                 % Add velocity ramps for first and last 5 cm
                 s = obj.distArray(i);
                 sf = obj.distArray(obj.numSamples);
-                if(abs(sf) > 2.0*obj.rampLength) % no ramp for short trajectories
-                    sUp = abs(s);
-                    sDn = abs(sf-s);
-                    if(sUp < obj.rampLength) % ramp up
-                        Vbase = Vbase * sUp/obj.rampLength;
-                    elseif(sDn < 0.05) % ramp down
-                        Vbase = Vbase * sDn/obj.rampLength;
-                    end
-                end
+                Vbase = u_ref_trap_s(s, P2_Robot.MAX_ACCEL, Vmax, sf, 0, 0);
+                % Al. Kelly Algorithm:
+%                 if(abs(sf) > 2.0*obj.rampLength) % no ramp for short trajectories
+%                     sUp = abs(s);
+%                     sDn = abs(sf-s);
+%                     if(sUp < obj.rampLength) % ramp up
+%                         Vbase = Vbase * sUp/obj.rampLength;
+%                     elseif(sDn < 0.05) % ramp down
+%                         Vbase = Vbase * sDn/obj.rampLength;
+%                     end
+%                 end
                 % Now proceed with base velocity 
                 %disp(Vbase);
                 V = Vbase*obj.sgn; % Drive forward or backward as desired.
                 K = obj.curvArray(i);
                 w = K*V;
                 vr = V + robotModel.W2*w;
-                vl = V - robotModel.W2*w;               
-                if(abs(vr) > Vbase)
-                    vrNew = Vbase * sign(vr);
+                vl = V - robotModel.W2*w;
+                if(abs(vr) > P2_Robot.MAX_SPEED)
+                    vrNew = P2_Robot.MAX_SPEED * sign(vr);
                     vl = vl * vrNew/vr;
                     vr = vrNew;
                 end
-                if(abs(vl) > Vbase)
-                    vlNew = Vbase * sign(vl);
+                if(abs(vl) > P2_Robot.MAX_SPEED)
+                    vlNew = P2_Robot.MAX_SPEED * sign(vl);
                     vr = vr * vlNew/vl;
                     vl = vlNew;
                 end
@@ -581,7 +583,7 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
             
             if (obj.transformed == 0)
                 %then transform this badboy before we're finished
-                p = obj.poseToWorld(p,obj.init_pose)
+                p = obj.poseToWorld(p,obj.init_pose);
             end
         end  
         
@@ -737,6 +739,14 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
         %Returns Vector of All Velocities:
         function Vs = getVVec(obj)
             Vs = obj.VArray;
+        end
+        %Returns Vector of All Rotational Velocities:
+        function Vs = getOmVec(obj)
+            Vs = obj.wArray;
+        end
+        %Returns Vector of All Curvatures:
+        function Vs = getKVec(obj)
+            Vs = obj.wArray;
         end
         
         %Returns Vector of All Times:
