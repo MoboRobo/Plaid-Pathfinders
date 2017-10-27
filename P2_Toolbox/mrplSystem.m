@@ -168,6 +168,13 @@ classdef mrplSystem < handle
             
         end % #goTo_th_Small
         
+        function goTo_Rel_th(obj, th)
+            curTh = obj.traj_vec(end).getFinalPose();
+            curTh = curTh.th;
+            change = th - curTh; change = atan2(sin(change), cos(change));
+            obj.goTo_th_Small(change);
+        end
+        
         %% Go To Relative Position
         function goTo_Rel(obj,rel_pose)
             x = rel_pose.x;
