@@ -80,7 +80,7 @@ classdef P2_Robot < handle
         
     end % P2_Robot->properties(public,private)
     
-    properties (GetAccess=public, SetAccess=public)
+    properties (Constant)
         %Geometry:
         WHEEL_TREAD = 0.08675; % [m] Lateral Distance between Wheel Centers
         
