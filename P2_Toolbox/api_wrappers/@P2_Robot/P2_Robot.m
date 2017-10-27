@@ -93,6 +93,7 @@ classdef P2_Robot < handle
         MAX_SPEED = 0.5;% m/s, Maximum Linear Speed of Robot
         MAX_ACCEL = 0.75;% m/s^2, Maximum Linear Acceleration of Robot
         MAX_OMEGA = 8;%   rad/s, Maximum Rotational Speed of Robot.
+        MAX_ALPHA = 5;%   rad/s^2, Maximum Angular Acceleration of Robot
     end % P2_Robot->properties(public,public)
     
     %% EVENTS

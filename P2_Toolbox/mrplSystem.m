@@ -137,6 +137,36 @@ classdef mrplSystem < handle
             end
             
         end % #goTo_X_Small
+        function goTo_th_Small(obj, th_rel)
+            %Anonymous function handle for velocity profile:
+            omref = @(~,t)u_ref_trap(t,3*obj.rob.MAX_ALPHA/4,0.5*obj.rob.MAX_OMEGA,th_rel,0,0);
+            vref = @(~,t)0;
+            t_f = u_ref_trap(0,obj.rob.MAX_ALPHA,0.5*obj.rob.MAX_OMEGA,th_rel,0,1);
+            
+            ttc = Trajectory_TimeCurve(vref,omref, 0, t_f, obj.traj_samples);
+            ttc.init_pose = obj.traj_vec(end).getFinalPose();
+            ttc.offsetInitPose();
+            
+            tf = Trajectory_Follower(obj.rob, ttc);
+            tf.fbk_controller.isPureTurn = 1;
+               
+            obj.time_loop(tf, 1);
+            
+            % Until Mix-Ins are implemented for Trajectory Class Hierarchy,
+            % Set traj_vec terminal TTC to equivalent TCS (to preserve
+            % homogeneity).
+            eq_tcs = Trajectory_CubicSpiral([0 0 0], 3);
+            pf = obj.tobj.traj_vec(end).getFinalPose();
+            eq_tcs.init_pose = [pf.X pf.Y pf.th+th_rel];
+            eq_tcs.offsetInitPose();
+            obj.traj_vec(end+1) = eq_tcs;
+            
+            %Update plot after completed trajectory
+            if(obj.plotting_enabled)
+               obj.update_plot(tf);
+            end
+            
+        end % #goTo_th_Small
         
         %% Go To Relative Position
         function goTo_Rel(obj,rel_pose)
@@ -188,12 +218,14 @@ classdef mrplSystem < handle
                 
                 T = obj.clock.time();
                 tf.follow_update_t(T);
+                obj.clock.pause();
+                obj.clock.resume();
                 
                 if(obj.plotting_enabled)
                     obj.update_plotData(tf, T);
                 end
                 
-                if(T < tf.rt.getFinalTime()+t_buffer)
+                if(T > tf.rt.getFinalTime()+t_buffer)
                     done = 1;
                     obj.rob.moveAt(0,0); % Stop Immediately
                 end

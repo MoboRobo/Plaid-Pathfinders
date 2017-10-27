@@ -13,7 +13,7 @@ function om_limits_test()
     
     %% TESTING
     res = 0.1;
-    oms = (2*pi:res:4*pi);
+    oms = (0:res:8);
     
     fig = figure();
     hold on
@@ -25,12 +25,15 @@ function om_limits_test()
     while (i < length(oms))
        rob.moveAt(0,oms(i));
        
-       pause(0.5);
+       pause(0.03125/2);
+       0.0174
        
        pl_ref.addXY((i-1)*res, oms(i));
-       pl_meas.addXY((i-1)*res, rob.hist_estVel(end).om);
+       pl_meas.addXY((i-1)*res, rob.measTraj.om_f);
         
     i = i+1;
     end
+    
+    pause
 
 end
