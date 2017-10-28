@@ -156,8 +156,8 @@ classdef mrplSystem < handle
             % Set traj_vec terminal TTC to equivalent TCS (to preserve
             % homogeneity).
             eq_tcs = Trajectory_CubicSpiral([0 0 0], 3);
-            pf = obj.tobj.traj_vec(end).getFinalPose();
-            eq_tcs.init_pose = [pf.X pf.Y pf.th+th_rel];
+            pf = obj.traj_vec(end).getFinalPose();
+            eq_tcs.init_pose = pose(pf.X, pf.Y, pf.th+th_rel);
             eq_tcs.offsetInitPose();
             obj.traj_vec(end+1) = eq_tcs;
             
@@ -167,13 +167,6 @@ classdef mrplSystem < handle
             end
             
         end % #goTo_th_Small
-        
-        function goTo_Rel_th(obj, th)
-            curTh = obj.traj_vec(end).getFinalPose();
-            curTh = curTh.th;
-            change = th - curTh; change = atan2(sin(change), cos(change));
-            obj.goTo_th_Small(change);
-        end
         
         %% Go To Relative Position
         function goTo_Rel(obj,rel_pose)
