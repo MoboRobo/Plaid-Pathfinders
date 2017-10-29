@@ -88,7 +88,8 @@ classdef FeedbackController < handle
             wrp = (refPose.poseVec(1:2) - curPose.poseVec(1:2));
             
             thr = atan2(sin(curPose.th), cos(curPose.th));
-            errorTh = refPose.th - curPose.th;
+            errorTh = atan2(sin(refPose.th),cos(refPose.th)) ...
+                    - atan2(sin(curPose.th),cos(curPose.th));
             errorTh = atan2(sin(errorTh),cos(errorTh));
             
             rrp = [cos(thr),-sin(thr); sin(thr), cos(thr)] \ wrp;

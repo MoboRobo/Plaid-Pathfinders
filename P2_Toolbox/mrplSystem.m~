@@ -119,6 +119,11 @@ classdef mrplSystem < handle
                 end
             i = i+1;
             end
+            
+            %% Pallets at 
+            if(p_nlo_r.X < 0)
+                
+            end
         end
         
         function turn_stationary(obj, th)
@@ -346,7 +351,7 @@ classdef mrplSystem < handle
                     );
             end % comm_plots?
             % TRAJECTORY PLOTS:
-            if isempty(obj.plot_figure) || obj.plot_figure < 0
+            if isempty(obj.plot_figure)
                 obj.plot_figure = figure();
             else
                 figure(obj.plot_figure);

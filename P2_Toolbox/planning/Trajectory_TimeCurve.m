@@ -67,13 +67,14 @@ classdef Trajectory_TimeCurve < ReferenceTrajectory
         % Computes the trajectory from time t0 to tf.
         function compute(obj)
             obj.times = (obj.t_init : obj.resolution : obj.t_fin);
+            obj.N_samples = length(obj.times); % Fix any anomalous shifting errors
             
             %Compute First Point:
             obj.profile(1) = struct( ...
                 'V', obj.V_func(obj,obj.t_init), ...
                 'om', obj.om_func(obj,obj.t_init) ...
             );
-        
+            
             i = 2;
             while(i <= obj.N_samples)
                 t = obj.times(i);
@@ -238,7 +239,11 @@ classdef Trajectory_TimeCurve < ReferenceTrajectory
         end
         %Return the Elapsed Time at the End of the Path:
         function tf = getFinalTime(obj)
-            tf = obj.times(end);
+            if length(obj.times) > 1
+                tf = obj.times(end);
+            else
+                tf = 0; % Investigate what's going on here
+            end
         end
         %Return the Path Length Covered at the End of the Path:
         function sf = getFinalDist(obj)

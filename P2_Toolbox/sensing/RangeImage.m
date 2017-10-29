@@ -102,26 +102,30 @@ classdef RangeImage < handle
             ys = obj.data.ys;
             rs = obj.data.ranges;
             
-            if nargin>1 % Colorize setting provided
-                if(nargin<3) % Create new plot
-                    if colorize
-                        pl = scatter(ys, xs, 36, rs);
-                    else
-                        pl = scatter(ys, xs, 36);
-                    end
+            if ~sum(isnan(rs))
+                if nargin>1 % Colorize setting provided
+                    if(nargin<3) % Create new plot
+                        if colorize
+                            pl = scatter(ys, xs, 36, rs);
+                        else
+                            pl = scatter(ys, xs, 36);
+                        end
+                        set(gca, 'Xdir', 'reverse'); % Ensure Robot Y-Axis Points Left
+                    else % Use plot handle given
+                        pl = plot_obj;
+                        if(colorize)
+                            set(pl, 'XData', ys, 'YData', xs, 'CData', rs);
+                        else
+                            set(pl, 'XData', ys, 'YData', xs);
+                        end % colorize?
+                    end % nargin<2?
+                else % colorize data not provided and new plot must be made.
+                    pl = scatter(ys,xs,36);
                     set(gca, 'Xdir', 'reverse'); % Ensure Robot Y-Axis Points Left
-                else % Use plot handle given
-                    pl = plot_obj;
-                    if(colorize)
-                        set(pl, 'XData', ys, 'YData', xs, 'CData', rs);
-                    else
-                        set(pl, 'XData', ys, 'YData', xs);
-                    end % colorize?
-                end % nargin<2?
-            else % colorize data not provided and new plot must be made.
-                pl = scatter(ys,xs,36);
-                set(gca, 'Xdir', 'reverse'); % Ensure Robot Y-Axis Points Left
-            end % nargin>1?
+                end % nargin>1?
+            else
+                warning('No Data in Range to Plot');
+            end
         end % #plot
         
         % Locates Candidates for Valid Contiguous Line Segments of length 
@@ -196,7 +200,7 @@ classdef RangeImage < handle
                 %leftSide
                 offset = 1;
                 prevX = midX; prevY = midY;
-                numSkippedPoints = initialNumSkippedPoints
+                numSkippedPoints = initialNumSkippedPoints;
                 curRadius = getIth(obj.data.ranges, i-offset, len);
                 while (1)
                     %get current radius to figure maxDist
@@ -337,7 +341,19 @@ classdef RangeImage < handle
                     underest_scale = 0.04; %round down to nearest ~quarter degree (little less)
                     new_th = underest_scale*floor(new_th/underest_scale);
                     
-                    new_pose = pose(centerX, centerY, new_th);
+                    new_x = centerX;
+                    new_y = centerY;
+                    
+                    % When pallet is at X<0, th points towards robot
+                    % instead of away, causing acquisition trajectories to
+                    % require Figure-8. Fix this by flipping th if X<0.
+                    if(new_x < 0)
+                        new_th = new_th + pi;
+                        new_th = atan2(sin(new_th),cos(new_th));
+                    end
+                    
+                    new_pose = pose(new_x, new_y, new_th);
+                    
                     obj.line_candidates.poses = [obj.line_candidates.poses new_pose];
                     obj.line_candidates.lengths = [obj.line_candidates.lengths estimatedLength];
                 end
