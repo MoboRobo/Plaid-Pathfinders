@@ -335,12 +335,6 @@ classdef RangeImage < handle
 %                 && origin_shift < halfSailLength/4 )
                 
                     new_th = atan2(2*Ixy, Iyy-Ixx) / 2.0;
-                    % ~"Slightly Underestimate Angle to produce less extreme
-                    % angles of approach"~ (use mechanical alignment to
-                    % correct):
-                    underest_scale = 0.04; %round down to nearest ~quarter degree (little less)
-                    new_th = underest_scale*floor(new_th/underest_scale);
-                    
                     new_x = centerX;
                     new_y = centerY;
                     

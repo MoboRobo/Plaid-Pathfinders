@@ -22,26 +22,28 @@ function Lab9(robot_id)
     mrpl.plottingOn(); % Turn on Plotting
 
     pause(2); % Wait for Robot to Initialize
-    forkDistance = .05;
-    overdrive = 0.02;
-    spacing = .07;
+    
+    forkDistance = 0.055;
+    overdrive = 0.01;
+    spacing = 0.08;
+    
     for i = 1:3
                                                                            str = 'Finding eem'
         p_nlo_r = mrpl.getNearestLineObject();
                                                                            str = 'Goteem'
-        p_acq_r = mrpl.acquisitionPose(p_nlo_r, 0.067, 0.02, spacing, 0);
+        p_acq_r = mrpl.acquisitionPose(p_nlo_r, 0.067, 0.02, spacing, 0.01);
 
         %go to spacing distance before the sail
         mrpl.goTo_Rel( p_acq_r );
         pause(1);
         %then move forward and pick up the sail, with overdrive
         p_nlo_r = mrpl.getNearestLineObject();
-        p_acq_r = mrpl.acquisitionPose(p_nlo_r, 0.067, 0.02, 0, 0);
-        th = p_acq_r.th
+%         p_acq_r = mrpl.acquisitionPose(p_nlo_r, 0.067, 0.02, 0, 0);
+        th = p_nlo_r.th
         mrpl.goTo_th_Small(th);
-        moveDist = p_acq_r.x;
-        mrpl.goTo_X_Small(moveDist+ overdrive);
-        a = moveDist+ overdrive
+        moveDist = p_nlo_r.x;
+        mrpl.goTo_X_Small(moveDist + overdrive, 0.1);
+        
         pause(1);
         mrpl.rob.core.forksUp();
         % wait a single second then drop the forks

@@ -80,7 +80,7 @@ classdef FeedbackController < handle
             k_th = 1 / obj.correctiveTime;
             if V < 0.03 % V-floor for k_y to prevent it from becoming too large
                 k_y = 0;
-                warning('Low Velocity');
+%                 warning('Low Velocity');
             else
                 k_y = 2 / (abs(V) * obj.correctiveTime^2);
             end % k_y<0.03?

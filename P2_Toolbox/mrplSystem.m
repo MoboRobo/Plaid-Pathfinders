@@ -71,7 +71,6 @@ classdef mrplSystem < handle
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% - MOTION CONTROL
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         
-
         %% Get Nearest Line Object Pose
         % Returns the Pose of the Nearest Valid Line Object in the Current
         % Lidar RangeImage in the Robot Frame
@@ -121,16 +120,22 @@ classdef mrplSystem < handle
             end
         end
         
-        function turn_stationary(obj, th)
-            Stationary_Turn(obj.rob, th);
-        end
         
-        
-        function goTo_X_Small(obj, x_rel)
+        %% Go To X (small)
+        % Optionally: specify speed, spd
+        function goTo_X_Small(obj, x_rel, spd)
+            speed = 0.5*obj.rob.MAX_SPEED; % Default
+            if(nargin > 2)
+                speed = spd;
+            end
+            % Lower speed likely mean finer motion and less jerk -> lower
+            % accels, .: scale with floor of 0.25*MAX_ACCEL.
+            accel = 0.75*obj.rob.MAX_ACCEL * speed/obj.rob.MAX_SPEED + 0.25*obj.rob.MAX_ACCEL;
+            
             %Anonymous function handle for velocity profile:
-            vref = @(~,t)u_ref_trap(t,obj.rob.MAX_ACCEL,0.5*obj.rob.MAX_SPEED,x_rel,0,0);
+            vref = @(~,t)u_ref_trap(t,accel,speed,x_rel,0,0);
             omref = @(~,t)0;
-            t_f = u_ref_trap(0,obj.rob.MAX_ACCEL,0.5*obj.rob.MAX_SPEED,x_rel,0,1);
+            t_f = u_ref_trap(0,accel,speed,x_rel,0,1);
             
             ttc = Trajectory_TimeCurve(vref,omref, 0, t_f, obj.traj_samples);
             ttc.init_pose = obj.traj_vec(end).getFinalPose();
@@ -158,6 +163,8 @@ classdef mrplSystem < handle
             end
             
         end % #goTo_X_Small
+        
+        %% Go To Th (small)
         function goTo_th_Small(obj, th_rel)
             %Anonymous function handle for velocity profile:
             omref = @(~,t)u_ref_trap(t,3*obj.rob.MAX_ALPHA/4,0.5*obj.rob.MAX_OMEGA,th_rel,0,0);
@@ -188,6 +195,11 @@ classdef mrplSystem < handle
             end
             
         end % #goTo_th_Small
+        
+        % Alias for goTo_th_Small
+        function turn_stationary(obj, th)
+            obj.goTo_th_Small(th);
+        end % #turn_stationary
         
         %% Go To Relative Position
         function goTo_Rel(obj,rel_pose)
@@ -346,7 +358,7 @@ classdef mrplSystem < handle
                     );
             end % comm_plots?
             % TRAJECTORY PLOTS:
-            if isempty(obj.plot_figure) || obj.plot_figure < 0
+            if isempty(obj.plot_figure) || ~isvalid(obj.plot_figure) || ~isgraphics(obj.plot_figure)
                 obj.plot_figure = figure();
             else
                 figure(obj.plot_figure);
@@ -448,6 +460,12 @@ classdef mrplSystem < handle
             y1 = objPose.y;
             th1 = objPose.th;
             x = x1 - totalDist * cos(th1); y = y1 - totalDist*sin(th1)+lateralFudge;
+            
+            % ~"Slightly Underestimate Angle to produce less extreme
+            % angles of approach"~ (use mechanical alignment to
+            % correct):
+            underest_scale = 0.04; %round down to nearest ~quarter degree (little less)
+            th = underest_scale*floor(th1/underest_scale);
 %             
 %         p__r_s = pose(0, 0, 0);
 %         T__r_s = p__r_s.bToA();
@@ -464,7 +482,7 @@ classdef mrplSystem < handle
 % 
 %         result = (finalTransformation * [objPose.X; objPose.Y; 1])';
 %         x = result(1); y = result(2);
-        acqPose = pose(x, y, objPose.th);
+        acqPose = pose(x, y, th);
     end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% - DATA MANIPULATION
