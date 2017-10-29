@@ -10,6 +10,7 @@ classdef mrplSystem < handle
                             % Trajectory Planning
         
         traj_vec = MakeNullInstance_TCS();
+        start_poses = [];
         plotting_enabled = 1;
        
             delay_plot_data = slidingFifo(10000, struct('tv',0, 'rv',0, 't',0));
@@ -211,8 +212,12 @@ classdef mrplSystem < handle
                 x, y, th, 1, ...
                 obj.traj_samples, obj.tcs_scale ...
             );
-            
-            rt.init_pose = obj.traj_vec(end).getFinalPose();
+            if (isempty(obj.start_poses))
+                initpose = pose(0, 0, 0)
+            else 
+                initpose = obj.start_poses(end)
+            end
+            rt.init_pose = initpose%obj.traj_vec(end).getFinalPose();
             % if you don't call offsetInitPose, Trajectory automatically
                 %transforms each reference pose before handing it to mrpl
             rt.offsetInitPose();
@@ -229,13 +234,17 @@ classdef mrplSystem < handle
              
             %Store completed trajectory
             obj.traj_vec(end+1) = tf.rt;
+            if (isempty(obj.start_poses))
+                obj.start_poses = rel_pose;
+            else
+                obj.start_poses(end+1) = addPoses(rel_pose, obj.start_poses(end));
+            end
             %Update plot after completed trajectory
             if(obj.plotting_enabled)
                obj.update_plot(tf);
             end
             
         end % #goTo_Rel
-
         % Helper Function Executing a loop commanding the robot to follow
         % the given trajectory follower until the t_buffer seconds after 
         % the tf's reference trajectory's final time.
