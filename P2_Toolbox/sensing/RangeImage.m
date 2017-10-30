@@ -420,6 +420,7 @@ classdef RangeImage < handle
     %% METHODS - STATICS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     methods (Static)
+
         %% Clean Image
         % Cleans the Image data by tossing out values above max_rng and 
         % below min_rng. Return vector of valid lidar ranges and their

@@ -227,6 +227,8 @@ classdef P2_Robot < handle
         %% SENSING
         function processNewLaserData(obj, ~, event)
             obj.hist_laser.add(RangeImage(event.Ranges));
+     
+            
         end
         function laserOn(obj)
             if ~obj.laser_state
