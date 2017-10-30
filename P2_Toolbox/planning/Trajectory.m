@@ -30,7 +30,7 @@ classdef (Abstract) Trajectory < handle
             offsetTh = p0.th;
             pw = pose(x, y, ...
                 atan2(sin(pr.th + offsetTh), cos(pr.th + offsetTh)));
-        end
+        end % #poseToWorld
     end % Trajectory <- methods(sealed,static)
     
     methods(Abstract)
@@ -125,7 +125,7 @@ classdef (Abstract) Trajectory < handle
         %Return the Elapsed Time at the End of the Path:
         function f = t_f(obj); f = obj.getFinalTime(); end
         %Return the Path Length Covered at the End of the Path:
-        function f = s_f(obj); f= obj.getFinalDist(); end
+        function f = s_f(obj); f = obj.getFinalDist(); end
         
         %Returns the Velocity at the End of the Path:
         function f = V_f(obj); f = obj.getFinalVelocity(); end

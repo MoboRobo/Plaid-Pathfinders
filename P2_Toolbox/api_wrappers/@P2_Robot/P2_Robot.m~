@@ -130,7 +130,7 @@ classdef P2_Robot < handle
         % Closest Attainable Velocity Profile (V,om) and Wheel Speeds
         % (vl,vr) which Do Not Exceed the Robot's Maximum Wheel Velocities.
         function [V_lim, om_lim, vl_lim, vr_lim] = limitWheelVelocity(V,om)
-            [vl, vr] = P2_Robot.computeFK(V,om); % Desired Wheel Speeds
+            [vl, vr] = P2_computeFK(V,om); % Desired Wheel Speeds
             
             vl_lim = vl; %Initial Assumptions.
             vr_lim = vr;
@@ -148,7 +148,7 @@ classdef P2_Robot < handle
             end
             
             % Compute Limited Velocity Profile:
-            [V_lim, om_lim] = P2_Robot.computeIK(vl_lim,vr_lim);
+            [V_lim, om_lim] = computeIK(vl_lim,vr_lim);
         end % #limitWheelVelocity
         
     end % P2_Robot <- methods(Static)

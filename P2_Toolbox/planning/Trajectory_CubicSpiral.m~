@@ -14,7 +14,21 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
         rampLength = 0.05;
     end
     
+    properties (Access = private)
+        
+        poseArray = [];
+        
+    end
     properties(Access = public)
+        numSamples = 0;
+        distArray = [];
+        timeArray = [];
+        curvArray = [];
+        vlArray = []
+        vrArray = []
+        VArray = [];
+        wArray = [];
+        
         V_max = 0.2; % Default Maximum Trajectory Speed
     end
     
@@ -409,14 +423,22 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
                 V = Vbase*obj.sgn; % Drive forward or backward as desired.
                 K = obj.curvArray(i);
                 w = K*V;
-                
-                [Vnew, wnew, vl, vr] = P2_Robot.limitWheelVelocity(V,w);
-                
+                vr = V + robotModel.W2*w;
+                vl = V - robotModel.W2*w;
+                if(abs(vr) > P2_Robot.MAX_SPEED)
+                    vrNew = P2_Robot.MAX_SPEED * sign(vr);
+                    vl = vl * vrNew/vr;
+                    vr = vrNew;
+                end
+                if(abs(vl) > P2_Robot.MAX_SPEED)
+                    vlNew = P2_Robot.MAX_SPEED * sign(vl);
+                    vr = vr * vlNew/vl;
+                    vl = vlNew;
+                end
                 obj.vlArray(i) = vl;
                 obj.vrArray(i) = vr;
-                
-                obj.VArray(i) = Vnew;
-                obj.wArray(i) = wnew;
+                obj.VArray(i) = (vr + vl)/2.0;
+                obj.wArray(i) = (vr - vl)/robotModel.W;
             end
             % Now compute the times that are implied by the velocities and
             % the distances.
@@ -507,6 +529,60 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
         function compute(obj)
             obj.integrateCommands();
             obj.planVelocities(obj.V_max);
+        end
+        
+        %Return the Elapsed Time at the End of the Path:
+        function tf = getFinalTime(obj)
+            tf = obj.getTrajectoryDuration();
+        end
+        %Return the Path Length Covered at the End of the Path:
+        function sf = getFinalDist(obj)
+            sf = obj.getTrajectoryDistance();
+        end
+        %Returns the Velocity at the End of the Path:
+        function vf = getFinalVelocity(obj); vf = obj.V_t(obj.t_f); end
+        %Returns the Velocity at the End of the Path:
+        function omf = getFinalOmega(obj); omf = obj.om_t(obj.t_f); end
+        %Returns the Velocity at the End of the Path:
+        function Kf = getFinalCurv(obj); Kf = obj.K_t(obj.t_f); end
+        
+        %Returns Vector of All X-Positions:
+        function xs = getXVec(obj)
+            xs = obj.poseArray(1,:);
+        end
+        %Returns Vector of All Y-Positions:
+        function ys = getYVec(obj)
+            ys = obj.poseArray(2,:);
+        end
+        %Returns Vector of All Headings:
+        function ths = getThVec(obj)
+            ths = obj.poseArray(3,:);
+        end
+        
+        %Returns Vector of All Velocities:
+        function Vs = getVVec(obj)
+            Vs = obj.VArray;
+        end
+        %Returns Vector of All Rotational Velocities:
+        function Vs = getOmVec(obj)
+            Vs = obj.wArray;
+        end
+        %Returns Vector of All Curvatures:
+        function Vs = getKVec(obj)
+            Vs = obj.wArray;
+        end
+        
+        %Returns Vector of All Times:
+        function ts = getTVec(obj)
+            ts = obj.timeArray;
+        end
+        %Returns Vector of All Path Lengths:
+        function ss = getSVec(obj)
+            ss = obj.distArray;
+        end
+        %Returns Vector of All Poses:
+        function ps = getPVec(obj)
+            ps = obj.poseArray;
         end
         
     end % ReferenceTrajectory <-methods(Abstract)
