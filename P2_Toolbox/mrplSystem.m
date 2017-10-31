@@ -146,8 +146,9 @@ classdef mrplSystem < handle
                 tf = Trajectory_Follower(obj.rob, ttc);
                 obj.feedback_controller = tf.fbk_controller;
             else
-                tf = Trajectory_Follower(obj.rob, ttc, obj.feedback_controller);
-                obj.feedback_controller.rt = ttc; % Super important to update this
+                tf = Trajectory_Follower(obj.rob, ttc);
+%                 tf = Trajectory_Follower(obj.rob, ttc, obj.feedback_controller);
+%                 obj.feedback_controller.rt = ttc; % Super important to update this
             end
             
             tf.fbk_controller.correctiveTime = obj.k_tau;%* rt.getFinalTime();
@@ -195,8 +196,9 @@ classdef mrplSystem < handle
                 tf = Trajectory_Follower(obj.rob, ttc);
                 obj.feedback_controller = tf.fbk_controller;
             else
-                tf = Trajectory_Follower(obj.rob, ttc, obj.feedback_controller);
-                obj.feedback_controller.rt = ttc; % Super important to update this
+                tf = Trajectory_Follower(obj.rob, ttc);
+%                 tf = Trajectory_Follower(obj.rob, ttc, obj.feedback_controller);
+%                 obj.feedback_controller.rt = ttc; % Super important to update this
             end
             
             tf.fbk_controller.correctiveTime = obj.k_tau;%* rt.getFinalTime();
@@ -252,8 +254,9 @@ classdef mrplSystem < handle
                 tf = Trajectory_Follower(obj.rob, rt);
                 obj.feedback_controller = tf.fbk_controller;
             else
-                tf = Trajectory_Follower(obj.rob, rt, obj.feedback_controller);
-                obj.feedback_controller.rt = rt; % Super important to update this
+                tf = Trajectory_Follower(obj.rob, rt);
+%                 tf = Trajectory_Follower(obj.rob, rt, obj.feedback_controller);
+%                 obj.feedback_controller.rt = rt; % Super important to update this
             end
             tf.fbk_controller.correctiveTime = obj.k_tau;%* rt.getFinalTime();
             
