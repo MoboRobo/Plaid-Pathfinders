@@ -213,11 +213,11 @@ classdef mrplSystem < handle
                 obj.traj_samples, obj.tcs_scale ...
             );
             if (isempty(obj.start_poses))
-                initpose = pose(0, 0, 0)
+                initpose = pose(0, 0, 0);
             else 
-                initpose = obj.start_poses(end)
+                initpose = obj.start_poses(end);
             end
-            rt.init_pose = initpose%obj.traj_vec(end).getFinalPose();
+            rt.init_pose = initpose;%obj.traj_vec(end).getFinalPose();
             % if you don't call offsetInitPose, Trajectory automatically
                 %transforms each reference pose before handing it to mrpl
             rt.offsetInitPose();
