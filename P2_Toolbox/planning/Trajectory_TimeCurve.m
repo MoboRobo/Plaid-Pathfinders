@@ -7,8 +7,6 @@ classdef Trajectory_TimeCurve < ReferenceTrajectory
     properties(GetAccess = public, SetAccess = public)
         resolution;         % s, Separation between Times
         
-        method = 'spline';  % Interpolation Method (override ReferenceTrajectory default)
-        
         t_init = 0;         % s, Curve Seed Time
         t_fin = Inf;        % s, Curve End Time
     end % TrajectoryCurve <- properties(public,public)
@@ -44,14 +42,19 @@ classdef Trajectory_TimeCurve < ReferenceTrajectory
             obj.resolution = (tf-t0)/(obj.numSamples-1);%Beware the fence-post
             
             if nargin > 5
-                obj.poses(1) = init_pose;
                 obj.init_pose = init_pose;
             else
                 obj.init_pose = pose(0,0,0);
             end% nargin>5?
             
+            obj.poseArray(:,1) = obj.init_pose.poseVec;
+            
             obj.t_init = t0;
             obj.t_fin = tf;
+            
+        
+            obj.method = 'spline';  % Interpolation Method (override ReferenceTrajectory default)
+            
             obj.compute();
         end % Constructor
         
@@ -60,6 +63,7 @@ classdef Trajectory_TimeCurve < ReferenceTrajectory
         function compute(obj)
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% -FINISH THIS
         
+            obj.distArray(1) = 0; % Initialize.
             obj.timeArray = (obj.t_init : obj.resolution : obj.t_fin);
             obj.numSamples = length(obj.timeArray); % Fix any anomalous shifting errors
             

@@ -150,13 +150,14 @@ classdef mrplSystem < handle
             % Until Mix-Ins are implemented for Trajectory Class Hierarchy,
             % Set traj_vec terminal TTC to equivalent TCS (to preserve
             % homogeneity).
-            eq_tcs = Trajectory_CubicSpiral.planTrajectory( ...
-                x_rel, 0, 0, 1, ...
-                obj.traj_samples, obj.tcs_scale ...
-            );
-            eq_tcs.init_pose = obj.traj_vec(end).getFinalPose();
-            eq_tcs.offsetInitPose();
-            obj.traj_vec(end+1) = eq_tcs;
+%             eq_tcs = Trajectory_CubicSpiral.planTrajectory( ...
+%                 x_rel, 0, 0, 1, ...
+%                 obj.traj_samples, obj.tcs_scale ...
+%             );
+%             eq_tcs.init_pose = obj.traj_vec(end).getFinalPose();
+%             eq_tcs.offsetInitPose();
+%             obj.traj_vec(end+1) = eq_tcs;
+            obj.traj_vec(end+1) = ttc;
             
             %Update plot after completed trajectory
             if(obj.plotting_enabled)
@@ -184,11 +185,12 @@ classdef mrplSystem < handle
             % Until Mix-Ins are implemented for Trajectory Class Hierarchy,
             % Set traj_vec terminal TTC to equivalent TCS (to preserve
             % homogeneity).
-            eq_tcs = Trajectory_CubicSpiral([0 0 0], 3);
-            pf = obj.traj_vec(end).getFinalPose();
-            eq_tcs.init_pose = pose(pf.X, pf.Y, pf.th+th_rel);
-            eq_tcs.offsetInitPose();
-            obj.traj_vec(end+1) = eq_tcs;
+%             eq_tcs = Trajectory_CubicSpiral([0 0 0], 3);
+%             pf = obj.traj_vec(end).getFinalPose();
+%             eq_tcs.init_pose = pose(pf.X, pf.Y, pf.th+th_rel);
+%             eq_tcs.offsetInitPose();
+%             obj.traj_vec(end+1) = eq_tcs;
+            obj.traj_vec(end+1) = ttc;
             
             %Update plot after completed trajectory
             if(obj.plotting_enabled)
