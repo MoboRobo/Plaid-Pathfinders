@@ -285,7 +285,7 @@ classdef RangeImage < handle
             end % rejectOutliers
             
             pixelIndex = 1;
-            while pixelIndex <= len
+            while ( (pixelIndex <= len) && len >= minNumPoints)
                 
                 % *Have search window be larger than w_sail so that larger
                 % widths can be observed and rejected.
