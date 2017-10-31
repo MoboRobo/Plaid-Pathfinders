@@ -146,11 +146,13 @@ classdef mrplSystem < handle
                 tf = Trajectory_Follower(obj.rob, ttc);
                 obj.feedback_controller = tf.fbk_controller;
             else
-                tf = Trajectory_Follower(obj.rob, ttc, obj.feedback_controller);
+                tf = Trajectory_Follower(obj.rob, ttc);
+%                 tf = Trajectory_Follower(obj.rob, ttc, obj.feedback_controller);
+%                 obj.feedback_controller.rt = ttc; % Super important to update this
             end
             
             tf.fbk_controller.correctiveTime = obj.k_tau;%* rt.getFinalTime();
-            tf.fbk_trim = 1; % Turn off feedback trim for this in-exact motion. %%%%%%% ? ? %%%%%
+            tf.fbk_trim = 0; % Turn off feedback trim for this in-exact motion. %%%%%%% ? ? %%%%%
                
             obj.time_loop(tf, 1);
             
@@ -167,10 +169,6 @@ classdef mrplSystem < handle
 %             eq_tcs.offsetInitPose();
 %             obj.traj_vec(end+1) = eq_tcs;
             obj.traj_vec(end+1) = ttc;
-            
-            p0 = ttc.p_t(0);
-            str = p0.poseVec
-            str = ttc.p_f.poseVec
             
             %Update plot after completed trajectory
             if(obj.plotting_enabled)
@@ -194,8 +192,9 @@ classdef mrplSystem < handle
                 tf = Trajectory_Follower(obj.rob, ttc);
                 obj.feedback_controller = tf.fbk_controller;
             else
-                tf = Trajectory_Follower(obj.rob, ttc, obj.feedback_controller);
-                obj.feedback_controller
+                tf = Trajectory_Follower(obj.rob, ttc);
+%                 tf = Trajectory_Follower(obj.rob, ttc, obj.feedback_controller);
+%                 obj.feedback_controller.rt = ttc; % Super important to update this
             end
             
             tf.fbk_controller.correctiveTime = obj.k_tau;%* rt.getFinalTime();
@@ -214,6 +213,16 @@ classdef mrplSystem < handle
 %             eq_tcs.offsetInitPose();
 %             obj.traj_vec(end+1) = eq_tcs;
             obj.traj_vec(end+1) = ttc;
+            if (isempty(obj.start_poses))
+                obj.start_poses = ;
+            else
+                obj.start_poses(end+1) = addPoses(rel_pose, obj.start_poses(end));
+            end
+            
+            rtf = obj.traj_vec(end);
+            p0 = rtf.p_t(0);
+            str = p0.poseVec
+            str = ttc.p_f.poseVec
             
             %Update plot after completed trajectory
             if(obj.plotting_enabled)
@@ -251,7 +260,9 @@ classdef mrplSystem < handle
                 tf = Trajectory_Follower(obj.rob, rt);
                 obj.feedback_controller = tf.fbk_controller;
             else
-                tf = Trajectory_Follower(obj.rob, rt, obj.feedback_controller);
+                tf = Trajectory_Follower(obj.rob, rt);
+%                 tf = Trajectory_Follower(obj.rob, rt, obj.feedback_controller);
+%                 obj.feedback_controller.rt = rt; % Super important to update this
             end
             tf.fbk_controller.correctiveTime = obj.k_tau;%* rt.getFinalTime();
             

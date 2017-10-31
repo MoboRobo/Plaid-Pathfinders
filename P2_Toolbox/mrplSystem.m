@@ -10,7 +10,7 @@ classdef mrplSystem < handle
                             % Trajectory Planning
         
         traj_vec = MakeNullInstance_TCS();
-        start_poses = [];
+        start_poses = []; % << I N   W O R L D   C O O R D I N A T E S >>
         plotting_enabled = 1;
        
             delay_plot_data = slidingFifo(10000, struct('tv',0, 'rv',0, 't',0));
@@ -138,9 +138,12 @@ classdef mrplSystem < handle
             omref = @(~,t)0;
             t_f = u_ref_trap(0,accel,speed,x_rel,0,1);
             
-            ttc = Trajectory_TimeCurve(vref,omref, 0, t_f, obj.traj_samples);
-            ttc.init_pose = obj.traj_vec(end).getFinalPose();
-            ttc.offsetInitPose();
+            if (isempty(obj.start_poses))
+                initpose = pose(0, 0, 0);
+            else 
+                initpose = obj.start_poses(end);
+            end
+            ttc = Trajectory_TimeCurve(vref,omref, 0, t_f, obj.traj_samples, initpose);
             
             if isempty(obj.feedback_controller)
                 tf = Trajectory_Follower(obj.rob, ttc);
@@ -152,7 +155,7 @@ classdef mrplSystem < handle
             end
             
             tf.fbk_controller.correctiveTime = obj.k_tau;%* rt.getFinalTime();
-            tf.fbk_trim = 1; % Turn off feedback trim for this in-exact motion. %%%%%%% ? ? %%%%%
+            tf.fbk_trim = 0; % Turn off feedback trim for this in-exact motion. %%%%%%% ? ? %%%%%
                
             obj.time_loop(tf, 1);
             
@@ -170,9 +173,12 @@ classdef mrplSystem < handle
 %             obj.traj_vec(end+1) = eq_tcs;
             obj.traj_vec(end+1) = ttc;
             
-            p0 = ttc.p_t(0);
-            str = p0.poseVec
-            str = ttc.p_f.poseVec
+            rel_pose = pose(x_rel,0,0);
+            if (isempty(obj.start_poses))
+                obj.start_poses = rel_pose;
+            else
+                obj.start_poses(end+1) = Trajectory.poseToWorld(rel_pose, obj.start_poses(end));
+            end
             
             %Update plot after completed trajectory
             if(obj.plotting_enabled)
@@ -189,7 +195,14 @@ classdef mrplSystem < handle
             t_f = u_ref_trap(0,3*obj.rob.MAX_ALPHA/4,0.5*obj.rob.MAX_OMEGA,th_rel,0,1);
             
             ttc = Trajectory_TimeCurve(vref,omref, 0, t_f, obj.traj_samples);
-            ttc.init_pose = obj.traj_vec(end).getFinalPose();
+            
+            if (isempty(obj.start_poses))
+                initpose = pose(0, 0, 0);
+            else    
+                initpose = obj.start_poses(end);
+            end
+            ttc.init_pose = initpose;%obj.traj_vec(end).getFinalPose();
+            
             ttc.offsetInitPose();
             
             if isempty(obj.feedback_controller)
@@ -217,6 +230,13 @@ classdef mrplSystem < handle
 %             eq_tcs.offsetInitPose();
 %             obj.traj_vec(end+1) = eq_tcs;
             obj.traj_vec(end+1) = ttc;
+            
+            rel_pose = pose(0,0,th_rel);
+            if (isempty(obj.start_poses))
+                obj.start_poses = rel_pose;
+            else
+                obj.start_poses(end+1) = Trajectory.poseToWorld(rel_pose, obj.start_poses(end));
+            end
             
             %Update plot after completed trajectory
             if(obj.plotting_enabled)
@@ -267,7 +287,7 @@ classdef mrplSystem < handle
             if (isempty(obj.start_poses))
                 obj.start_poses = rel_pose;
             else
-                obj.start_poses(end+1) = addPoses(rel_pose, obj.start_poses(end));
+                obj.start_poses(end+1) = Trajectory.poseToWorld(rel_pose, obj.start_poses(end));
             end
             %Update plot after completed trajectory
             if(obj.plotting_enabled)

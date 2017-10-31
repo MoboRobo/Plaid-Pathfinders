@@ -12,7 +12,7 @@ classdef Trajectory_Follower < handle
         u_comm_s = @(s)0;     % Function Handle for TrajectoryTime-Variant 
                             % Velocity Control Signal (Ffwd w/Fbk-trim)
         
-        send_delay = 0.164; % Delay in Command Sending to Robot
+        send_delay = 0.364; % Delay in Command Sending to Robot
     end % Trajectory_Follower <- properties(public,private)
     
     properties(GetAccess=public, SetAccess=public)
