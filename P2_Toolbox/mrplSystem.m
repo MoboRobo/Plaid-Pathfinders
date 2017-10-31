@@ -142,10 +142,19 @@ classdef mrplSystem < handle
             ttc.init_pose = obj.traj_vec(end).getFinalPose();
             ttc.offsetInitPose();
             
-            tf = Trajectory_Follower(obj.rob, ttc);
-            tf.fbk_trim = 0; % Turn off feedback trim for this in-exact motion. %%%%%%% ? ? %%%%%
+            if isempty(obj.feedback_controller)
+                tf = Trajectory_Follower(obj.rob, ttc);
+                obj.feedback_controller = tf.fbk_controller;
+            else
+                tf = Trajectory_Follower(obj.rob, ttc, obj.feedback_controller);
+            end
+            
+            tf.fbk_controller.correctiveTime = obj.k_tau;%* rt.getFinalTime();
+            tf.fbk_trim = 1; % Turn off feedback trim for this in-exact motion. %%%%%%% ? ? %%%%%
                
             obj.time_loop(tf, 1);
+            
+            tf.fbk_trim = 1; % Reset
             
             % Until Mix-Ins are implemented for Trajectory Class Hierarchy,
             % Set traj_vec terminal TTC to equivalent TCS (to preserve
@@ -159,6 +168,10 @@ classdef mrplSystem < handle
 %             obj.traj_vec(end+1) = eq_tcs;
             obj.traj_vec(end+1) = ttc;
             
+            p0 = ttc.p_t(0);
+            str = p0.poseVec
+            str = ttc.p_f.poseVec
+            
             %Update plot after completed trajectory
             if(obj.plotting_enabled)
                obj.update_plot(tf);
@@ -171,16 +184,25 @@ classdef mrplSystem < handle
             %Anonymous function handle for velocity profile:
             omref = @(~,t)u_ref_trap(t,3*obj.rob.MAX_ALPHA/4,0.5*obj.rob.MAX_OMEGA,th_rel,0,0);
             vref = @(~,t)0;
-            t_f = u_ref_trap(0,obj.rob.MAX_ALPHA,0.5*obj.rob.MAX_OMEGA,th_rel,0,1);
+            t_f = u_ref_trap(0,3*obj.rob.MAX_ALPHA/4,0.5*obj.rob.MAX_OMEGA,th_rel,0,1);
             
             ttc = Trajectory_TimeCurve(vref,omref, 0, t_f, obj.traj_samples);
             ttc.init_pose = obj.traj_vec(end).getFinalPose();
             ttc.offsetInitPose();
             
-            tf = Trajectory_Follower(obj.rob, ttc);
+            if isempty(obj.feedback_controller)
+                tf = Trajectory_Follower(obj.rob, ttc);
+                obj.feedback_controller = tf.fbk_controller;
+            else
+                tf = Trajectory_Follower(obj.rob, ttc, obj.feedback_controller);
+            end
+            
+            tf.fbk_controller.correctiveTime = obj.k_tau;%* rt.getFinalTime();
             tf.fbk_controller.isPureTurn = 1;
                
             obj.time_loop(tf, 1);
+            
+            tf.fbk_controller.isPureTurn = 0; % Reset
             
             % Until Mix-Ins are implemented for Trajectory Class Hierarchy,
             % Set traj_vec terminal TTC to equivalent TCS (to preserve
