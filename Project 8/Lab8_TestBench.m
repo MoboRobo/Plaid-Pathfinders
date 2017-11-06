@@ -59,7 +59,7 @@ global laser_plotting_data
     clk = Clock();
     while(clk.time() < 91)
         V = 0.00; rho = 0.01;
-        rob.moveAt(V,V/rho);
+        %rob.moveAt(V,V/rho);
         
         %% Plot Laser Data
         % Update Lidar Plot Every "period" seconds (since /end/ of last plot).

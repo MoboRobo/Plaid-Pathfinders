@@ -246,7 +246,7 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
             elseif(twoBad==true)
                 au=a1;bu=b1;       
             elseif(r2 > r1)
-                au=a1;bu=b1;  
+                au=a1;bu=b1;
             else
                 au=a2;bu=b2;
             end

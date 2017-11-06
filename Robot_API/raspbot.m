@@ -148,8 +148,8 @@ classdef raspbot < handle
                 r.fork_pub=rospublisher('/forks',rostype.std_msgs_Int8);
                 r.encoders=rossubscriber('/enc');
                 r.laser=rossubscriber('/scan');
-%                 r.camera=rossubscriber('/camera/image/compressed');
-%                 r.speech_pub=rospublisher('/textToSpeech', rostype.std_msgs_String);
+                r.camera=rossubscriber('/camera/image/compressed');
+                r.speech_pub=rospublisher('/textToSpeech', rostype.std_msgs_String);
 %                r.fileWrite_pub=rospublisher('/fileWrite', 'audio_receiver/audioFile');
 %                 r.playFile_pub=rospublisher('/playFile', rostype.std_msgs_String);
             end
@@ -326,7 +326,7 @@ classdef raspbot < handle
                  msg.Data = str;
                  send(r.speech_pub,msg);
              else
-                 warning('Function input must be a string');
+                 warning('Function input must be a character array, delim by prime');
              end
          end
          

@@ -1,9 +1,9 @@
 %% Initialize
-robot = raspbot('sim');
+robot = raspbot('RaspBot');
 
 %% Take a Picture
 % Stores Matlab-formatted rgb image data in 'image' and displays it
-image = robot.captureImage;
+% image = robot.captureImage;
 
 
 %% Use Text-to-Speech

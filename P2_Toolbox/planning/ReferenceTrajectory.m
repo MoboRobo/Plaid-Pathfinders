@@ -24,7 +24,7 @@ classdef (Abstract) ReferenceTrajectory < Trajectory & matlab.mixin.Heterogeneou
         poseArray = [];
         
         method = 'pchip';  % Interpolation Method
-    end % ReferenceTrajectory <-properties(public,private)
+    end % ReferenceTrajectory <-properties(public,protected)
     
     properties(Abstract)
         
