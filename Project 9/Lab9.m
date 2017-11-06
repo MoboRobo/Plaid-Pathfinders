@@ -31,7 +31,7 @@ function Lab9(robot_id)
                                                                            str = 'Finding eem'
         p_nlo_r = mrpl.getNearestLineObject();
                                                                            str = 'Goteem'
-        p_acq_r = mrpl.acquisitionPose(p_nlo_r, 0.067, 0.02, spacing, 0.0);
+        p_acq_r = mrpl.acquisitionPose(p_nlo_r, 0.067, 0.02, spacing, 0.01);
 
         %go to spacing distance before the sail
         mrpl.goTo_Rel( p_acq_r );
