@@ -69,7 +69,7 @@ function avgErr2 = fitError(obj,pose,ptsInModelFrame)
     end
 end
 
-function [err2_Plus0,J] = getJacobian(obj,poseIn,modelPts)
+function [currErr,J] = getJacobian(obj,poseIn,modelPts)
     % Computes the gradient of the error function
     currErr = fitError(obj,poseIn,modelPts);
     
@@ -90,7 +90,7 @@ function [err2_Plus0,J] = getJacobian(obj,poseIn,modelPts)
     dThetaPoseErr = fitError(obj,newPose,modelPts);
     dE_dTheta = (1/eps)*(dThetaPoseErr-currErr);
     
-    err2_Plus0 = [dE_dx; dE_dy; dE_dTheta]; 
+    J = [dE_dx; dE_dy; dE_dTheta]; 
 end
  
 function [success, curpose]...
