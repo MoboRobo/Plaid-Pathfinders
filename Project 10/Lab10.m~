@@ -1,0 +1,5 @@
+function Lab10(robot_id, starting_pose)
+    ri = RobotInterface(robot_id, pose(0,0,0)); % Robot ID and 
+    
+    
+end % #Lab10

@@ -147,7 +147,7 @@ classdef RangeImage < handle
             if nargin>2
                 marginOfLengthError = mle;
             else
-                marginOfLengthError = 0.03; %5 centimeters of leeway
+                marginOfLengthError = 0.03; %3 centimeters of leeway
             end
             
             len = length(obj.data.ranges); % Number of Valid Range Readings

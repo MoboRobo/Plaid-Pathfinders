@@ -20,6 +20,6 @@ function sendVelocity(obj, v_l, v_r)
         %Update Commanded Odometry:
         obj.commTraj.update(V,omega, t);
 
-        obj.hist_commWheelVel(end+1) = struct('v_l',v_l, 'v_r',v_r);
+        obj.hist_commWheelVel.add(struct('v_l',v_l, 'v_r',v_r));
     end
 end % #setVelocity
