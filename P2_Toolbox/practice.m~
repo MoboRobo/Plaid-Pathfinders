@@ -1,5 +1,5 @@
-function practice(rng)
-    maxIterations = 15;
+
+maxIterations = 15;
     p1 = [-2 ; -2];
     p2 = [ 2 ; -2];
     p3 = [ 2 ; 2];
@@ -34,4 +34,3 @@ function practice(rng)
     tic()
     myObj.refinePose(thePose, modelPts, 40);
     toc()
-end

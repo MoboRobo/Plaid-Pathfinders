@@ -43,7 +43,11 @@ classdef RobotInterface < handle
         % (default value must be some number ~=0)
         displayPlots = struct( ...
             'odometry', 1, ...      % Where the Robot has Moved since it Began
-            'localization', 1, ...  % What Robot Sees relative to Known Map
+            ...
+            'localization_image', 1, ...  % What Robot Sees in World Coordinates
+            'localization_world', 1, ...  % Plot of Map in World Coordinates
+            'localization_robot', 1, ...  % Plot of Robot in World Coordinates
+            ...
             'lidar_feed', 1 ...   	% Feed of Raw Range Images.
         );
         
@@ -191,18 +195,36 @@ classdef RobotInterface < handle
                     
                     rngs = r_img.raw(1:spec_vol:end);
                     angs = r_img.raw_ang(1:spec_vol:end);
-                    
-                    [succ, currPose] = 
-                    
                     [xs, ys] = RangeImage.arToXy(rngs, angs);
+                    rangePts = [xs; ys; ones(size(xs))];
+                    
+                    len_wall = 2;
+                    World_Map = [0 0 len_wall; len_wall 0 0; 1 1 1];
+                    
+                    % Get Localized Current Pose of Robot
+                    [~, curPose] = Lab10_WorldLocalize(rangePts); %%%%%%%%%%%%%%%%%% TODO: CHANGE THIS IN FUTURE.
+                    
+                    % Transform RangeImage into World Coordinates:
+                    worldPts = curPose.bToA()*rangePts;
+                    xs = worldPts(1,:);
+                    ys = worldPts(2,:);
+                    
+                    % Transform Robot Body Points into World Coordinates:
+                    robPts = robotKinematicModel.bodyGraph();
+                    robPts = curPose.bToA()*robPts;
                     
                     if ~sum(isnan(rngs))
-                        if ~isgraphics(obj.displayPlots.lidar_feed) % Initialize Plot if Not Yet Instantiated
-                            obj.displayPlots.lidar_feed = scatter(as, ys, xs, 36, rngs);
+                        if ~isgraphics(obj.displayPlots.localization_image) % Initialize Plot if Not Yet Instantiated
+                            hold on
+                                obj.displayPlots.localization_image = scatter(as, ys, xs);
+                                obj.displayPlots.localization_world = plot(as, World_Map(2,:),World_Map(1,:), 'b');
+                                obj.displayPlots.localization_robot = plot(as, robPts(2,:),robPts(1,:), 'g');
+                            hold off
                             set(as, 'Xdir', 'reverse'); % Ensure Robot Y-Axis Points Left
                         end
-
-                        set(obj.displayPlots.lidar_feed, 'XData', ys, 'YData', xs, 'CData', rngs);
+   
+                        set(obj.displayPlots.localization_image, 'XData', ys, 'YData', xs);
+                        set(obj.displayPlots.localization_robot, 'XData', robPts(2,:), 'YData', robPts(1,:));
                     else
                         warning('No Data in Range to Plot or Invalid Range Data');
                     end

@@ -43,7 +43,14 @@ classdef RobotInterface < handle
         % (default value must be some number ~=0)
         displayPlots = struct( ...
             'odometry', 1, ...      % Where the Robot has Moved since it Began
-            'localization', 1, ...  % What Robot Sees relative to Known Map
+            ...
+            'localization_image', 1, ...  % What Robot Sees in World Coordinates
+            'localization_world', 1, ...  % Plot 
+            'localization_robot', 1, ...  % What Robot Sees relative to Known Map
+            obj.displayPlots.localization_image = scatter(as, ys, xs);
+                                obj.displayPlots.localization_world = plot(as, World_Map(2,:),World_Map(1,:), 'b');
+                                obj.displayPlots.localization_robot
+            ...
             'lidar_feed', 1 ...   	% Feed of Raw Range Images.
         );
         
@@ -60,7 +67,7 @@ classdef RobotInterface < handle
             'lidar_feed_lastT', 1, ...          % Time of Last Plotting of the Lidar Feed
             ...
             'command_stream_count', 1, ...     % Total Number of Line Entries in Command Stream
-            'command_stream_lastVelLen', 0, ...% Length of Robot CommVel Vector at Last Stream Update (this is not sufficient by itself because of data pre-allocation).
+            'command_stream_lastVelLen', 1, ...% Length of Robot CommVel Vector at Last Stream Update (this is not sufficient by itself because of data pre-allocation).
             'command_stream_lastVel', struct('V',0, 'om',0, 'v_l',0, 'v_r',0) ... % Velocity Profile (V,om,v_l,v_r) of Last Velocity Command
         );
     end % RobotInterface <- properties(public,private)
@@ -176,9 +183,54 @@ classdef RobotInterface < handle
             
             if(obj.displayPlottingFlags.localization_plot)
                 if( (obj.mrpl.clock.time() - obj.displayMetaData.localization_plot_lastT) > 1/obj.displayMetaData.localization_plot_maxFreq )
+                    if(~obj.mrpl.rob.laser_state) % If lasers are off
+                        obj.mrpl.rob.laserOn(); % Turn Lasers on
+                        pause(1); % Wait for Lasers to generate RangeImages.
+                    end
+                    
                     as = obj.fig_handles.MapLocalizationAxes;
                     
-                    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% TODO: Figure out what needs to go here and DO IT.
+                    r_img = obj.mrpl.rob.hist_laser.last;
+                    
+                    % To get every nth RangeImage Point, n is spec_vol, the
+                    % Specific Volume:
+                    spec_vol = 10;
+                    
+                    rngs = r_img.raw(1:spec_vol:end);
+                    angs = r_img.raw_ang(1:spec_vol:end);
+                    [xs, ys] = RangeImage.arToXy(rngs, angs);
+                    rangePts = [xs; ys; ones(size(xs))];
+                    
+                    len_wall = 2;
+                    World_Map = [0 0 len_wall; len_wall 0 0; 1 1 1];
+                    
+                    % Get Localized Current Pose of Robot
+                    [~, curPose] = Lab10_WorldLocalize(rangePts); %%%%%%%%%%%%%%%%%% TODO: CHANGE THIS IN FUTURE.
+                    
+                    % Transform RangeImage into World Coordinates:
+                    worldPts = curPose.bToA()*rangePts;
+                    xs = worldPts(1,:);
+                    ys = worldPts(2,:);
+                    
+                    % Transform Robot Body Points into World Coordinates:
+                    robPts = robotKinematicModel.bodyGraph();
+                    robPts = curPose.bToA()*robPts;
+                    
+                    if ~sum(isnan(rngs))
+                        if ~isgraphics(obj.displayPlots.localization_image) % Initialize Plot if Not Yet Instantiated
+                            hold on
+                                obj.displayPlots.localization_image = scatter(as, ys, xs);
+                                obj.displayPlots.localization_world = plot(as, World_Map(2,:),World_Map(1,:), 'b');
+                                obj.displayPlots.localization_robot = plot(as, robPts(2,:),robPts(1,:), 'g');
+                            hold off
+                            set(as, 'Xdir', 'reverse'); % Ensure Robot Y-Axis Points Left
+                        end
+   
+                        set(obj.displayPlots.localization_image, 'XData', ys, 'YData', xs);
+                        set(obj.displayPlots.localization_robot, 'XData', robPts(2,:), 'YData', robPts(1,:));
+                    else
+                        warning('No Data in Range to Plot or Invalid Range Data');
+                    end
                     
                     if(~strcmp(get(as,'XDir'),'reverse'))
                         set(as, 'Xdir', 'reverse'); % Ensure Robot Y-Axis Points Left
@@ -234,8 +286,7 @@ classdef RobotInterface < handle
         function update_commandStream(obj)
             
             % UPDATE IF THERE HAS BEEN A VELOCITY COMMAND.
-            len 
-            n = obj.mrpl.rob.commTraj.data_V.numElements;
+            len = obj.mrpl.rob.commTraj.data_V.numElements;
             V_curr = obj.mrpl.rob.commTraj.V_f;
             om_curr = obj.mrpl.rob.commTraj.om_f;
             cwv_curr = obj.mrpl.rob.hist_commWheelVel.last;
@@ -244,12 +295,13 @@ classdef RobotInterface < handle
             
             last_vp = obj.displayMetaData.command_stream_lastVel;
             if( ...
-            obj.displayMetaData.command_stream_lastVelLen ~= lwn
+            obj.displayMetaData.command_stream_lastVelLen < len ...
             || last_vp.V ~= V_curr ...
             || last_vp.om ~= om_curr ...
             || last_vp.v_l ~= v_l_curr ...
             || last_vp.v_r ~= v_r_curr ...
             )
+                obj.displayMetaData.command_stream_lastVelLen = len;
                 obj.displayMetaData.command_stream_lastVel = struct(...
                     'V', V_curr, ...
                     'om', om_curr, ...
@@ -259,13 +311,13 @@ classdef RobotInterface < handle
                 
                 obj.addCommandStreamEntry(strcat( ...
                     'Profile: ', ...
-                    'V: ', num2str(V_curr), ...
+                    'V: ', num2str(V_curr, 3), ...
                     ', ', ...
-                    'om: ', num2str(om_curr), ...
+                    '\omega: ', num2str(om_curr, 3), ...
                     ' -> ', ...
-                    'L: ', num2str(v_l_curr), ...
+                    'L: ', num2str(v_l_curr, 3), ...
                     ', ', ...
-                    'R: ', num2str(v_r_curr) ...
+                    'R: ', num2str(v_r_curr, 3) ...
                 ));
                     
             end
@@ -274,9 +326,8 @@ classdef RobotInterface < handle
         %% Add Command Stream Entry
         % Adds a new line entry, str, to the command stream.
         function addCommandStreamEntry(obj, str)
-            list_old = get(obj.fig_handles.CommandStreamList,'String');
-            new_line = {str};
-            set(obj.fig_handles.CommandStreamList,'String',{list_old{:}, new_line{:}});
+            list_old = get(obj.fig_handles.CommandStreamList,'string');
+            set(obj.fig_handles.CommandStreamList,'string',[list_old; cellstr(str)]);
             
             obj.displayMetaData.command_stream_count = obj.displayMetaData.command_stream_count + 1;
             set(obj.fig_handles.CommandStreamList,'value',obj.displayMetaData.command_stream_count);
