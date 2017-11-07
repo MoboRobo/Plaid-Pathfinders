@@ -84,8 +84,11 @@ classdef lineMapLocalizer < handle
             dE_dy = (1/eps)*(dyPoseErr-currErr);
 
             dTheta = [0.0; 0.0; eps];
+            dthPoseErr = fitError(obj,pose(poseIn.poseVec()+dTheta),modelPts);
+            dE_th = (1/eps)*(dthPoseErr-currErr);
             currTheta = poseIn.poseVec(3);
             newTheta = atan2(sin(currTheta + dTheta), cos(currTheta + dTheta));
+            
             newPose = pose(poseIn.poseVec(1),poseIn.poseVec(2),newTheta);
 
             dThetaPoseErr = fitError(obj,newPose,modelPts);
@@ -94,7 +97,7 @@ classdef lineMapLocalizer < handle
             J = [dE_dx; dE_dy; dE_dTheta]; 
         end
 
-        function [success, ret_curpose]...
+        function [success, ret_curpose, ptsAnalysed]...
             = refinePose(obj, inPose, ptsInModelFrame, maxIterations)
 
             success = 0;
@@ -115,10 +118,12 @@ classdef lineMapLocalizer < handle
             
             ids = obj.throwOutliers(inPose, ptsInModelFrame);
             ptsInModelFrame = ptsInModelFrame(:,ids);
+            ptsAnalysed = ptsInModelFrame;
             [curErr, J] = obj.getJacobian(pose(curpose), ptsInModelFrame);
          %   fprintf('initial fit error: %d\n', curErr);
             lastErr = 1000; lastMagOfJ = 10000;
 
+            outpose = curpose;
             for i = 1:maxIterations
                 %move small amount along negative gradient
                 curpose = curpose - obj.gain * J;

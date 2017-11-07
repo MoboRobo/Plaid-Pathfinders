@@ -209,8 +209,9 @@ classdef RobotInterface < handle
                     World_Map = [0 0 -len_wall; -len_wall 0 0; 1 1 1];
                     
                     % Get Localized Current Pose of Robot
-                    [~, curPose] = Lab10_WorldLocalize(World_Map, rangePts, obj.rob_pose); %%%%%%%%%%%%%%%%%% TODO: CHANGE THIS IN FUTURE.
+                    [~, curPose, ptsAnalysed] = Lab10_WorldLocalize(World_Map, rangePts, obj.rob_pose); %%%%%%%%%%%%%%%%%% TODO: CHANGE THIS IN FUTURE.
                     
+                    rangePts = ptsAnalysed; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% YO, DAWG, I CHANGED THIS
                     % Transform RangeImage into World Coordinates:
                     worldPts = curPose.bToA()*rangePts;
                     xs = worldPts(1,:);
@@ -226,13 +227,14 @@ classdef RobotInterface < handle
                     if ~sum(isnan(rngs))
                         if ~isgraphics(obj.displayPlots.localization_image) % Initialize Plot if Not Yet Instantiated
                             axes(as);
-                            figure();
+%                             figure();
                             hold on
-                                obj.displayPlots.localization_image = scatter(ys, xs);
+                                obj.displayPlots.localization_image = scatter(ys, xs, 36, 'r');
                                 obj.displayPlots.localization_world = plot(World_Map(2,:),World_Map(1,:), 'b');
                                 obj.displayPlots.localization_robot = plot(robPts(2,:),robPts(1,:), 'g');
                                 axis equal
                             hold off
+%                             set('Xdir', 'reverse'); % Ensure Robot Y-Axis Points Left
                             set(as, 'Xdir', 'reverse'); % Ensure Robot Y-Axis Points Left
                         end
                         hold on
