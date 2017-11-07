@@ -19,7 +19,7 @@ classdef lineMapLocalizer < handle
         gradThresh = 0.0005;
      end
 
-     methods 
+     methods
         function obj = ...
             lineMapLocalizer(lines_p1,lines_p2,gain,errThresh,gradThresh)
             % create a lineMapLocalizer
@@ -57,6 +57,7 @@ classdef lineMapLocalizer < handle
 
              % transform the points
             worldPts = pose.bToA()*ptsInModelFrame;
+            %try
 
             r2 = obj.closestSquaredDistanceToLines(worldPts);
             r2(r2 == Inf) = [];
@@ -70,28 +71,27 @@ classdef lineMapLocalizer < handle
             end
         end
 
-        function [err2_Plus0,J] = getJacobian(obj,poseIn,modelPts)
+        function [currErr,J] = getJacobian(obj,poseIn,modelPts)
             % Computes the gradient of the error function
             currErr = fitError(obj,poseIn,modelPts);
-
-            eps = 1e-9;
+            eps = 1e-6;
             dx = [eps ; 0.0 ; 0.0];
-            dxPoseErr = fitError(obj,pose(poseIn.getPose+dx),modelPts);
+            dxPoseErr = fitError(obj,pose(poseIn.poseVec()+dx),modelPts);
             dE_dx = (1/eps)*(dxPoseErr-currErr);
 
             dy = [0.0; eps; 0.0];
-            dyPoseErr = fitError(obj,pose(poseIn.getPose+dy),modelPts);
+            dyPoseErr = fitError(obj,pose(poseIn.poseVec()+dy),modelPts);
             dE_dy = (1/eps)*(dyPoseErr-currErr);
 
             dTheta = [0.0; 0.0; eps];
-            currTheta = poseIn.getPose(3);
+            currTheta = poseIn.poseVec(3);
             newTheta = atan2(sin(currTheta + dTheta), cos(currTheta + dTheta));
-            newPose = pose(poseIn.getPose(1),poseIn.getPose(2),newTheta);
+            newPose = pose(poseIn.poseVec(1),poseIn.poseVec(2),newTheta);
 
             dThetaPoseErr = fitError(obj,newPose,modelPts);
             dE_dTheta = (1/eps)*(dThetaPoseErr-currErr);
 
-            err2_Plus0 = [dE_dx; dE_dy; dE_dTheta]; 
+            J = [dE_dx; dE_dy; dE_dTheta]; 
         end
 
         function [success, curpose]...
@@ -105,41 +105,49 @@ classdef lineMapLocalizer < handle
             % any changes that reduced the fit error. Pose changes that
             % increase fit error are not included and termination
             % occurs thereafter.
-
+            xs = []; ys = []
             %thresholds taken from values recommended in lab writeup
-            gradientThreshold = .0005; errThreshold = .01;
             % should I throw values as they do in write up with worldPts(:,ids) =
             % yes I should, so I am below:)
-            k = .1; 
-            ptsInModelFrame = obj.throwOutliers(inPose, ptsInModelFrame);
-            curpose = inPose;
+            %ptsInModelFrame = obj.throwOutliers(inPose, ptsInModelFrame);
+            curpose = inPose.poseVec();
             % compute gradient, determine how far away from desired position we are
-            [curErr, J] = obj.getJacobian(curpose, ptsInModelFrame);
-            lastErr = curErr; lastMagOfJ = norm(J);
-            figure
+            
+            ids = obj.throwOutliers(inPose, ptsInModelFrame);
+            ptsInModelFrame = ptsInModelFrame(:,ids);
+            [curErr, J] = obj.getJacobian(pose(curpose), ptsInModelFrame);
+         %   fprintf('initial fit error: %d\n', curErr);
+            lastErr = 1000; lastMagOfJ = 10000;
+
             for i = 1:maxIterations
                 %move small amount along negative gradient
-                curpose = curpose - k * J;
+                curpose = curpose - obj.gain * J;
+                xs = [xs curpose(1)]; ys = [ys curpose(2)];
 
-                scatter(outpose(1), outpose(2));
-                xlabel('X'); ylabel('Y');
 
                 squaredVals = J .* J; sumSquaredVals = sum(squaredVals); 
                 magnitudeOfJ = sqrt(sumSquaredVals);
                 %after changes, recompute error accordingly
-                [curErr, J] = obj.getJacobian(curpose, ptsInModelFrame);
-                title('Fit Error: %d', curErr); title('Iteration no. %d', i);
+                [curErr, J] = obj.getJacobian(pose(curpose), ptsInModelFrame);
+                title(sprintf('Fit Error: %d Iteration no. %d', curErr, i)); 
                 %if error is small or gradient is near zero magnitude you're done
-                if (curErr < errThreshold || magnitudeOfJ < gradientThreshold)
+                if (curErr < obj.errThresh )%|| magnitudeOfJ < obj.gradThresh)
+                    fprintf('happened\n');
                     outpose = curpose;
                     success = 1;
                     break
-                elseif (curErr > lastErr || lastMagOfJ > magnitudeOfJ)
+                elseif (curErr > lastErr)
                     break
                 end
-                pause(.5);
+%                  fprintf('curError: %d\n', curErr);
+%                 pause(.001);
                 outpose = curpose; lastErr = curErr; lastMagOfJ = magnitudeOfJ;
             end
+%             figure 
+%             hold on
+%             plot(obj.lines_p1, obj.lines_p2)
+%             scatter(xs, ys);
+%             xlabel('X'); ylabel('Y');
 
         end
      end
