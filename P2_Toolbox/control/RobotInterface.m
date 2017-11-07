@@ -77,6 +77,7 @@ classdef RobotInterface < handle
         %% Constructor:
         function obj = RobotInterface(robot_id, init_pose)
             obj.mrpl = mrplSystem( robot_id, init_pose );
+            obj.rob_pose = init_pose;
             
             obj.fig_master = WorldFinder();
             obj.fig_handles = guidata(obj.fig_master);
