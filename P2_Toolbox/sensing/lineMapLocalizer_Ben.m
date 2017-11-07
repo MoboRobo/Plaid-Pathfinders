@@ -90,7 +90,7 @@ function [err2_Plus0,J] = getJacobian(obj,poseIn,modelPts)
     dThetaPoseErr = fitError(obj,newPose,modelPts);
     dE_dTheta = (1/eps)*(dThetaPoseErr-currErr);
     
-    err2_Plus0 = [dE_dx, dE_dy, dE_dTheta]; 
+    err2_Plus0 = [dE_dx; dE_dy; dE_dTheta]; 
 end
  
 function [success, curpose]...
