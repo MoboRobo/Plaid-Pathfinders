@@ -492,7 +492,7 @@ classdef mrplSystem < handle
         %% Update Lidar Plotting
         function update_lidar_staticPlotting(obj)
             if( obj.clock.time() - obj.laser_plotting_data.last_time > obj.laser_plotting_data.delay_width )
-                r_img = RangeImage(obj.rob.hist_laser.last.raw);
+                r_img = obj.rob.hist_laser.last;
                 figure(obj.laser_plotting_data.curr_fig);
                 r_img.plot(obj.laser_plotting_data.colorize, obj.laser_plotting_data.lidar_plot);
 

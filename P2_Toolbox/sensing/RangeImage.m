@@ -50,7 +50,8 @@ classdef RangeImage < handle
     
     %% PROPERTIES
     properties(GetAccess=public, SetAccess=private)
-        raw;    % Vector of Raw Sensor Data.
+        raw;        % Vector of Raw Sensor Data.
+        raw_ang;    % Angles to Each Raw Sensor Data Point.
         
         % Valid Data:
         data = struct( ...
@@ -83,6 +84,7 @@ classdef RangeImage < handle
             end
             
             % Process and Store Sensible Information from Raw Data:
+            obj.raw_ang = RangeImage.IndicesToRads(1:length(obj.raw));
             [obj.data.ranges, obj.data.angles] = RangeImage.cleanImage(obj.raw);
             [obj.data.xs, obj.data.ys] = RangeImage.arToXy(obj.data.ranges, obj.data.angles);
             
@@ -285,7 +287,7 @@ classdef RangeImage < handle
             end % rejectOutliers
             
             pixelIndex = 1;
-            while ( (pixelIndex <= len) && len >= minNumPoints)
+            while ( (pixelIndex <= len) && len >= minNumPoints ) %% Breaks when len~=1
                 
                 % *Have search window be larger than w_sail so that larger
                 % widths can be observed and rejected.
@@ -443,8 +445,14 @@ classdef RangeImage < handle
             idx = (1:pixels); %Instruction: linspace(2,pixels,pixels)';
             idx = idx(valid);
             
-            ang = (idx - 1)*(pi/180) - deg2rad(RangeImage.INDEX_OFFSET());
+            ang = RangeImage.IndicesToRads(idx);
         end % #cleanImage
+        
+        %% Indices to Rad
+        % Converts the Given Indices to Radians
+        function as = IndicesToRads(is)
+            as = (is - 1)*(pi/180) - deg2rad(RangeImage.INDEX_OFFSET());
+        end % #IndicesToRads
         
         %% Index to Bearing
         % Converts a given Range Point Index to a Bearing in the Robot's
