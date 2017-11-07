@@ -5,7 +5,7 @@ classdef RobotInterface < handle
     properties(Constant)
         % Base (sub-gain) Speeds for the Robot to Drive at.
         V_base = 0.02;
-        om_base = 0.006; % 0.006/0.1
+        om_base = 0.06; % 0.006/0.1
         
         NO_KEY = 0;             % Identifier for No Key being Pressed
     end % RobotInterface <- properties(Constant)
@@ -181,49 +181,51 @@ classdef RobotInterface < handle
         function update_localizationPlot(obj)
             set(obj.fig_handles.MapLocalizationPlotMaxFreqText,'String',obj.displayMetaData.localization_plot_maxFreq);
             
-            if(obj.displayPlottingFlags.localization_plot || 1)
-                if( (obj.mrpl.clock.time() - obj.displayMetaData.localization_plot_lastT) > 1/obj.displayMetaData.localization_plot_maxFreq )
-                    if(~obj.mrpl.rob.laser_state) % If lasers are off
-                        obj.mrpl.rob.laserOn(); % Turn Lasers on
-                        pause(1); % Wait for Lasers to generate RangeImages.
-                    end
-                    
-                    as = obj.fig_handles.MapLocalizationAxes;
-                    
-                    r_img = obj.mrpl.rob.hist_laser.last;
-                    
-                    % To get every nth RangeImage Point, n is spec_vol, the
-                    % Specific Volume:
-                    spec_vol = 10;
-                    
+            if(~obj.mrpl.rob.laser_state) % If lasers are off
+                obj.mrpl.rob.laserOn(); % Turn Lasers on
+                pause(1); % Wait for Lasers to generate RangeImages.
+            end
+            
+            r_img = obj.mrpl.rob.hist_laser.last;
+
+            % To get every nth RangeImage Point, n is spec_vol, the
+            % Specific Volume:
+            spec_vol = 10;
+
 %                     rngs = r_img.raw(1:spec_vol:end);
 %                     angs = r_img.raw_ang(1:spec_vol:end);
 %                     [xs, ys] = RangeImage.arToXy(rngs, angs);
 %                     rangePts = [xs; ys; ones(size(xs))];
+
+            rngs = r_img.data.ranges(1:spec_vol:end);
+            xs = r_img.data.xs(1:spec_vol:end);
+            ys = r_img.data.ys(1:spec_vol:end);
+            rangePts = [xs; ys; ones(size(xs))];
+
+            len_wall = 2;
+            World_Map = [0 0 -len_wall; -len_wall 0 0; 1 1 1];
+
+            % Get Localized Current Pose of Robot
+            [~, curPose, ptsAnalysed] = Lab10_WorldLocalize(World_Map, rangePts, obj.rob_pose); %%%%%%%%%%%%%%%%%% TODO: CHANGE THIS IN FUTURE.
+
+            rangePts = ptsAnalysed; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% YO, DAWG, I CHANGED THIS
+            % Transform RangeImage into World Coordinates:
+            worldPts = curPose.bToA()*rangePts;
+            xs = worldPts(1,:);
+            ys = worldPts(2,:);
+
+            % Transform Robot Body Points into World Coordinates:
+            robPts = robotKinematicModel.bodyGraph();
+            robPts = curPose.bToA()*robPts;
+
+            % Update Robot Pose Estimate:
+            obj.rob_pose = curPose;
+            
+            
+            if(obj.displayPlottingFlags.localization_plot || 1)
+                if( (obj.mrpl.clock.time() - obj.displayMetaData.localization_plot_lastT) > 1/obj.displayMetaData.localization_plot_maxFreq )
                     
-                    rngs = r_img.data.ranges(1:spec_vol:end);
-                    xs = r_img.data.xs(1:spec_vol:end);
-                    ys = r_img.data.ys(1:spec_vol:end);
-                    rangePts = [xs; ys; ones(size(xs))];
-                    
-                    len_wall = 2;
-                    World_Map = [0 0 -len_wall; -len_wall 0 0; 1 1 1];
-                    
-                    % Get Localized Current Pose of Robot
-                    [~, curPose, ptsAnalysed] = Lab10_WorldLocalize(World_Map, rangePts, obj.rob_pose); %%%%%%%%%%%%%%%%%% TODO: CHANGE THIS IN FUTURE.
-                    
-                    rangePts = ptsAnalysed; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% YO, DAWG, I CHANGED THIS
-                    % Transform RangeImage into World Coordinates:
-                    worldPts = curPose.bToA()*rangePts;
-                    xs = worldPts(1,:);
-                    ys = worldPts(2,:);
-                    
-                    % Transform Robot Body Points into World Coordinates:
-                    robPts = robotKinematicModel.bodyGraph();
-                    robPts = curPose.bToA()*robPts;
-                    
-                    % Update Robot Pose Estimate:
-                    obj.rob_pose = curPose;
+                    as = obj.fig_handles.MapLocalizationAxes;
                     
                     if ~sum(isnan(rngs))
                         if ~isgraphics(obj.displayPlots.localization_image) % Initialize Plot if Not Yet Instantiated

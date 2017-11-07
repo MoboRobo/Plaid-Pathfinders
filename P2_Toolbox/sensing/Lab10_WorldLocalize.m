@@ -25,6 +25,6 @@ function [success, curPose, ptsAnalysed] = Lab10_WorldLocalize(World_Map, modelP
 %     thePose = pose(0.0+dx,0.0+dy,0.0+dt);
     %  thePose = pose(1, 1, 2);
     
-    LML = lineMapLocalizer(lines_p1, lines_p2, .3, .01, .0005);
-    [success, curPose, ptsAnalysed] = LML.refinePose(robPose, modelPts, 40);
+    LML = lineMapLocalizer(lines_p1, lines_p2, .3, .001, .0005);
+    [success, curPose, ptsAnalysed] = LML.refinePose(robPose, modelPts, 20);
 end
