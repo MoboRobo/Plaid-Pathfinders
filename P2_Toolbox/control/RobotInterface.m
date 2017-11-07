@@ -13,7 +13,9 @@ classdef RobotInterface < handle
     properties(GetAccess = public, SetAccess=private)
         mrpl; % MrplSystem Layer Responsible for Commanding Robot
         
-        vGain_default = 2; % Default Base Gain Applied to All Drive Velocities
+        rob_pose = pose(-15*0.0254,-9*0.0254,0);%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Temp. Impl. until Sensor Fusion in P2_Robot
+        
+        vGain_default = 1; % Default Base Gain Applied to All Drive Velocities
         
         running = 0; % Whether the System is Currently Running (looping)
         loopFcns = struct( ... % Functions to Execute at Before and After Each Loop
@@ -40,15 +42,15 @@ classdef RobotInterface < handle
         );
     
         % Handles for Plots
-        % (default value must be some number ~=0)
+        % (default value must be some number ~=0,1)
         displayPlots = struct( ...
-            'odometry', 1, ...      % Where the Robot has Moved since it Began
+            'odometry', -1, ...     % Where the Robot has Moved since it Began
             ...
-            'localization_image', 1, ...  % What Robot Sees in World Coordinates
-            'localization_world', 1, ...  % Plot of Map in World Coordinates
-            'localization_robot', 1, ...  % Plot of Robot in World Coordinates
+            'localization_image', -1, ... % What Robot Sees in World Coordinates
+            'localization_world', -1, ... % Plot of Map in World Coordinates
+            'localization_robot', -1, ... % Plot of Robot in World Coordinates
             ...
-            'lidar_feed', 1 ...   	% Feed of Raw Range Images.
+            'lidar_feed', -1 ...   % Feed of Raw Range Images.
         );
         
         % Meta Data for All Plots:
@@ -178,7 +180,7 @@ classdef RobotInterface < handle
         function update_localizationPlot(obj)
             set(obj.fig_handles.MapLocalizationPlotMaxFreqText,'String',obj.displayMetaData.localization_plot_maxFreq);
             
-            if(obj.displayPlottingFlags.localization_plot)
+            if(obj.displayPlottingFlags.localization_plot || 1)
                 if( (obj.mrpl.clock.time() - obj.displayMetaData.localization_plot_lastT) > 1/obj.displayMetaData.localization_plot_maxFreq )
                     if(~obj.mrpl.rob.laser_state) % If lasers are off
                         obj.mrpl.rob.laserOn(); % Turn Lasers on
@@ -193,16 +195,21 @@ classdef RobotInterface < handle
                     % Specific Volume:
                     spec_vol = 10;
                     
-                    rngs = r_img.raw(1:spec_vol:end);
-                    angs = r_img.raw_ang(1:spec_vol:end);
-                    [xs, ys] = RangeImage.arToXy(rngs, angs);
+%                     rngs = r_img.raw(1:spec_vol:end);
+%                     angs = r_img.raw_ang(1:spec_vol:end);
+%                     [xs, ys] = RangeImage.arToXy(rngs, angs);
+%                     rangePts = [xs; ys; ones(size(xs))];
+                    
+                    rngs = r_img.data.ranges(1:spec_vol:end);
+                    xs = r_img.data.xs(1:spec_vol:end);
+                    ys = r_img.data.ys(1:spec_vol:end);
                     rangePts = [xs; ys; ones(size(xs))];
                     
                     len_wall = 2;
-                    World_Map = [0 0 len_wall; len_wall 0 0; 1 1 1];
+                    World_Map = [0 0 -len_wall; -len_wall 0 0; 1 1 1];
                     
                     % Get Localized Current Pose of Robot
-                    [~, curPose] = Lab10_WorldLocalize(rangePts); %%%%%%%%%%%%%%%%%% TODO: CHANGE THIS IN FUTURE.
+                    [~, curPose] = Lab10_WorldLocalize(World_Map, rangePts, obj.rob_pose); %%%%%%%%%%%%%%%%%% TODO: CHANGE THIS IN FUTURE.
                     
                     % Transform RangeImage into World Coordinates:
                     worldPts = curPose.bToA()*rangePts;
@@ -213,18 +220,25 @@ classdef RobotInterface < handle
                     robPts = robotKinematicModel.bodyGraph();
                     robPts = curPose.bToA()*robPts;
                     
+                    % Update Robot Pose Estimate:
+                    obj.rob_pose = curPose;
+                    
                     if ~sum(isnan(rngs))
                         if ~isgraphics(obj.displayPlots.localization_image) % Initialize Plot if Not Yet Instantiated
+                            axes(as);
+                            figure();
                             hold on
-                                obj.displayPlots.localization_image = scatter(as, ys, xs);
-                                obj.displayPlots.localization_world = plot(as, World_Map(2,:),World_Map(1,:), 'b');
-                                obj.displayPlots.localization_robot = plot(as, robPts(2,:),robPts(1,:), 'g');
+                                obj.displayPlots.localization_image = scatter(ys, xs);
+                                obj.displayPlots.localization_world = plot(World_Map(2,:),World_Map(1,:), 'b');
+                                obj.displayPlots.localization_robot = plot(robPts(2,:),robPts(1,:), 'g');
+                                axis equal
                             hold off
                             set(as, 'Xdir', 'reverse'); % Ensure Robot Y-Axis Points Left
                         end
-   
-                        set(obj.displayPlots.localization_image, 'XData', ys, 'YData', xs);
-                        set(obj.displayPlots.localization_robot, 'XData', robPts(2,:), 'YData', robPts(1,:));
+                        hold on
+                            set(obj.displayPlots.localization_image, 'XData', ys, 'YData', xs);
+                            set(obj.displayPlots.localization_robot, 'XData', robPts(2,:), 'YData', robPts(1,:));
+                        hold off
                     else
                         warning('No Data in Range to Plot or Invalid Range Data');
                     end

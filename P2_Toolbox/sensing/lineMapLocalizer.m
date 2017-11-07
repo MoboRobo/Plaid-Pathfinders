@@ -48,7 +48,7 @@ classdef lineMapLocalizer < handle
             % Find ids of outliers in a scan.
             worldPts = pose.bToA()*ptsInModelFrame;
             r2 = obj.closestSquaredDistanceToLines(worldPts);
-            ids = find(r2 > obj.maxErr*obj.maxErr);
+            ids = find(r2 < obj.maxErr*obj.maxErr);
         end
 
         function avgErr2 = fitError(obj,pose,ptsInModelFrame)
@@ -94,7 +94,7 @@ classdef lineMapLocalizer < handle
             J = [dE_dx; dE_dy; dE_dTheta]; 
         end
 
-        function [success, curpose]...
+        function [success, ret_curpose]...
             = refinePose(obj, inPose, ptsInModelFrame, maxIterations)
 
             success = 0;
@@ -105,7 +105,7 @@ classdef lineMapLocalizer < handle
             % any changes that reduced the fit error. Pose changes that
             % increase fit error are not included and termination
             % occurs thereafter.
-            xs = []; ys = []
+            xs = []; ys = [];
             %thresholds taken from values recommended in lab writeup
             % should I throw values as they do in write up with worldPts(:,ids) =
             % yes I should, so I am below:)
@@ -129,10 +129,10 @@ classdef lineMapLocalizer < handle
                 magnitudeOfJ = sqrt(sumSquaredVals);
                 %after changes, recompute error accordingly
                 [curErr, J] = obj.getJacobian(pose(curpose), ptsInModelFrame);
-                title(sprintf('Fit Error: %d Iteration no. %d', curErr, i)); 
+%                 title(sprintf('Fit Error: %d Iteration no. %d', curErr, i)); 
                 %if error is small or gradient is near zero magnitude you're done
                 if (curErr < obj.errThresh )%|| magnitudeOfJ < obj.gradThresh)
-                    fprintf('happened\n');
+%                     fprintf('happened\n');
                     outpose = curpose;
                     success = 1;
                     break
@@ -148,7 +148,7 @@ classdef lineMapLocalizer < handle
 %             plot(obj.lines_p1, obj.lines_p2)
 %             scatter(xs, ys);
 %             xlabel('X'); ylabel('Y');
-
+        ret_curpose = pose(outpose);
         end
      end
 end

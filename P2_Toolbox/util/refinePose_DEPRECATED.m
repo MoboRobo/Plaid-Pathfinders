@@ -1,5 +1,5 @@
 function [success, curpose]...
-    = refinePose(obj, inPose, ptsInModelFrame, maxIterations)
+    = refinePose_DEPRECATED(obj, inPose, ptsInModelFrame, maxIterations)
 
     success = 0;
     

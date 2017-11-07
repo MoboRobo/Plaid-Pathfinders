@@ -1,8 +1,8 @@
-function [success, curPose] = Lab10_WorldLocalize(robPose, modelPts)
-    p1 = [-2 ; -2];
-    p2 = [ 2 ; -2];
-    p3 = [ 2 ; 2];
-    p4 = [-2 ; 2];
+function [success, curPose] = Lab10_WorldLocalize(World_Map, modelPts, robPose)
+    p1 = [-2 ; 0];
+    p2 = [0 ; 0];
+    p3 = [0 ; -2];
+    p4 = [-2 ; -2];
     lines_p1 = [p1 p2 p3 p4];
     lines_p2 = [p2 p3 p4 p1];
     % Set up test points
@@ -25,6 +25,6 @@ function [success, curPose] = Lab10_WorldLocalize(robPose, modelPts)
 %     thePose = pose(0.0+dx,0.0+dy,0.0+dt);
     %  thePose = pose(1, 1, 2);
     
-    LML = lineMapLocalizer(lines_p1, lines_p2, .01, .001, .0005);
+    LML = lineMapLocalizer(lines_p1, lines_p2, .3, .01, .0005);
     [success, curPose] = LML.refinePose(robPose, modelPts, 40);
 end
