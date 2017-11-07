@@ -83,10 +83,19 @@ classdef lineMapLocalizer < handle
             dyPoseErr = fitError(obj,pose(poseIn.poseVec()+dy),modelPts);
             dE_dy = (1/eps)*(dyPoseErr-currErr);
 
-            dTheta = [0.0; 0.0; eps];
+            
+            dTheta = [0.0; 0.0; 0.0];
             dThetaPoseErr = fitError(obj,pose(poseIn.poseVec()+dTheta),modelPts);
             dE_dTheta = (1/eps)*(dThetaPoseErr-currErr);
             
+            dTheta = [0.0; 0.0; eps];
+            currTheta = poseIn.poseVec(3);
+            newTheta = currTheta + dTheta;
+            newPose = pose(poseIn.poseVec(1),poseIn.poseVec(2),newTheta);
+
+            dThetaPoseErr = fitError(obj,newPose,modelPts);
+            dE_dTheta = (1/eps)*(dThetaPoseErr-currErr);
+
             J = [dE_dx; dE_dy; dE_dTheta]; 
         end
 
