@@ -5,7 +5,7 @@ classdef RobotInterface < handle
     properties(Constant)
         % Base (sub-gain) Speeds for the Robot to Drive at.
         V_base = 0.02;
-        om_base = 0.06; % 0.006/0.1
+        om_base = 0.006; % 0.006/0.1
         
         NO_KEY = 0;             % Identifier for No Key being Pressed
     end % RobotInterface <- properties(Constant)
