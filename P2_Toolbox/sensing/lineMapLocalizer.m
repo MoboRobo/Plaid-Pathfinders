@@ -1,44 +1,62 @@
-classdef lineMapLocalizer < handle
-     %mapLocalizer A class to match a range scan against a map in
+classdef LineMapLocalizer < handle
+     %LineMapLocalizer A class to match a range scan against a map in
      % order to find the true location of the range scan relative to
      % the map.
 
      properties(Constant)
-        maxErr = 0.05; % 5 cm
+        maxErr = 0.08; % 8 cm
         minPts = 5; % min # of points that must match
-     end
-
-     properties(Access = private)
-     end
+        
+        maxIterations = 40; % Maximum Number of Gradient Descent Iterations
+        
+        % Inverse of Fraction of Provided Model Points to Analyze (ie.
+        % every spec_vol points).
+        spec_vol = 4;
+        
+     end % LineMapLocalizer<-properties(Constant)
+     
+     properties(GetAccess=public, SetAccess=private)
+        % Permanently Set on Instantiation for any LML:
+        world_map = WorldMap.empty;
+        lines_p1 = []; % List of Start Points of Every Line in Map
+        lines_p2 = []; % List of End Points of Every Line in Map
+     end % LineMapLocalizer<-properties(private)
 
      properties(Access = public)
-        lines_p1 = [];
-        lines_p2 = [];
         gain = 0.3;
-        errThresh = 0.01;
+        errThresh = 0.001;
         gradThresh = 0.0005;
-     end
+        
+        % Vector of Last Points Analysed:
+        last_ptsAnalysed = [0;0];
+     end % LineMapLocalizer<-properties(public)
 
      methods
-        function obj = ...
-            lineMapLocalizer(lines_p1,lines_p2,gain,errThresh,gradThresh)
-            % create a lineMapLocalizer
-            obj.lines_p1 = lines_p1;
-            obj.lines_p2 = lines_p2;
-            obj.gain = gain;
-            obj.errThresh = errThresh;
-            obj.gradThresh = gradThresh;
+        % Create a LineMapLocalizer for the Given WorldMap, optionally
+        % supplying custom gradient descent settings.
+        function obj = LineMapLocalizer(wm, gain,errThresh,gradThresh)
+            obj.world_map = wm;
+            [obj.lines_p1, obj.lines_p2] = obj.world_map.createPointVecs();
+            
+            % Optional Gradient Descent Settings Override:
+            if nargin>1
+                obj.gain = gain;
+            elseif nargin>2
+                obj.errThresh = errThresh;
+            elseif nargin>3
+                obj.gradThresh = gradThresh;
+            end % nargin?
         end
 
-        function ro2 = closestSquaredDistanceToLines(obj,pi)
-            % Find the squared shortest distance from pi to any line
+        function ro2 = closestSquaredDistanceToLines(obj,p0)
+            % Find the squared shortest distance from p0 to any line
             % segment in the supplied list of line segments.
-            % pi is an array of 2d points
+            % p0 is an array of 2d points
             % throw away homogenous flag
-            pi = pi(1:2,:);
-            r2Array = zeros(size(obj.lines_p1,2),size(pi,2));
+            p0 = p0(1:2,:);
+            r2Array = zeros(size(obj.lines_p1,2),size(p0,2));
             for i = 1:size(obj.lines_p1,2)
-                [r2Array(i,:) , ~] = closestPointOnLineSegment(pi,...
+                [r2Array(i,:) , ~] = closestPointOnLineSegment(p0,...
                 obj.lines_p1(:,i),obj.lines_p2(:,i));
             end
             ro2 = min(r2Array,[],1);
@@ -63,7 +81,7 @@ classdef lineMapLocalizer < handle
             r2(r2 == Inf) = [];
             err2 = sum(r2);
             num = length(r2);
-            if(num >= lineMapLocalizer.minPts)
+            if(num >= LineMapLocalizer.minPts)
                 avgErr2 = err2/num;
             else
             % not enough points to make a guess
@@ -90,9 +108,15 @@ classdef lineMapLocalizer < handle
             J = [dE_dx; dE_dy; dE_dTheta];
         end
 
-        function [success, ret_curpose, ptsAnalysed]...
-            = refinePose(obj, inPose, ptsInModelFrame, maxIterations)
-
+        function [success, ret_curpose] = refinePose(obj, inPose, pimf)
+        % pimf - Points In Model Frame (prior to processing)
+            
+            % To get every nth RangeImage Point, n is spec_vol, the
+            % Specific Volume:
+            xs = pimf(1,1:obj.spec_vol:end);
+            ys = pimf(2,1:obj.spec_vol:end);
+            ptsInModelFrame = [xs; ys; ones(size(xs))];
+        
             success = 0;
             % refine robot pose in world (inPose) based on lidar
             % registration. Terminates if maxIters iterations is
@@ -111,17 +135,18 @@ classdef lineMapLocalizer < handle
             
             ids = obj.throwOutliers(inPose, ptsInModelFrame);
             ptsInModelFrame = ptsInModelFrame(:,ids);
-            ptsAnalysed = ptsInModelFrame;
+            obj.last_ptsAnalysed = ptsInModelFrame;
+            
             [curErr, J] = obj.getJacobian(pose(curpose), ptsInModelFrame);
          %   fprintf('initial fit error: %d\n', curErr);
             lastErr = 1000; lastMagOfJ = 10000;
 
             outpose = curpose;
-            for i = 1:maxIterations
+            i = 1;
+            while i<=obj.maxIterations
                 %move small amount along negative gradient
                 curpose = curpose - obj.gain * J;
                 xs = [xs curpose(1)]; ys = [ys curpose(2)];
-
 
                 squaredVals = J .* J; sumSquaredVals = sum(squaredVals); 
                 magnitudeOfJ = sqrt(sumSquaredVals);
@@ -129,7 +154,7 @@ classdef lineMapLocalizer < handle
                 [curErr, J] = obj.getJacobian(pose(curpose), ptsInModelFrame);
 %                 title(sprintf('Fit Error: %d Iteration no. %d', curErr, i)); 
                 %if error is small or gradient is near zero magnitude you're done
-                if (curErr < obj.errThresh )%|| magnitudeOfJ < obj.gradThresh)
+                if (curErr < obj.errThresh || magnitudeOfJ < obj.gradThresh)
 %                     fprintf('happened\n');
                     outpose = curpose;
                     success = 1;
@@ -140,7 +165,9 @@ classdef lineMapLocalizer < handle
 %                  fprintf('curError: %d\n', curErr);
 %                 pause(.001);
                 outpose = curpose; lastErr = curErr; lastMagOfJ = magnitudeOfJ;
-            end
+                
+                i = i+1;
+            end % while i<=obj.maxIterations?
 %             figure 
 %             hold on
 %             plot(obj.lines_p1, obj.lines_p2)

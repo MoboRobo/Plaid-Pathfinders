@@ -12,9 +12,9 @@ function Lab2_Solution_Connor(robot_id)
 
     rob.core.forksDown(); % Prevent Brown-out
     %% SETUP MAPPING
-    bounds = [0 0];%3.5*[0.5 0; 0.5 1; -0.5 1; -0.5 0]; % Inverted U-Shaped Container
+    bounds = [0 0];%3.5*[0.5 0; 0.5 1; -0.5 1; -0.5 0; 0.5 0]; % Inverted U-Shaped Container
     person_lines = ShapeGen.rect(0.1,0.05);
-    wm = WorldMap(rob, bounds);
+    wm = WorldMap(bounds);
         person = wm.addObstacle(person_lines); % Person to Follow.
         person.pose = [0.25 0.5 0]; % Move to Center Screen
     wm.createMap();

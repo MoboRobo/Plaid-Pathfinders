@@ -13,8 +13,6 @@ classdef RobotInterface < handle
     properties(GetAccess = public, SetAccess=private)
         mrpl; % MrplSystem Layer Responsible for Commanding Robot
         
-        rob_pose = pose(-15*0.0254,-9*0.0254,0);%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Temp. Impl. until Sensor Fusion in P2_Robot
-        
         vGain_default = 1; % Default Base Gain Applied to All Drive Velocities
         
         running = 0; % Whether the System is Currently Running (looping)
@@ -75,9 +73,9 @@ classdef RobotInterface < handle
     %% METHODS
     methods
         %% Constructor:
-        function obj = RobotInterface(robot_id, init_pose)
-            obj.mrpl = mrplSystem( robot_id, init_pose );
-            obj.rob_pose = init_pose;
+        function obj = RobotInterface(robot_id, init_pose, world_map)
+            obj.mrpl = mrplSystem( robot_id, init_pose, world_map );
+                obj.mrpl.interface = obj; % Eek.
             
             obj.fig_master = WorldFinder();
             obj.fig_handles = guidata(obj.fig_master);
@@ -127,7 +125,7 @@ classdef RobotInterface < handle
                 obj.update_graphics();
 
             obj.loopFcns.post();
-            pause(0.01); % CPU Relief
+            pause(0.09); % CPU Relief (can be big b/c all this means is that graphics will be delayed by up to this amt.)
             end
         end % #run_loop
         
@@ -186,64 +184,48 @@ classdef RobotInterface < handle
                 pause(1); % Wait for Lasers to generate RangeImages.
             end
             
-            r_img = obj.mrpl.rob.hist_laser.last;
-
-            % To get every nth RangeImage Point, n is spec_vol, the
-            % Specific Volume:
-            spec_vol = 10;
-
-%                     rngs = r_img.raw(1:spec_vol:end);
-%                     angs = r_img.raw_ang(1:spec_vol:end);
-%                     [xs, ys] = RangeImage.arToXy(rngs, angs);
-%                     rangePts = [xs; ys; ones(size(xs))];
-
-            rngs = r_img.data.ranges(1:spec_vol:end);
-            xs = r_img.data.xs(1:spec_vol:end);
-            ys = r_img.data.ys(1:spec_vol:end);
-            rangePts = [xs; ys; ones(size(xs))];
-
-            len_wall = 2;
-            World_Map = [0 0 -len_wall; -len_wall 0 0; 1 1 1];
-
-            % Get Localized Current Pose of Robot
-            [~, curPose, ptsAnalysed] = Lab10_WorldLocalize(World_Map, rangePts, obj.rob_pose); %%%%%%%%%%%%%%%%%% TODO: CHANGE THIS IN FUTURE.
-
-            rangePts = ptsAnalysed; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% YO, DAWG, I CHANGED THIS
-            % Transform RangeImage into World Coordinates:
-            worldPts = curPose.bToA()*rangePts;
-            xs = worldPts(1,:);
-            ys = worldPts(2,:);
-
-            % Transform Robot Body Points into World Coordinates:
-            robPts = robotKinematicModel.bodyGraph();
-            robPts = curPose.bToA()*robPts;
-
-            % Update Robot Pose Estimate:
-            obj.rob_pose = curPose;
-            
-            
-            if(obj.displayPlottingFlags.localization_plot || 1)
+            if(obj.displayPlottingFlags.localization_plot)
                 if( (obj.mrpl.clock.time() - obj.displayMetaData.localization_plot_lastT) > 1/obj.displayMetaData.localization_plot_maxFreq )
+                    
+                    curPose = obj.mrpl.rob.measTraj.p_f;
+
+                    if(~isempty(obj.mrpl.rob.localizer))
+                        ptsAnalysed = obj.mrpl.rob.localizer.last_ptsAnalysed;
+                        World_Map = obj.mrpl.rob.localizer.world_map;
+                    else
+                        ptsAnalysed = [0;0];
+                        World_Map = WorldMap([0 0]);
+                    end
+                    
+                    % Transform Points Analysed in Range Data into World Coordinates:
+                    ptsAnalysed = curPose.bToA() * ptsAnalysed;
+                    
+                    xs = ptsAnalysed(1,:);
+                    ys = ptsAnalysed(2,:);
+                    
+                    % Transform Robot Body Points into World Coordinates:
+                    robPts = robotKinematicModel.bodyGraph();
+                    robPts = curPose.bToA() * robPts;
+
                     
                     as = obj.fig_handles.MapLocalizationAxes;
                     
-                    if ~sum(isnan(rngs))
+                    if ~sum([isnan(xs), isnan(ys)]) % No NaN xs or ys.
                         if ~isgraphics(obj.displayPlots.localization_image) % Initialize Plot if Not Yet Instantiated
-                            axes(as);
-%                             figure();
-                            hold on
-                                obj.displayPlots.localization_image = scatter(ys, xs, 36, 'r');
-                                obj.displayPlots.localization_world = plot(World_Map(2,:),World_Map(1,:), 'b');
-                                obj.displayPlots.localization_robot = plot(robPts(2,:),robPts(1,:), 'g');
-                                axis equal
-                            hold off
-%                             set('Xdir', 'reverse'); % Ensure Robot Y-Axis Points Left
+                                obj.displayPlots.localization_image = scatter(as, ys, xs, 36, 'r');
+                            hold(as, 'on'); % ^Use First Plotting to purge old data, then put the hold on.
+                                obj.displayPlots.localization_world = World_Map.plot(as); % Is Static. Plot Once.
+                                obj.displayPlots.localization_robot = plot(as, robPts(2,:),robPts(1,:), 'g');
+                            hold(as, 'off');
+                            
+                            axis(as, 'equal');
                             set(as, 'Xdir', 'reverse'); % Ensure Robot Y-Axis Points Left
                         end
-                        hold on
+                        hold(as, 'on');
                             set(obj.displayPlots.localization_image, 'XData', ys, 'YData', xs);
                             set(obj.displayPlots.localization_robot, 'XData', robPts(2,:), 'YData', robPts(1,:));
-                        hold off
+                        hold(as, 'off');
+                        axis(as, 'equal');
                     else
                         warning('No Data in Range to Plot or Invalid Range Data');
                     end

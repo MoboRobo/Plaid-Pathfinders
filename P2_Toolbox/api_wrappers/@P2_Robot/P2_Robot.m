@@ -22,13 +22,22 @@ classdef P2_Robot < handle
         on_time; 	% Time (tic) that the robot started
         getTime;    % Lambda Function for Getting Time
                     % (for opt. use of external clocks)
-        
+                    
+        % Line Map Localizer for Sensor Fusion:
+        localizer = LineMapLocalizer.empty;
+        % Whether to Use Sensor Fusion for Localization (or just odometry):
+        localizeAndFuse = 0;
+        % Gain on Estimation-Lidar Error to Use when Performing Sensor Fusion:
+        sensorFusionGain = 0.25;
         
         %Motion:
         curr_V = 0;     % m/s, Most Recently Commanded Body Velocity
         curr_omega = 0; % rad/s, Most Recently Commanded Rotational Velocity
         
         %Raspbot Data Logs:
+        
+        % Pose in the World-Frame at which the Robot exists at t=0.
+        init_pose = pose.empty;
         
         % History of Encoder Readings [m]
         % Formatted as: [[sl_0,sr_0, t_0]; ... ]:
@@ -47,6 +56,7 @@ classdef P2_Robot < handle
         
         % History of lidar laser RangeImages.
         hist_laser = slidingFifo(100, RangeImage(zeros(1,360)));
+        hist_laser_times = slidingFifo(100, 0);
         % Whether the lidar laser is on.
         laser_state = 0;
         
@@ -156,34 +166,67 @@ classdef P2_Robot < handle
     methods
         %% Constructor
         % rb - RaspBot/Neato Robot Class which manages ROS Communication
-        function obj = P2_Robot(rb, time_lambda)
+        %
+        % p0 - position in the world-frame where the robot starts.
+        % wm - optionally, supply a WorldMap for using localization. If a
+        % map is supplied, localization and sensor fusion will be turned on.
+        %
+        % time_lambda - optionally, Supply an Alternative Method for
+        % Reading Time with this lambda.
+        function obj = P2_Robot(rb, p0, wm, time_lambda)
             if nargin>0
                 if isa(rb,'raspbot')
                     obj.core = rb;
                 else
-                    error('Debugger Robot must be a raspbot')
+                    error('Core Robot must be a raspbot')
                 end % r is raspbot?
                 
             else
-                error('Must give Debugger a Robot to track')
+                error('Must give a Core Robot to track')
             end % nargin>0?
-            
+           
           % Initialize Timing:
             obj.on_time = tic;
             obj.trip_startTime = tic;
             obj.startTrip(); % Default odometry starts at instantiation.
-            if nargin>1
+            if nargin>3
                 obj.getTime = time_lambda;
             else
                 obj.getTime = @()toc(obj.on_time);
-            end % nargin>1
+            end % nargin>3
+            
+          % Initial Pose:
+            if nargin>1
+                obj.init_pose = p0;
+            else
+                obj.init_pose = pose(0,0,0); % Default Value
+            end % nargin>1?
+            
+          % World Map:
+            if nargin>2
+                wm.createMap(); % Ensure Map Construct is Up-to-Date
+                h = wm.map.plot(); % Raspbot API Map Plot (for sim)
+                if ishandle(h)
+                    close(h);
+                end
+                f = figure(); % Must create and close a figure around genMap to 
+                              % keep objects from being plotted in another
+                              % figure.
+                    obj.core.genMap(wm.map.objects);
+                if ishandle(f)
+                    close(f);
+                end
+                
+                obj.localizer = LineMapLocalizer(wm);
+                obj.localizeAndFuse = 1;
+            end % nargin>2
             
             obj.waitForReady();
             evnt = obj.core.encoders.LatestMessage;
             obj.hist_enc.que(1) = struct('s_l',evnt.Vector.X, 's_r',evnt.Vector.Y, 't',(evnt.Header.Stamp.Sec + evnt.Header.Stamp.Nsec/1e9));
             
-            obj.encTraj = RobotTrajectory();
-            obj.commTraj = RobotTrajectory();
+            obj.encTraj = RobotTrajectory(obj.init_pose);
+            obj.commTraj = RobotTrajectory(obj.init_pose);
             
             obj.measTraj = obj.encTraj;
             
@@ -226,16 +269,70 @@ classdef P2_Robot < handle
         
         %% SENSING
         function processNewLaserData(obj, ~, event)
-            obj.hist_laser.add(RangeImage(event.Ranges));
-     
+            r_img = RangeImage(event.Ranges);
+            t_img = event.Header.Stamp.Sec + event.Header.Stamp.Nsec/1e9;
             
-        end
+            obj.hist_laser.add(r_img);
+            obj.hist_laser_times.add(t_img);
+            
+            % Perform Map Localization if a Map (and .: LML) was Supplied
+            % and Sensor Fusion is Desired.
+            obj.performLocalizationFusion();
+        end % #processNewLaserData
+        
+        function performLocalizationFusion(obj)
+            % Perform Map Localization if a Map (and .: LML) was Supplied
+            % and Sensor Fusion is Desired (and lasers are on <- not old
+            % data).
+            if(~isempty(obj.localizer) && obj.localizeAndFuse && obj.laser_state)
+                % Get Latest Laser Data:
+                r_img = obj.hist_laser.last;
+                t_img = obj.hist_laser_times.last;
+                
+                % Get Current Robot Pose when RangeImage was Taken (both
+                % are in robot-time not CPU-time):
+                curPose = obj.measTraj.p_f;
+                %curPose = obj.measTraj.p_t(t_img); % <<< SHOULD BE DOING
+                %THIS (but not paramount; so, is okay for now).
+                
+                % Fetch Range Points:
+                xs = r_img.data.xs;
+                ys = r_img.data.ys;
+                rangePts = [xs; ys; ones(size(xs))];
+
+                % Localize Robot within World Map:
+                [success, p_lid] = obj.localizer.refinePose(curPose, rangePts);
+                if success % Successfully Localized Robot in Map
+                    % Get Pose Vectors:
+                    p_lid_vec = p_lid.poseVec;
+                    p_last_vec = curPose.poseVec;
+
+                    % Fuse Localized Position with Odometry Position:
+                    Dp = p_lid_vec - p_last_vec; % Compute Difference in Pose
+                    Dth = atan2(sin(Dp(3)), cos(Dp(3))); % Compute Angle Diff. (Crucial)
+                    Dp(3) = Dth;
+
+                    p_fus_vec = p_last_vec + obj.sensorFusionGain * Dp;
+
+                    % Issue a Pose Correction to Robot Positioning with Fused
+                    % Output:
+                    t_up = obj.encTraj.t_f; % Time must flow ever forward (don't use historical t_img.
+                    obj.encTraj.issuePoseCorrection( pose(p_fus_vec), t_up );
+
+                end % success?
+            end % localizeAndFuse?
+        end % #performLocalizationFusion
+        
         function laserOn(obj)
             if ~obj.laser_state
                 %Reset Lidar History:
                 obj.hist_laser = slidingFifo( ...
                     obj.hist_laser.maxElements, ...
                     RangeImage(zeros(1,360)) ...
+                );
+                obj.hist_laser_times = slidingFifo( ...
+                    obj.hist_laser_times.maxElements, ...
+                    0 ...
                 );
                 
                 obj.core.startLaser();
@@ -261,6 +358,8 @@ classdef P2_Robot < handle
         
         % Resets All Robot State Data
         function resetStateData(obj)
+            obj.laserOff(); % Robot Starts with Lasers Off
+            
             obj.hist_enc.add(obj.hist_enc.first());
             obj.hist_estWheelVel.add(obj.hist_estWheelVel.first());
             obj.encTraj.reset();
@@ -269,6 +368,7 @@ classdef P2_Robot < handle
             obj.commTraj.reset();
             
             obj.hist_laser = slidingFifo(100, RangeImage(zeros(1,360)));
+            obj.hist_laser_times = slidingFifo(100, 0);
             
             obj.curr_V = 0;
             obj.curr_omega = 0;
@@ -306,6 +406,10 @@ classdef P2_Robot < handle
             end % dt>0?
             
             obj.hist_enc.add(struct('s_l',s_l, 's_r',s_r, 't',t));
+            
+            % Call Loc. Here too b/c Lidar doesn't Call Frequently Enough:
+            %obj.performLocalizationFusion(); % Nvm. No even theoretical
+            %benefits anymore since now using measTraj.p_t(t_img);
         end % #processNewEncoderData
         
         % DEPRECATED

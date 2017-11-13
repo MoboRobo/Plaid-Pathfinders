@@ -56,6 +56,26 @@ classdef WorldMap < handle
             end
         end % #createMap
         
+        %% Create Point Vectors
+        % Returns two vectors for every line in a colliding object in the 
+        % map in the map (this excludes flags but includes the boundary and 
+        % obstacles):
+        % pts_s - vector of the start points of the included lines
+        % pts_e - vector of the end points of the included lines
+        function [pts_s, pts_e] = createPointVecs(obj)
+            pts_s = zeros(max(size(A)+size(B))); % Preallocate space
+            pts_e = zeros(max(size(A)+size(B)));
+            for b = obj.boundary
+                bs = b.lines';
+                bs_s = bs(:,1:end-1);
+                bs_e = bs(:,2:end);
+                
+            end
+            for o = obj.obtacles
+                
+            end
+        end % #createPointVecs
+        
         %% Add Flag
         % As a Non-Colliding Flag to the WorldMap and Updates the Plot
         % f - Point-Outline of the Flag given as a Vector of Points. Ex:

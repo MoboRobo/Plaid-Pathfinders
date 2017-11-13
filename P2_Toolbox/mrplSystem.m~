@@ -21,8 +21,6 @@ classdef mrplSystem < handle
     end
 
     properties(GetAccess = public, SetAccess = public)
-        interface = RobotInterface.empty; % Interface Controller for this System
-        
         debugging = struct(...
             'delay_plots', 0, ...   % Whether Transient Velocity Plots for Determining should be Made.
             'error_plots', 0, ...    % Whether Transient Error Plots (from FeedbackController) should be Made.
@@ -64,7 +62,7 @@ classdef mrplSystem < handle
             if nargin>2
                 wm = world_map;
             else
-                wm = WorldMap([0 0]); %% Default empty bounds
+                wm = WorldMap([0;0]); %% Default empty bounds
             end
             
             obj.rob = P2_Robot( rasp, startPose, wm, @()(obj.clock.time()) );
@@ -136,18 +134,17 @@ classdef mrplSystem < handle
         % being Controlled is Using Map Localization.
         function p_s = getTrajectoryStart(obj)
             if(obj.rob.localizeAndFuse)
-                % If Robot is using Map Localization, Assume it has the
-                % most accurate estimate on its final world position.
+                % If Robot is using Map Localization, Assume it ha
                 p_s = obj.rob.measTraj.p_f;
             else
-                % Otherwise, start new trajectory where the last one ended.
                 if(isempty(obj.start_poses))
-                    p_s = obj.rob.init_pose; % First Run
+                    p_s = pose(0, 0, 0); % First Run
                 else 
                     p_s = obj.start_poses(end); % There was a Prev. Traj.
                 end
-            end % rob.localizeAndFuse?
+            end % rob.use_sensorFusion?
         end
+
         
         %% Go To X (small)
         % Optionally: specify speed, spd
@@ -219,7 +216,11 @@ classdef mrplSystem < handle
             
             ttc = Trajectory_TimeCurve(vref,omref, 0, t_f, obj.traj_samples);
             
-            initpose = obj.getTrajectoryStart();
+            if (isempty(obj.start_poses))
+                initpose = pose(0, 0, 0);
+            else    
+                initpose = obj.start_poses(end);
+            end
             ttc.init_pose = initpose;%obj.traj_vec(end).getFinalPose();
             
             ttc.offsetInitPose();
@@ -279,7 +280,11 @@ classdef mrplSystem < handle
                 x, y, th, 1, ...
                 obj.traj_samples, obj.tcs_scale ...
             );
-            initpose = obj.getTrajectoryStart();
+            if (isempty(obj.start_poses))
+                initpose = pose(0, 0, 0);
+            else 
+                initpose = obj.start_poses(end);
+            end
             rt.init_pose = initpose;%obj.traj_vec(end).getFinalPose();
             % if you don't call offsetInitPose, Trajectory automatically
                 %transforms each reference pose before handing it to mrpl
@@ -330,15 +335,6 @@ classdef mrplSystem < handle
                 
                 if(obj.plotting_enabled)
                     obj.update_plotData(tf, T);
-                end
-                
-                % Update the interface controller if there is one.
-                if ~isempty(obj.interface)
-                    % Read Interface Data:
-                    obj.interface.readInterfaceInputs();
-
-                    % Update Graphics:
-                    obj.interface.update_graphics();
                 end
                 
                 if(T > tf.rt.getFinalTime()+t_buffer)

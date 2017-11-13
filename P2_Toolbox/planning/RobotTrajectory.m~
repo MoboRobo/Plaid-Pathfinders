@@ -83,10 +83,8 @@ classdef RobotTrajectory < Trajectory
 
                 obj.data_poses.add( pose(new_x, new_y, new_th) );
             else
-                % Prevent Data-Length Mis-Match:
                 obj.data_s.add( obj.data_s.last() );
-                obj.data_poses.add( obj.data_poses.last() );
-            end
+                obj.data_p
             
             obj.data_V.add(V);
             obj.data_om.add(om);
@@ -98,13 +96,15 @@ classdef RobotTrajectory < Trajectory
         % distance travelled (core odometry). Used for Map Localization
         % Updates.
         function issuePoseCorrection(obj, new_pose, t)
-            obj.data_poses.add( new_pose );
+
             obj.data_t.add(t);
+            obj.data_poses.add( new_pose );
             
             obj.data_V.add( obj.data_V.last() );
             obj.data_om.add( obj.data_om.last() );
 
             obj.data_s.add( obj.data_s.last() );
+            
         end % #issuePoseCorrection
  
         %% Reset Trajectory
@@ -174,7 +174,7 @@ classdef RobotTrajectory < Trajectory
             y = obj.getInt(ts,obj.ys(), t);
             th = obj.getInt(ts,obj.ths(), t);
             
-            p = pose(x,y,th);
+            p = poses(x,y,th);
         end
         
         %For Inverting Parameterization if Necessary (Computationally
@@ -200,7 +200,7 @@ classdef RobotTrajectory < Trajectory
             y = obj.getInt(ss,obj.ys(), s);
             th = obj.getInt(ss,obj.ths(), s);
             
-            p = pose(x,y,th);
+            p = poses(x,y,th);
         end
         
         % Curvature at Path Length:
