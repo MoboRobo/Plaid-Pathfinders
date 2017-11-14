@@ -35,7 +35,7 @@ classdef FeedbackController < handle
         rt; % Reference Trajectory
         
         % maximum values
-        v_max = 0.2;
+        v_max = 0.5;
         w_max = 8;
         maxErrorIntegralX = 10;
         maxErrorIntegralY = 10;
@@ -64,7 +64,7 @@ classdef FeedbackController < handle
             obj.rt = rt;
             obj.rob = rob;
         end
-        function [u_v, u_w] = getControl_t(obj, t)
+        function retV = getControl_t(obj, t)
             
             t_last = obj.error_times.last();
             %% determine reference pose and estimated pose
@@ -164,6 +164,8 @@ classdef FeedbackController < handle
 %             hold(obj.int_axes, 'on');
 %                 scatter(obj.int_axes, -curPose.y, curPose.x, 12, errorY);
 %             hold(obj.int_axes, 'off');
+
+            retV = [u_v, u_w];
             
         end
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

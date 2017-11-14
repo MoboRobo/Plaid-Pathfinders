@@ -60,7 +60,10 @@ classdef Trajectory_Follower < handle
         function follow_update_t(obj, t)
             if(obj.fbk_trim )%&& t > 0.25*obj.rt.getFinalTime()) % Don't execute feedback on beginning of loop
 %                                                                             warning('Using Feedback Trim');
-                u_t = obj.u_comm_t(t);
+                
+                u_f = obj.u_ffwd_t(t);
+                u_b = obj.u_fbk_t(t);
+                u_t = u_f + u_b;
             else
                 obj.u_fbk_t(t); % Just callin' it (so errors are still computed)
                 u_t = obj.u_ffwd_t(t);

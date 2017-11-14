@@ -40,7 +40,9 @@ classdef mrplSystem < handle
         );
     end
     properties(GetAccess=private, SetAccess=private)
-         k_tau = 2.2;%7.0253;%1.4; A.S.S.: 1.95    % Trajectory Time Multiplier for Corrective Time
+         k_tau = 2;%7.0253;%1.4; A.S.S.: 1.95    % Trajectory Time Multiplier for Corrective Time
+         %% 
+         %% 
          % ^-6.
          % RaspBot-16: Delay:0.164,Ramp:0.05,k_tau:6,vm:0.2
          % RaspBot-17: Delay:0.164,Ramp:0.05,k_tau:5.5,vm:0.2
