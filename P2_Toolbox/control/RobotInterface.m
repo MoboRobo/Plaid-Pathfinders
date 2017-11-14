@@ -13,7 +13,7 @@ classdef RobotInterface < handle
     properties(GetAccess = public, SetAccess=private)
         mrpl; % MrplSystem Layer Responsible for Commanding Robot
         
-        vGain_default = 1; % Default Base Gain Applied to All Drive Velocities
+        vGain_default = 10; % Default Base Gain Applied to All Drive Velocities
         
         running = 0; % Whether the System is Currently Running (looping)
         loopFcns = struct( ... % Functions to Execute at Before and After Each Loop
@@ -183,6 +183,8 @@ classdef RobotInterface < handle
                 obj.mrpl.rob.laserOn(); % Turn Lasers on
                 pause(1); % Wait for Lasers to generate RangeImages.
             end
+            
+            %obj.mrpl.rob.performLocalizationFusion(); % Nope.
             
             if(obj.displayPlottingFlags.localization_plot)
                 if( (obj.mrpl.clock.time() - obj.displayMetaData.localization_plot_lastT) > 1/obj.displayMetaData.localization_plot_maxFreq )

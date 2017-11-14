@@ -12,7 +12,7 @@ function Lab11(robot_id)
 %      ri.mrpl.debugging.error_plots = 1;
 %      ri.mrpl.debugging.comm_plots = 1;
 
-    pause(3);
+
      
      ri.mrpl.goTo_Rel( pose(0.3048,0.3048,0.0) );
      ri.mrpl.goTo_Rel( pose(-0.6096,-0.6096,-pi/2.0) );

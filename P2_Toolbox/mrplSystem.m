@@ -74,6 +74,13 @@ classdef mrplSystem < handle
                 obj.rob.core.forksDown(); % Prevent Brown-out
             end
             
+            if nargin>2
+                if(~obj.rob.laser_state) % If lasers are off
+                    obj.rob.laserOn(); % Turn Lasers on
+                    pause(1); % Wait for Lasers to generate RangeImages.
+                end
+            end
+            
             obj.feedback_controller = FeedbackController.empty;
         end
         
@@ -268,6 +275,48 @@ classdef mrplSystem < handle
         function turn_stationary(obj, th)
             obj.goTo_th_Small(th);
         end % #turn_stationary
+        
+        %% Go To Absolute Position
+        function goTo(obj,rel_pose)
+            x = rel_pose.x;
+            y = rel_pose.y;
+            th = rel_pose.th;
+            
+            rt = Trajectory_CubicSpiral.planTrajectory( ...
+                x, y, th, 1, ...
+                obj.traj_samples, obj.tcs_scale ...
+            );
+            initpose = obj.getTrajectoryStart();
+            rt.init_pose = initpose;%obj.traj_vec(end).getFinalPose();
+            % if you don't call offsetInitPose, Trajectory automatically
+                %transforms each reference pose before handing it to mrpl
+            rt.offsetInitPose();
+            
+            if isempty(obj.feedback_controller)
+                tf = Trajectory_Follower(obj.rob, rt);
+                obj.feedback_controller = tf.fbk_controller;
+            else
+                tf = Trajectory_Follower(obj.rob, rt);
+%                 tf = Trajectory_Follower(obj.rob, rt, obj.feedback_controller);
+%                 obj.feedback_controller.rt = rt; % Super important to update this
+            end
+            tf.fbk_controller.correctiveTime = obj.k_tau;%* rt.getFinalTime();
+            
+            obj.time_loop(tf, 1);
+             
+            %Store completed trajectory
+            obj.traj_vec(end+1) = tf.rt;
+            if (isempty(obj.start_poses))
+                obj.start_poses = rel_pose;
+            else
+                obj.start_poses(end+1) = Trajectory.poseToWorld(rel_pose, obj.start_poses(end));
+            end
+            %Update plot after completed trajectory
+            if(obj.plotting_enabled)
+               obj.update_plot(tf);
+            end
+            
+        end % #goTo
         
         %% Go To Relative Position
         function goTo_Rel(obj,rel_pose)

@@ -284,6 +284,7 @@ classdef P2_Robot < handle
             % Perform Map Localization if a Map (and .: LML) was Supplied
             % and Sensor Fusion is Desired (and lasers are on <- not old
             % data).
+                                                                            str_t = obj.getTime()
             if(~isempty(obj.localizer) && obj.localizeAndFuse && obj.laser_state)
                 % Get Latest Laser Data:
                 r_img = obj.hist_laser.last;
@@ -292,6 +293,10 @@ classdef P2_Robot < handle
                 % Get Current Robot Pose when RangeImage was Taken (both
                 % are in robot-time not CPU-time):
                 curPose = obj.measTraj.p_f;
+                % Issue a Pose Correction to Robot Positioning with Fused
+                % Output:
+                t_up = obj.encTraj.t_f; % Time must flow ever forward (don't use historical t_img).
+                
                 %curPose = obj.measTraj.p_t(t_img); % <<< SHOULD BE DOING
                 %THIS (but not paramount; so, is okay for now).
                 
@@ -313,10 +318,9 @@ classdef P2_Robot < handle
                     Dp(3) = Dth;
 
                     p_fus_vec = p_last_vec + obj.sensorFusionGain * Dp;
+                    Sth = atan2(sin(p_fus_vec(3)), cos(p_fus_vec(3)));
+                    p_fus_vec(3) = Sth;
 
-                    % Issue a Pose Correction to Robot Positioning with Fused
-                    % Output:
-                    t_up = obj.encTraj.t_f; % Time must flow ever forward (don't use historical t_img.
                     obj.encTraj.issuePoseCorrection( pose(p_fus_vec), t_up );
 
                 end % success?
