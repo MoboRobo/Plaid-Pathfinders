@@ -24,7 +24,7 @@ classdef mrplSystem < handle
         interface = RobotInterface.empty; % Interface Controller for this System
         
         debugging = struct(...
-            'delay_plots', 0, ...   % Whether Transient Velocity Plots for Determining should be Made.
+            'delay_plots', 1, ...   % Whether Transient Velocity Plots for Determining should be Made.
             'error_plots', 0, ...    % Whether Transient Error Plots (from FeedbackController) should be Made.
             'comm_plots', 0 ...     % Whether Transient Comm plots should be made
         );
@@ -363,7 +363,7 @@ classdef mrplSystem < handle
                     obj.rob.moveAt(0,0); % Stop Immediately
                 end
                 
-                pause(0.005);
+                pause(0.03);
             end % ~done?
             obj.rob.moveAt(0,0);
             %obj.rob.core.stop(); % Maybe throws things off?
