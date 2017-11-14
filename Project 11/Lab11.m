@@ -25,7 +25,13 @@ function Lab11(robot_id)
 %      ri.mrpl.turn_stationary(pi);
      pause(2);
      ri.mrpl.goTo( robot_starting_pose );
-     
+     ri.mrpl.turn_stationary( adel(ri.mrpl.rob.measTraj.p_f.th, robot_starting_pose.th) );
+     pause(2);
+     pr = ri.mrpl.rob.measTraj.p_f;
+     p0 = robot_starting_pose;
+%      ri.mrpl.goTo_X_Small( norm([pr.x-p0.x, pr.y-p0.y]), 0.08 );
+%      pause(2);
+%      
 %      ri.mrpl.goTo_Rel( pose(0.3048,0.3048,0.0) );
 %      ri.mrpl.goTo_Rel( pose(-0.6096,-0.6096,-pi/2.0) );
 %      ri.mrpl.goTo_Rel( pose(-0.3048,0.3048,pi/2.0) );
