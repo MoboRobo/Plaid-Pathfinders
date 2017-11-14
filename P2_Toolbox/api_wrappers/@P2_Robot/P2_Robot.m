@@ -28,7 +28,7 @@ classdef P2_Robot < handle
         % Whether to Use Sensor Fusion for Localization (or just odometry):
         localizeAndFuse = 0;
         % Gain on Estimation-Lidar Error to Use when Performing Sensor Fusion:
-        sensorFusionGain = 0.25;
+        sensorFusionGain = 0.15;
         
         %Motion:
         curr_V = 0;     % m/s, Most Recently Commanded Body Velocity
