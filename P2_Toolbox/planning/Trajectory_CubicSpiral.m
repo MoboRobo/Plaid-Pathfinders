@@ -15,7 +15,7 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
     end
     
     properties(Access = public)
-        V_max = 0.2; % Default Maximum Trajectory Speed
+        V_max = 0.09; % Default Maximum Trajectory Speed
     end
     
     % Inherited Abstract Methods (from ReferenceTrajectory)

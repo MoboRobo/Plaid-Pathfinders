@@ -284,7 +284,7 @@ classdef P2_Robot < handle
             % Perform Map Localization if a Map (and .: LML) was Supplied
             % and Sensor Fusion is Desired (and lasers are on <- not old
             % data).
-                                                                            str_t = obj.getTime()
+            
             if(~isempty(obj.localizer) && obj.localizeAndFuse && obj.laser_state)
                 % Get Latest Laser Data:
                 r_img = obj.hist_laser.last;

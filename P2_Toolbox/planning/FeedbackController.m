@@ -82,8 +82,8 @@ classdef FeedbackController < handle
                 k_y = 0;
 %                 warning('Low Velocity');
             else
-                k_y = 2 / (abs(V) * obj.correctiveTime^2);
-            end % k_y<0.03?
+                k_y = 2 / (abs(V) * (obj.correctiveTime/2)^2); %%%%%%%%%%%%%%%%%%%% More control at lower speeds? Is this right?
+            end % V<0.03?
             
             wrp = (refPose.poseVec(1:2) - curPose.poseVec(1:2));
             

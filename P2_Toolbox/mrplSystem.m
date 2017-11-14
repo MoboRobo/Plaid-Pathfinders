@@ -277,45 +277,13 @@ classdef mrplSystem < handle
         end % #turn_stationary
         
         %% Go To Absolute Position
-        function goTo(obj,rel_pose)
-            x = rel_pose.x;
-            y = rel_pose.y;
-            th = rel_pose.th;
+        function goTo(obj,abs_pose)
+            xa = abs_pose.x; ya = abs_pose.y; tha = abs_pose.th;
             
-            rt = Trajectory_CubicSpiral.planTrajectory( ...
-                x, y, th, 1, ...
-                obj.traj_samples, obj.tcs_scale ...
-            );
-            initpose = obj.getTrajectoryStart();
-            rt.init_pose = initpose;%obj.traj_vec(end).getFinalPose();
-            % if you don't call offsetInitPose, Trajectory automatically
-                %transforms each reference pose before handing it to mrpl
-            rt.offsetInitPose();
+            rel_pose_vec = obj.rob.measTraj.p_f.aToB() * [xa; ya; 1];
+            rel_pose_vec(3) = adel(tha, obj.rob.measTraj.p_f.th);
             
-            if isempty(obj.feedback_controller)
-                tf = Trajectory_Follower(obj.rob, rt);
-                obj.feedback_controller = tf.fbk_controller;
-            else
-                tf = Trajectory_Follower(obj.rob, rt);
-%                 tf = Trajectory_Follower(obj.rob, rt, obj.feedback_controller);
-%                 obj.feedback_controller.rt = rt; % Super important to update this
-            end
-            tf.fbk_controller.correctiveTime = obj.k_tau;%* rt.getFinalTime();
-            
-            obj.time_loop(tf, 1);
-             
-            %Store completed trajectory
-            obj.traj_vec(end+1) = tf.rt;
-            if (isempty(obj.start_poses))
-                obj.start_poses = rel_pose;
-            else
-                obj.start_poses(end+1) = Trajectory.poseToWorld(rel_pose, obj.start_poses(end));
-            end
-            %Update plot after completed trajectory
-            if(obj.plotting_enabled)
-               obj.update_plot(tf);
-            end
-            
+            obj.goTo_Rel( pose(rel_pose_vec) );
         end % #goTo
         
         %% Go To Relative Position
@@ -374,8 +342,8 @@ classdef mrplSystem < handle
                 
                 T = obj.clock.time();
                 tf.follow_update_t(T);
-                obj.clock.pause();
-                obj.clock.resume();
+%                 obj.clock.pause();
+%                 obj.clock.resume(); % Break here for in-loop debugging
                 
                 if(obj.plotting_enabled)
                     obj.update_plotData(tf, T);
@@ -396,9 +364,9 @@ classdef mrplSystem < handle
                 end
                 
                 pause(0.01);
-            end
+            end % ~done?
             obj.rob.moveAt(0,0);
-            obj.rob.core.stop();
+            %obj.rob.core.stop(); % Maybe throws things off?
         end
         
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

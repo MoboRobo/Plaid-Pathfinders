@@ -21,6 +21,8 @@ classdef mrplSystem < handle
     end
 
     properties(GetAccess = public, SetAccess = public)
+        interface = RobotInterface.empty; % Interface Controller for this System
+        
         debugging = struct(...
             'delay_plots', 0, ...   % Whether Transient Velocity Plots for Determining should be Made.
             'error_plots', 0, ...    % Whether Transient Error Plots (from FeedbackController) should be Made.
@@ -62,7 +64,7 @@ classdef mrplSystem < handle
             if nargin>2
                 wm = world_map;
             else
-                wm = WorldMap([0;0]); %% Default empty bounds
+                wm = WorldMap([0 0]); %% Default empty bounds
             end
             
             obj.rob = P2_Robot( rasp, startPose, wm, @()(obj.clock.time()) );
@@ -70,6 +72,13 @@ classdef mrplSystem < handle
                 obj.rob.core.togglePlot(); %Turn on map plotting for non-simulated robots
                 RangeImage.INDEX_OFFSET(5);
                 obj.rob.core.forksDown(); % Prevent Brown-out
+            end
+            
+            if nargin>2
+                if(~obj.rob.laser_state) % If lasers are off
+                    obj.rob.laserOn(); % Turn Lasers on
+                    pause(1); % Wait for Lasers to generate RangeImages.
+                end
             end
             
             obj.feedback_controller = FeedbackController.empty;
@@ -134,17 +143,18 @@ classdef mrplSystem < handle
         % being Controlled is Using Map Localization.
         function p_s = getTrajectoryStart(obj)
             if(obj.rob.localizeAndFuse)
-                % If Robot is using Map Localization, Assume it ha
+                % If Robot is using Map Localization, Assume it has the
+                % most accurate estimate on its final world position.
                 p_s = obj.rob.measTraj.p_f;
             else
+                % Otherwise, start new trajectory where the last one ended.
                 if(isempty(obj.start_poses))
-                    p_s = pose(0, 0, 0); % First Run
+                    p_s = obj.rob.init_pose; % First Run
                 else 
                     p_s = obj.start_poses(end); % There was a Prev. Traj.
                 end
-            end % rob.use_sensorFusion?
+            end % rob.localizeAndFuse?
         end
-
         
         %% Go To X (small)
         % Optionally: specify speed, spd
@@ -216,11 +226,7 @@ classdef mrplSystem < handle
             
             ttc = Trajectory_TimeCurve(vref,omref, 0, t_f, obj.traj_samples);
             
-            if (isempty(obj.start_poses))
-                initpose = pose(0, 0, 0);
-            else    
-                initpose = obj.start_poses(end);
-            end
+            initpose = obj.getTrajectoryStart();
             ttc.init_pose = initpose;%obj.traj_vec(end).getFinalPose();
             
             ttc.offsetInitPose();
@@ -270,6 +276,15 @@ classdef mrplSystem < handle
             obj.goTo_th_Small(th);
         end % #turn_stationary
         
+        %% Go To Absolute Position
+        function goTo(obj,abs_pose)
+            xa = abs_pose.x; ya = abs_pose.y; tha = abs_pose.th;
+            
+            rel_pose_vec = obj.rob.measTraj.p_f.aToB() * [xa; ya; 1];
+            Dth = rel
+            rel_pose_vec(3) = 
+        end % #goTo
+        
         %% Go To Relative Position
         function goTo_Rel(obj,rel_pose)
             x = rel_pose.x;
@@ -280,11 +295,7 @@ classdef mrplSystem < handle
                 x, y, th, 1, ...
                 obj.traj_samples, obj.tcs_scale ...
             );
-            if (isempty(obj.start_poses))
-                initpose = pose(0, 0, 0);
-            else 
-                initpose = obj.start_poses(end);
-            end
+            initpose = obj.getTrajectoryStart();
             rt.init_pose = initpose;%obj.traj_vec(end).getFinalPose();
             % if you don't call offsetInitPose, Trajectory automatically
                 %transforms each reference pose before handing it to mrpl
@@ -330,11 +341,20 @@ classdef mrplSystem < handle
                 
                 T = obj.clock.time();
                 tf.follow_update_t(T);
-                obj.clock.pause();
-                obj.clock.resume();
+%                 obj.clock.pause();
+%                 obj.clock.resume(); % Break here for in-loop debugging
                 
                 if(obj.plotting_enabled)
                     obj.update_plotData(tf, T);
+                end
+                
+                % Update the interface controller if there is one.
+                if ~isempty(obj.interface)
+                    % Read Interface Data:
+                    obj.interface.readInterfaceInputs();
+
+                    % Update Graphics:
+                    obj.interface.update_graphics();
                 end
                 
                 if(T > tf.rt.getFinalTime()+t_buffer)
@@ -343,9 +363,9 @@ classdef mrplSystem < handle
                 end
                 
                 pause(0.01);
-            end
+            end % ~done?
             obj.rob.moveAt(0,0);
-            obj.rob.core.stop();
+            %obj.rob.core.stop(); % Maybe throws things off?
         end
         
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
