@@ -2,7 +2,7 @@ function Lab11(robot_id)
     bounds = 2*[-1 0; 0 0; 0 -1]; % 2 Meter L intersecting origin
     wm = WorldMap(bounds);
     
-    robot_starting_pose = pose(-0.6096-0.3048/2, -0.6096, 0.0);
+    robot_starting_pose = pose(-0.6096, -0.6096, -pi/2);
     
     ri = struct('mrpl',mrplSystem.empty);
     ri.mrpl = mrplSystem(robot_id, robot_starting_pose, wm);
@@ -19,7 +19,11 @@ function Lab11(robot_id)
 %      ri.mrpl.goTo( pose(-0.6096, -0.6096, 0.0) );
      
      ri.mrpl.goTo( addPoses(robot_starting_pose, pose(0.3048,0.3048,0.0)) );
+%      ri.mrpl.turn_stationary(pi);
+     pause(2);
      ri.mrpl.goTo( addPoses(robot_starting_pose, pose(-0.3048,-0.3048,-pi/2.0)) );
+%      ri.mrpl.turn_stationary(pi);
+     pause(2);
      ri.mrpl.goTo( robot_starting_pose );
      
 %      ri.mrpl.goTo_Rel( pose(0.3048,0.3048,0.0) );

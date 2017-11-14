@@ -7,7 +7,7 @@ classdef LineMapLocalizer < handle
         maxErr = 0.08; % 8 cm
         minPts = 5; % min # of points that must match
         
-        maxIterations = 20; % Maximum Number of Gradient Descent Iterations
+        maxIterations = 40; % Maximum Number of Gradient Descent Iterations
         
         % Inverse of Fraction of Provided Model Points to Analyze (ie.
         % every spec_vol points).

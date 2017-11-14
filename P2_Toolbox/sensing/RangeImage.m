@@ -16,7 +16,7 @@ classdef RangeImage < handle
     %% STATIC & CONSTANT PROPERTIES
     properties(Constant)
         MIN_RANGE = 0.07;   % m, Minimum Range for Sensible Data
-        MAX_RANGE = 1.25;   % m, Maximum Range for Sensible Data
+        MAX_RANGE = 1.75;   % m, Maximum Range for Sensible Data
     end
     % Must be handled as persistent variables wrapped in an accessor which
     % returns the value and sets the value if given an argument.

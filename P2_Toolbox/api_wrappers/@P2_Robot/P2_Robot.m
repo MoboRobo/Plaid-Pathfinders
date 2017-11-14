@@ -28,7 +28,7 @@ classdef P2_Robot < handle
         % Whether to Use Sensor Fusion for Localization (or just odometry):
         localizeAndFuse = 0;
         % Gain on Estimation-Lidar Error to Use when Performing Sensor Fusion:
-        sensorFusionGain = 0.15;
+        sensorFusionGain = 0.5;
         
         %Motion:
         curr_V = 0;     % m/s, Most Recently Commanded Body Velocity
@@ -308,6 +308,8 @@ classdef P2_Robot < handle
                 % Localize Robot within World Map:
                 [success, p_lid] = obj.localizer.refinePose(curPose, rangePts);
                 if success % Successfully Localized Robot in Map
+            
+                                                                            disp(obj.getTime());
                     % Get Pose Vectors:
                     p_lid_vec = p_lid.poseVec;
                     p_last_vec = curPose.poseVec;
@@ -414,6 +416,7 @@ classdef P2_Robot < handle
             % Call Loc. Here too b/c Lidar doesn't Call Frequently Enough:
             %obj.performLocalizationFusion(); % Nvm. No even theoretical
             %benefits anymore since now using measTraj.p_t(t_img);
+            %obj.performLocalizationFusion();
         end % #processNewEncoderData
         
         % DEPRECATED

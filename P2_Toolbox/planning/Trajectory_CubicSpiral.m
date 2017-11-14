@@ -15,7 +15,7 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
     end
     
     properties(Access = public)
-        V_max = 0.09; % Default Maximum Trajectory Speed
+        V_max = 0.15; % Default Maximum Trajectory Speed
     end
     
     % Inherited Abstract Methods (from ReferenceTrajectory)
@@ -383,7 +383,7 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
             % Plan the highest possible velocity for the path where no
             % wheel may exceed Vmax in absolute value.
             obj.V_max = Vmax; % Update Class Property
-            run_kelly = 1; % Whether to Run the Al.Kelly Profile
+            run_kelly = 0; % Whether to Run the Al.Kelly Profile
             
             for i=1:obj.numSamples
 %                 Vbase = Vmax;

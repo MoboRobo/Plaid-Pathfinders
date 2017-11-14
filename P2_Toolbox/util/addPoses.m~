@@ -1,0 +1,15 @@
+% Adds Pose 2 to Pose 1
+function p = addPoses(p1, p2)
+    x = p1.x + p2.x;
+    y = p1.y + p2.y;
+    th = p1.th + p2.th;
+    th = atan2(sin(th), cos(th));
+    p = pose(x, y, th);
+    
+    wrp = (refPose.poseVec(1:2) - curPose.poseVec(1:2));
+            
+            thr = atan2(sin(curPose.th), cos(curPose.th));
+            errorTh = atan2(sin(refPose.th),cos(refPose.th)) ...
+                    - atan2(sin(curPose.th),cos(curPose.th));
+            errorTh = atan2(sin(errorTh),cos(errorTh));
+end

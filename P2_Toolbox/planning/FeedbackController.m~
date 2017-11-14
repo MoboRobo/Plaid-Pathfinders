@@ -53,6 +53,8 @@ classdef FeedbackController < handle
         k_p = 0;
         k_d = 0;
         k_i = 0;
+        
+        int_axes;
 
     end %FeedbackController <- properties(public, public)
 
@@ -63,6 +65,9 @@ classdef FeedbackController < handle
         function obj = FeedbackController(rob, rt)
             obj.rt = rt;
             obj.rob = rob;
+            
+            figure();
+            obj.int_axes = gca;
         end
         function [u_v, u_w] = getControl_t(obj, t)
             
@@ -160,10 +165,7 @@ classdef FeedbackController < handle
             obj.lastErrorY = errorY;
             obj.lastErrorTh = errorTh;
             
-%             disp(errorY);
-%             hold(obj.int_axes, 'on');
-%                 scatter(obj.int_axes, -curPose.y, curPose.x, 12, errorY);
-%             hold(obj.int_axes, 'off');
+            H
             
         end
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

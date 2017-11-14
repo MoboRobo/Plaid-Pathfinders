@@ -40,7 +40,7 @@ classdef mrplSystem < handle
         );
     end
     properties(GetAccess=private, SetAccess=private)
-         k_tau = 5.5;%7.0253;%1.4; A.S.S.: 1.95    % Trajectory Time Multiplier for Corrective Time
+         k_tau = 6;%7.0253;%1.4; A.S.S.: 1.95    % Trajectory Time Multiplier for Corrective Time
          % RaspBot-16: Delay:0.164,Ramp:0.05,k_tau:6,vm:0.2
          % RaspBot-17: Delay:0.164,Ramp:0.05,k_tau:5.5,vm:0.2
     end
@@ -312,7 +312,7 @@ classdef mrplSystem < handle
             end
             tf.fbk_controller.correctiveTime = obj.k_tau;%* rt.getFinalTime();
             
-            obj.time_loop(tf, 1);
+            obj.time_loop(tf, 1.75);
              
             %Store completed trajectory
             obj.traj_vec(end+1) = tf.rt;
@@ -363,7 +363,7 @@ classdef mrplSystem < handle
                     obj.rob.moveAt(0,0); % Stop Immediately
                 end
                 
-                pause(0.01);
+                pause(0.005);
             end % ~done?
             obj.rob.moveAt(0,0);
             %obj.rob.core.stop(); % Maybe throws things off?

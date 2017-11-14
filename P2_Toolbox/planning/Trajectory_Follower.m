@@ -58,7 +58,7 @@ classdef Trajectory_Follower < handle
         % Commands the Robot to assume the Motion it should have at
         % Trajectory Time, t
         function follow_update_t(obj, t)
-            if(obj.fbk_trim && t > 0.25*obj.rt.getFinalTime()) % Don't execute feedback on beginning of loop
+            if(obj.fbk_trim )%&& t > 0.25*obj.rt.getFinalTime()) % Don't execute feedback on beginning of loop
 %                                                                             warning('Using Feedback Trim');
                 u_t = obj.u_comm_t(t);
             else
