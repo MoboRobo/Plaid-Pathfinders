@@ -140,8 +140,8 @@ classdef RangeImage < handle
         
             initialNumSkippedPoints = 1;
             %minimum number of points allowable in point cloud
-            minNumPoints = 3;
-            distanceCoefficient = 1.5;
+            minNumPoints = 2;
+            distanceCoefficient = 1.4;
             if nargin>1
                 halfSailLength = l/2;
             else
@@ -152,7 +152,7 @@ classdef RangeImage < handle
             else
                 marginOfLengthError = 0.03; %3 centimeters of leeway
             end
-            marginOfLengthError = .1;
+            marginOfLengthError = .04;
             len = length(obj.data.ranges); % Number of Valid Range Readings
             
             % Returns cloud of pixels within a certain distance of a given
@@ -313,7 +313,7 @@ classdef RangeImage < handle
                 numPoints = length(cloudXs);
                 if numPoints < minNumPoints
                     %skip to next iteration
-                    pixelIndex =pixelIndex+1;
+                    pixelIndex =eI+1;
                     continue;
                 end
                 
@@ -345,7 +345,7 @@ classdef RangeImage < handle
                 Inert = lambda(1);
 
                 % CONDITIONS FOR VALID LINE CANDIDATE:
-                if( Inert < 5 ...
+                if( Inert < 3.5 ...
                 && (abs(estimatedLength - halfSailLength*2) < marginOfLengthError) ...
                 )
 %                 && origin_shift < halfSailLength/4 )
