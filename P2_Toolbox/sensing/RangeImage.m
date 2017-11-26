@@ -137,10 +137,10 @@ classdef RangeImage < handle
         function findLineCandidates(obj, l,mle)
         %[obj.line_candidates.poses, obj.line_candidates.lengths] = getPalletPoses(obj, obj.raw);
         
-            initialNumSkippedPoints = 0;
+            initialNumSkippedPoints = 1;
             %minimum number of points allowable in point cloud
             minNumPoints = 3;
-            
+            distanceCoefficient = 1.3;
             if nargin>1
                 halfSailLength = l/2;
             else
@@ -206,7 +206,8 @@ classdef RangeImage < handle
                 curRadius = getIth(obj.data.ranges, i-offset, len);
                 while (1)
                     %get current radius to figure maxDist
-                    maxDistance = (curRadius*2*pi / double(rawLen)) * 1.5;
+                    maxDistance = (curRadius*2*pi / double(rawLen)) ...
+                        * distanceCoefficient;
                     curX = getIth(obj.data.xs, i - offset, len);
                     curY = getIth(obj.data.ys, i - offset, len);
                     curTh = getIth(obj.data.angles, i - offset, len);
@@ -232,7 +233,8 @@ classdef RangeImage < handle
                 numSkippedPoints = initialNumSkippedPoints;
                 curRadius = getIth(obj.data.ranges, i+offset, len);
                 while(1)
-                    maxDistance = (curRadius*2*pi / double(rawLen)) * 1.5;
+                    maxDistance = (curRadius*2*pi / double(rawLen)) ...
+                        * distanceCoefficient;
                     curX = getIth(obj.data.xs, i + offset, len);
                     curY = getIth(obj.data.ys, i + offset, len);
                     curTh = getIth(obj.data.angles, i + offset, len);
@@ -249,9 +251,9 @@ classdef RangeImage < handle
                     prevX = curX; prevY = curY;
                     cloudXs(end+1) = curX;
                     cloudYs(end+1) = curY;
+                    endI = i + offset;
                     offset = offset+1;
                     curRadius = getIth(obj.data.ranges, i+(offset), len);
-                    endI = i + offset;
                 end
             end % #getPixelsWithin
             
