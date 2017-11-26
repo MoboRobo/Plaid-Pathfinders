@@ -53,6 +53,7 @@ classdef slidingFifo < GenericDataContainer
             end % nargin>0?
         end 
         
+        % Adds the given element to the end of the queue.
         function add(obj,element)
         % Add an object at the right of the queue and slide to the left.
             if(obj.numElements == obj.maxElements)
@@ -62,7 +63,71 @@ classdef slidingFifo < GenericDataContainer
                 obj.numElements = obj.numElements + 1;
                 obj.que(obj.numElements) = element;
             end
-        end
+        end % #add
+        % Alias for #add.
+        function push(obj,element); obj.add(element); end % #push
+        
+        % Adds the Given Element to the Queue by Making it the nth-Element
+        function addAt(obj, element, n)
+            if(n > obj.numElements || n<1)
+                warning(strcat('Nth element ', n, 'is not populated in call to #slidingFifo::addAt'));
+            elseif(obj.numElements+1 > obj.maxElements)
+                warning(strcat('FiFo Addition Failed at #slidingFifo::addAt.', ...
+                               ' Inserting an element into this queue will cause it to overflow and produce undefined behaviour.'));        
+%                 % If adding an element is going to throw the list
+%                 % overbounds, kick out the first element. Do this /first/
+%                 % to avoid interim data reallocation for a larger array.
+%                 if(obj.numElements+1 > obj.maxElements)
+%                     obj.pop(); %Takes care of resizing numElements
+%                     idx = idx - 1; % Index is now smaller
+%                 end
+            else
+                idx = n;
+                obj.que(idx+1:obj.numElements+1) = obj.que(idx:obj.numElements);
+                obj.que(idx) = element;
+                obj.numElements = obj.numElements + 1;
+            end
+        end % #addAt
+        
+        % Removes the First Element from the Queue and Returns It.
+        function e = pop(obj)
+            if(obj.numElements > 0)
+                e = obj.que(1);
+                obj.que(1:obj.numElements-1) = obj.que(2:obj.numElements);
+                obj.que(obj.numElements) = obj.que(end);% Ensure Matching of Empty Data Type Class
+                obj.numElements = obj.numElements - 1;
+            else
+                e = obj.que(end); % Ensure Matching of Empty Data Type Class
+                warning(strcat('No elements populated in call to #slidingFifo::pop'));
+            end %numElements?
+        end % #pop
+        
+        % Alias for First. Returns the First Element of the Queue.
+        function e = peek(obj); e = obj.first(); end % #peek
+        
+        % Removes the nth element from the queue and returns it.
+        function e = remove(obj, n)
+            if(n > obj.numElements || n<1)
+                warning(strcat('Nth element ', n, 'is not populated in call to #slidingFifo::remove'));
+            else
+                e = obj.que(n);
+                obj.que(n:obj.numElements-1) = obj.que(n+1:obj.numElements);
+                obj.que(obj.numElements) = obj.que(end);% Ensure Matching of Empty Data Type Class
+                obj.numElements = obj.numElements - 1;
+            end
+        end % #remove
+        
+        % Reverses the Queue by Reversing the Populated Section of the 
+        % Allocated Data Space.
+        function reverse(obj)
+            % Just did this because MATLAB has a cool way of doing it.
+            if(obj.numElements > 0)
+                obj.que(1:obj.numElements) = obj.que(obj.numElements:-1:1);
+            else
+                warning(strcat('Queue has zero length in call to #slidingFifo::reverse'));
+            end
+        end % #reverse
+        
     end % slidingFifo <- methods
     
     % Implement Abstract Methods of GenericDataContainer:

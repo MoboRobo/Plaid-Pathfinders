@@ -218,7 +218,7 @@ classdef P2_Robot < handle
                 end
                 
                 obj.localizer = LineMapLocalizer(wm);
-                obj.localizeAndFuse = 1;
+                obj.localizeAndFuse = 1; % Turn on L&F if Map Provided
             end % nargin>2
             
             obj.waitForReady();
@@ -285,6 +285,8 @@ classdef P2_Robot < handle
             % and Sensor Fusion is Desired (and lasers are on <- not old
             % data).
             
+            % (Beware large deltas where L&F might be turned off for a
+            % period.)
             if(~isempty(obj.localizer) && obj.localizeAndFuse && obj.laser_state)
                 % Get Latest Laser Data:
                 r_img = obj.hist_laser.last;
@@ -309,7 +311,7 @@ classdef P2_Robot < handle
                 [success, p_lid] = obj.localizer.refinePose(curPose, rangePts);
                 if success % Successfully Localized Robot in Map
             
-                                                                            disp(obj.getTime());
+                                                                            %disp(obj.getTime());
                     % Get Pose Vectors:
                     p_lid_vec = p_lid.poseVec;
                     p_last_vec = curPose.poseVec;

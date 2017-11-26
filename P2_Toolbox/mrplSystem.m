@@ -88,6 +88,76 @@ classdef mrplSystem < handle
         end
         
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% - TASKS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        
+    %% PICK UP OBJECT AT
+    % Coordinates the Robot to Find and Pick Up and Object (sail) which
+    % /should/ be found at p_nom at the given speed.
+    function pickupObjAt(obj, p_nom, speed)
+        forkDistance = 0.055;
+        overdrive = 0.01;
+        
+        p_acq = obj.acquisitionWorldPose(p_nom);
+        
+        Dth = adel(ri.mrpl.rob.measTraj.p_f.th, p_acq.th);
+        if Dth > pi
+            % This turn is to resolve the obj behind rob issue (where robot
+            % goes around obj to get to it). However, we already have pose 
+            % fix for this in the Line Object Detection.
+            obj.turn_stationary(Dth);
+            pause(0.25);
+        end % Dth>pi/2?
+        
+        obj.goTo(p_acq, speed); % Pretty self explanatory
+        
+        pause(0.1); % Minimize all run-time pauses.
+        
+        % Find sail, then turn to face sail, move forward, and pick up the
+        % sail, with overdrive.
+        p_nlo_r = obj.getNearestLineObject();
+        th = p_nlo_r.th;
+        obj.goTo_th_Small(th); % Turn to Face Line Object
+        moveDist = p_nlo_r.x;
+        obj.goTo_X_Small(moveDist + overdrive, speed/2);
+        
+        pause(0.2); % Wait for vehicle to stabilze.
+        
+        obj.rob.core.forksUp();
+        
+        pause(0.1); % Wait for vehicle to stabilze.
+        
+        % Perform final backup of exactly one fork length away
+        mrpl.goTo_X_Small(-forkDistance, 0.15);
+        
+    end % #pickupObjAt
+    
+    %% DROP OBJECT AT
+    % Coordinates the Robot to Drop Off the Held Object (sail) at the given
+    % drop-off pose, p_drop at the given speed.
+    function dropObjAt(obj, p_drop, speed)
+        forkDistance = 0.055;
+        
+        Dth = adel(ri.mrpl.rob.measTraj.p_f.th, p_drop.th);
+        if Dth > pi
+            obj.turn_stationary(Dth);
+            pause(0.25);
+        end % Dth>pi/2?
+        
+        obj.goTo(p_drop, speed); % Pretty self explanatory
+        
+        pause(0.1); % Minimize all run-time pauses.
+        
+        obj.rob.core.forksDown();
+        
+        pause(0.1); % Wait for vehicle to stabilze.
+        
+        % Perform final backup
+        mrpl.goTo_X_Small(-forkDistance, 0.15);
+        
+    end % #dropObjAt
+        
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% - MOTION CONTROL
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         
@@ -138,7 +208,7 @@ classdef mrplSystem < handle
                 end
             i = i+1;
             end
-        end
+        end % #getNearestLineObject
         
         %% Get Trajectory Start
         % Determines the appropriate Starting Pose for a New Trajectory
@@ -157,7 +227,7 @@ classdef mrplSystem < handle
                     p_s = obj.start_poses(end); % There was a Prev. Traj.
                 end
             end % rob.localizeAndFuse?
-        end
+        end % #getTrajectoryStart
         
         %% Go To X (small)
         % Optionally: specify speed, spd
@@ -190,7 +260,7 @@ classdef mrplSystem < handle
             tf.fbk_controller.correctiveTime = obj.k_tau;%* rt.getFinalTime();
             tf.fbk_trim = 0; % Turn off feedback trim for this in-exact motion. %%%%%%% ? ? %%%%%
                
-            obj.time_loop(tf, 1);
+            obj.time_loop(tf, 0.75); %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% YO, DAWG, I CHANGED THIS (used to be 1).
             
             tf.fbk_trim = 1; % Reset
             
@@ -246,7 +316,7 @@ classdef mrplSystem < handle
             tf.fbk_controller.correctiveTime = obj.k_tau;%* rt.getFinalTime();
             tf.fbk_controller.isPureTurn = 1;
                
-            obj.time_loop(tf, 1);
+            obj.time_loop(tf, 0.75);%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% YO, DAWG, I CHANGED THIS (used to be 1).
             
             tf.fbk_controller.isPureTurn = 0; % Reset
             
@@ -280,25 +350,44 @@ classdef mrplSystem < handle
         end % #turn_stationary
         
         %% Go To Absolute Position
-        function goTo(obj,abs_pose)
+        % Optionally, specify peak transit speed, spd.
+        function goTo(obj,abs_pose, spd)
             xa = abs_pose.x; ya = abs_pose.y; tha = abs_pose.th;
             
             rel_pose_vec = obj.rob.measTraj.p_f.aToB() * [xa; ya; 1];
             rel_pose_vec(3) = adel(tha, obj.rob.measTraj.p_f.th);
             
-            obj.goTo_Rel( pose(rel_pose_vec) );
+            
+            % Specify speed if speed given
+            if nargin>2
+                obj.goTo_Rel( pose(rel_pose_vec), spd );
+            else
+                obj.goTo_Rel( pose(rel_pose_vec) );
+            end %nargin>2
         end % #goTo
         
         %% Go To Relative Position
-        function goTo_Rel(obj,rel_pose)
+        % Optionally, specify peak transit speed, spd.
+        function goTo_Rel(obj,rel_pose, spd)
             x = rel_pose.x;
             y = rel_pose.y;
             th = rel_pose.th;
             
-            rt = Trajectory_CubicSpiral.planTrajectory( ...
-                x, y, th, 1, ...
-                obj.traj_samples, obj.tcs_scale ...
-            );
+            % Specify speed if speed given
+            if nargin>2
+                rt = Trajectory_CubicSpiral.planTrajectory( ...
+                    x, y, th, 1, ...
+                    obj.traj_samples, obj.tcs_scale, ...
+                    spd ...
+                );
+            else
+                rt = Trajectory_CubicSpiral.planTrajectory( ...
+                    x, y, th, 1, ...
+                    obj.traj_samples, obj.tcs_scale, ...
+                    0.42*obj.rob.MAX_SPEED ... % Default speed.
+                );
+            end % nargin>2
+            
             initpose = obj.getTrajectoryStart();
             rt.init_pose = initpose;%obj.traj_vec(end).getFinalPose();
             % if you don't call offsetInitPose, Trajectory automatically
@@ -315,8 +404,8 @@ classdef mrplSystem < handle
             end
             tf.fbk_controller.correctiveTime = obj.k_tau;%* rt.getFinalTime();
             
-            obj.time_loop(tf, 1.75);
-             
+            obj.time_loop(tf, 1);%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% YO, DAWG, I CHANGED THIS (was 1.75).
+            
             %Store completed trajectory
             obj.traj_vec(end+1) = tf.rt;
             if (isempty(obj.start_poses))
@@ -366,7 +455,7 @@ classdef mrplSystem < handle
                     obj.rob.moveAt(0,0); % Stop Immediately
                 end
                 
-                pause(0.03);
+                pause(0.03); % CPU Relief %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% TUNE THIS.
             end % ~done?
             obj.rob.moveAt(0,0);
             %obj.rob.core.stop(); % Maybe throws things off?
@@ -556,6 +645,60 @@ classdef mrplSystem < handle
     end % mrplSystem <- methods
     
     methods(Static)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% - POSE MANIPULATION
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+        %% TRANSFORM COORDINATE FRAMES:
+        % Converts a Robot-Relative Pose to an Absolute World Coordinates
+        function p_w = relToAbs(p_r)
+            % Uses Homog. Transform to add Pose-Vec of p_r to Robot Pose in
+            % World-Frame, p_f. 
+            p_w = addPoses(obj.rob.measTraj.p_f, p_r);
+        end % #relToAbs
+        % Converts an Absolute World Pose to Robot-Relative Coordinates 
+        function p_r = absToRel(p_w)
+            xa = p_w.x; ya = p_w.y; tha = p_w.th;
+            
+            p_r = obj.rob.measTraj.p_f.aToB() * [xa; ya; 1];
+            p_r(3) = adel(tha, obj.rob.measTraj.p_f.th);
+        end % #absToRel
+        
+        %% GET ACQUISITION POSE:
+        % Determines the Required Acquisition Pose for the Robot to be able
+        % to Pick Up an Object at p_obj, all IN W O R L D COORDINATES.
+        function p_acq = acquisitionWorldPose(p_obj, robFrontOffset, ... 
+                                              objFaceOffset, moreOffset, ...
+                                              lateralFudge, angularFudge)
+            % Default Values:
+            if nargin<6
+                angularFudge = 0;
+                if nargin<5
+                    lateralFudge = 0;
+                    if nargin<4
+                        % Spacing Between Robot Forks and Obj. Face.
+                        moreOffset = 0.08;
+                        if nargin<3
+                            % Dist from Obj. Origin to Obj Edge.
+                            objFaceOffset = 0.02;
+                            if nargin<2
+                                % Dist from Rob. Origin to Rob. Fork Edge
+                                robFrontOffset = 0.067;
+                            end
+                        end
+                    end
+                end
+            end % nargin?...
+                                  
+            longitudinal_offset = robFrontOffset + objFaceOffset + moreOffset;
+            
+            p_offset = pose(-longitudinal_offset, lateralFudge, angularFudge);
+            
+            p_acq = addPoses(p_obj, p_offset);
+        end % #acquisitionWorldPose
+        
+        % Determines the Required Acquisition Pose for the Robot to be able
+        % to Pick Up an Object at objPose relative to the Robot.
         function acqPose = acquisitionPose(objPose,...
             robFrontOffset, objFaceOffset, moreOffset, lateralFudge)
             totalDist = robFrontOffset + objFaceOffset + moreOffset;

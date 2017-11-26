@@ -177,9 +177,10 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
         
         % Plans a trajectory to Position (x,y,th) Relative to Current Robot
         % Position in the direction of sgn, with number of samples 
-        % optionally specified by ns, and optionally loading data of a 
-        % particular scale as specified by ds.
-        function curve = planTrajectory(x,y,th,sgn, ns, ds)
+        % optionally specified by ns,  optionally loading data of a 
+        % particular scale as specified by ds, and optionally specified
+        % maximum transit velocity, v_max.
+        function curve = planTrajectory(x,y,th,sgn, ns, ds, v_max)
             persistent data_loaded;
             persistent a1T a2T b1T b2T r1T r2T num_samp data_scale
             
@@ -253,7 +254,7 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
 
             % Plot the corresponding unit
             su = 1.0;
-            clothu = Trajectory_CubicSpiral([au bu su],num_samp);
+            clothu = Trajectory_CubicSpiral([au bu su],num_samp, v_max);
 
             %hold on;
 
@@ -272,7 +273,7 @@ classdef Trajectory_CubicSpiral < ReferenceTrajectory
                 as = -as;  
                 ss = -ss;
             end
-            curve = Trajectory_CubicSpiral([as bs ss],num_samp);
+            curve = Trajectory_CubicSpiral([as bs ss],num_samp, v_max);
         end
             
     end
