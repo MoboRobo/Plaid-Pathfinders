@@ -41,6 +41,9 @@ function testSaveLaser(robot_id)
     load_data();
 
     for i = imgs
+        i.findLineCandidates();
+        disp(length(i.line_candidates.lengths));
+        
         lidar_plotting(i);
     end
     
@@ -52,6 +55,7 @@ function testSaveLaser(robot_id)
             lidar_plot = scatter(0,0,36,0);
             set(gca, 'Xdir', 'reverse'); % Ensure Robot Y-Axis Points Left
 
+            title({'LIDAR Data', '(Robot Reference Frame)'});
             xlabel('Y-Position [m]');
             ylabel('X-Position [m]');
             axis(1.2*[
@@ -64,13 +68,7 @@ function testSaveLaser(robot_id)
             r_img.plot(1, lidar_plot);
             
             r_img.findLineCandidates();
-            
-            n_lc = length(r_img.line_candidates.lengths) - 1;
-            title({'LIDAR Data', strcat('LC Found: ', num2str(n_lc))});
-            
-            r_img.plotLineCandidates(0, gca);
-            
-            set(curr_fig, 'Position', get(0, 'Screensize')); % Fullscreen
+            r_img.plotLineCandidates(1, gca);
     end
   
 end

@@ -369,8 +369,7 @@ classdef RangeImage < handle
         % Robot Frame).
         % Optional Argument: - cp: clears prev plotting of line
         % candidates
-        % - as, axes to plot onto.
-        function plotLineCandidates(obj, cp, as)
+        function plotLineCandidates(obj, cp)
         persistent plot_objs % Objects Plotted.
             
             clear_prev = 1; % Default value
@@ -397,14 +396,8 @@ classdef RangeImage < handle
             n = length(obj.line_candidates.lengths);
             plot_objs(1:n) = 0;
             
-            if nargin>2
-                plot_axes = as;
-            else
-                plot_axes = gca;
-            end
-            
             i = 1;
-            hold(plot_axes, 'on')
+            hold on
             while i<=n
                 p = obj.line_candidates.poses(i);
                 l = obj.line_candidates.lengths(i);
@@ -416,12 +409,12 @@ classdef RangeImage < handle
 
                 y0 = p.Y - l*sin(th)/2;
                 y1 = p.Y + l*sin(th)/2;
-                plot_objs(i) = plot(plot_axes, [y0 y1], [x0 x1]);
-                
+                plot_objs(i) = plot([y0 y1], [x0 x1]);
+                                                                            disp( [ y0 y1; [x0 x1]
             i = i+1;
             end
-            hold(plot_axes, 'off')
-            set(plot_axes, 'Xdir', 'reverse'); % Ensure Robot Y-Axis Points Left
+            hold off
+            set(gca, 'Xdir', 'reverse'); % Ensure Robot Y-Axis Points Left
         end
     end % RangeImage<-methods(public)
     
