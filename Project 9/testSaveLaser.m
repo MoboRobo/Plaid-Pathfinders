@@ -1,36 +1,39 @@
-function testSaveLaser(robot_id)
-%   mrpl = mrplSystem(robot_id, pose(0,0,0)); 
-%   mrpl.rob.laserOn()
-%   
-%   clk = Clock();
-%   first_loop = 1;
-%   
-%   pause(1);
-%   images = RangeImage.empty();
-%   
-%   pause(5); % Wait for laser to spin up
+function testSaveLaser(robot_id, capture)
+% - capture, whether to capture images first or just display them.
+    if capture
+        mrpl = mrplSystem(robot_id, pose(0,0,0)); 
+        mrpl.rob.laserOn()
 
-%   figure();
-%   counter = 0;
-%   while (counter < 10)
-%     disp("snap");
-%     if(first_loop)
-%         clk = Clock();
-%         first_loop = 0;
-%         images = mrpl.rob.hist_laser.last();
-%     else
-%         images(end+1) = mrpl.rob.hist_laser.last();
-%     end
-%     
-%     counter = counter + 1;
-%     
-%     mrpl.rob.hist_laser.last.plot();
-%     pause(5);
-%     
-%   end
-%   save(strcat('rangeImages2'),'images');
-%     
-%   clear all
+        clk = Clock();
+        first_loop = 1;
+
+        pause(1);
+        images = RangeImage.empty();
+
+        pause(5); % Wait for laser to spin up
+
+        figure();
+        counter = 0;
+        while (counter < 10)
+        disp("snap");
+        if(first_loop)
+            clk = Clock();
+            first_loop = 0;
+            images = mrpl.rob.hist_laser.last();
+        else
+            images(end+1) = mrpl.rob.hist_laser.last();
+        end
+
+        counter = counter + 1;
+
+        mrpl.rob.hist_laser.last.plot();
+        pause(5);
+
+        end
+        save(strcat('rangeImages2'),'images');
+
+    end % capture?
+
   
   persistent imgs
   function load_data()
@@ -68,7 +71,7 @@ function testSaveLaser(robot_id)
             n_lc = length(r_img.line_candidates.lengths) - 1;
             title({'LIDAR Data', strcat('LC Found: ', num2str(n_lc))});
             
-            r_img.plotLineCandidates(0, gca);
+            r_img.plotLineCandidates(0, gca, 1);
             
             set(curr_fig, 'Position', get(0, 'Screensize')); % Fullscreen
     end

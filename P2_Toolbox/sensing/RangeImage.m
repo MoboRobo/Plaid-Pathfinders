@@ -370,13 +370,20 @@ classdef RangeImage < handle
         % Optional Argument: - cp: clears prev plotting of line
         % candidates
         % - as, axes to plot onto.
-        function plotLineCandidates(obj, cp, as)
+        % - dm, whether to Display Meta-data next to each line
+        % candidate.
+        function plotLineCandidates(obj, cp, as, dm)
         persistent plot_objs % Objects Plotted.
             
             clear_prev = 1; % Default value
-            if nargin>1
+            if nargin > 1
                 clear_prev = cp;
-            end
+            end % nargin>1?
+            
+            disp_meta = 0;
+            if nargin > 3
+                disp_meta = dm;
+            end % nargin>3?
             
             % Clear Previous Plots (i/a):
             if( ~isempty(plot_objs) && clear_prev )
@@ -417,6 +424,20 @@ classdef RangeImage < handle
                 y0 = p.Y - l*sin(th)/2;
                 y1 = p.Y + l*sin(th)/2;
                 plot_objs(i) = plot(plot_axes, [y0 y1], [x0 x1]);
+                
+                if(disp_meta && l~=0)
+                    xm = (x0+x1) / 2; % Left Edge of Text
+                    ym = (y0+y1) / 2;
+                    xm = 0.9*xm; ym = 0.9*ym;
+                    xm = double(xm); ym = double(ym);
+                    
+                    text(...
+                        ym, xm, strcat('L: ', num2str(l)), ...
+                        'FontName', 'OCR A Std',...
+                        'FontSize', 12,...
+                        'Color', 'r' ...
+                        );
+                end % disp_meta?
                 
             i = i+1;
             end
