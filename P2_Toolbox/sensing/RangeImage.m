@@ -65,7 +65,8 @@ classdef RangeImage < handle
         % Line (Pallet) Candidates within Valid Range Data:
         line_candidates = struct( ...
             'poses', pose(0,0,0), ...   % Poses of Lines in Robot Frame
-            'lengths', 0 ...            % Lengths of Lines
+            'lengths', 0, ...           % Lengths of Lines
+            'inertias', 0 ...           % Moments of Inertia of Lines
         );
         
     end % RangeImage<-properties(public,private)
@@ -144,7 +145,7 @@ classdef RangeImage < handle
             if nargin>1
                 halfSailLength = l/2;
             else
-                halfSailLength = 0.0635; %in meters
+                halfSailLength = 0.05600;%0.0635; %in meters
             end
             if nargin>2
                 marginOfLengthError = mle;
@@ -332,8 +333,10 @@ classdef RangeImage < handle
                                         cloudYs(1)-cloudYs(end)]);
 %                 estimatedLength = sqrt(max(eig([Ixx Ixy; Ixy Iyy])));
                                     
+                Inert = lambda(1);
+
                 % CONDITIONS FOR VALID LINE CANDIDATE:
-                if( lambda(1) < 1.3 ...
+                if( Inert < 1.3 ...
                 && (abs(estimatedLength - halfSailLength*2) < marginOfLengthError) ...
                 )
 %                 && origin_shift < halfSailLength/4 )
@@ -354,6 +357,7 @@ classdef RangeImage < handle
                     
                     obj.line_candidates.poses = [obj.line_candidates.poses new_pose];
                     obj.line_candidates.lengths = [obj.line_candidates.lengths estimatedLength];
+                    obj.line_candidates.inertias = [obj.line_candidates.inertias Inert];
                 end
             %pixelIndex = pixelIndex+1;
             
@@ -428,13 +432,16 @@ classdef RangeImage < handle
                 plot_objs(i) = plot(plot_axes, [y0 y1], [x0 x1]);
                 
                 if(disp_meta && l~=0)
+                    Inert = obj.line_candidates.inertias(i);
+                
                     xm = (x0+x1) / 2; % Left Edge of Text
                     ym = (y0+y1) / 2;
                     xm = 0.9*xm; ym = 0.9*ym;
                     xm = double(xm); ym = double(ym);
                     
                     text(...
-                        ym, xm, strcat('L: ', num2str(l)), ...
+                        ym, xm, strcat('L,I: ', ...
+                        num2str(l), ', ', num2str(Inert)), ...
                         'FontName', 'OCR A Std',...
                         'FontSize', 12,...
                         'Color', 'r' ...

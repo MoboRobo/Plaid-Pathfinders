@@ -28,6 +28,7 @@ function testSaveLaser(robot_id, capture)
 
         mrpl.rob.hist_laser.last.plot();
         pause(5);
+        beep;
 
         end
         save(strcat('rangeImages2'),'images');
