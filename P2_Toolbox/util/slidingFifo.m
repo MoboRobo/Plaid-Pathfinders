@@ -54,12 +54,8 @@ classdef slidingFifo < GenericDataContainer
         end 
         
         % Returns whether queue is empty or not
-        function ans = isEmpty(obj)
-            if (length(obj.que) == 0)
-                ans = 1;
-            else
-                ans = 0;
-            end
+        function emp = isEmpty(obj)
+            emp = isempty(obj.que);
         end
 
         % Adds the given element to the end of the queue.

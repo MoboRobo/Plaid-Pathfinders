@@ -1,4 +1,7 @@
 function Lab11(robot_id)
+
+    speed = 0.2;
+
     bounds = 2*[-1 0; 0 0; 0 -1]; % 2 Meter L intersecting origin
     wm = WorldMap(bounds);
     
@@ -12,19 +15,19 @@ function Lab11(robot_id)
 %      ri.mrpl.debugging.error_plots = 1;
 %      ri.mrpl.debugging.comm_plots = 1;
 
-    pause(3); % Ensure Robot Has Stable Localization before Beginnning
+    pause(5); % Ensure Robot Has Stable Localization before Beginnning
      
 %      ri.mrpl.goTo( pose(-0.3048, -0.3048, 0.0) );
 %      ri.mrpl.goTo( pose(-0.9144, -0.9144, -pi/2.0) );
 %      ri.mrpl.goTo( pose(-0.6096, -0.6096, 0.0) );
      
-     ri.mrpl.goTo( addPoses(robot_starting_pose, pose(0.3048,0.3048,0.0)) );
+     ri.mrpl.goTo( addPoses(robot_starting_pose, pose(0.3048,0.3048,0.0)), speed );
 %      ri.mrpl.turn_stationary(pi);
      pause(2);
-     ri.mrpl.goTo( addPoses(robot_starting_pose, pose(-0.3048,-0.3048,-pi/2.0)) );
+     ri.mrpl.goTo( addPoses(robot_starting_pose, pose(-0.3048,-0.3048,-pi/2.0)), speed );
 %      ri.mrpl.turn_stationary(pi);
      pause(2);
-     ri.mrpl.goTo( pose(robot_starting_pose.x,robot_starting_pose.y, -pi/2) );
+     ri.mrpl.goTo( pose(robot_starting_pose.x,robot_starting_pose.y, -pi/2), speed );
      ri.mrpl.turn_stationary( adel(ri.mrpl.rob.measTraj.p_f.th, robot_starting_pose.th) );
      pause(2);
      pr = ri.mrpl.rob.measTraj.p_f;

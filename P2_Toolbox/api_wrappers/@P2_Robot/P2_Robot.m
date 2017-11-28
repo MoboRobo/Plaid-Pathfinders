@@ -297,7 +297,7 @@ classdef P2_Robot < handle
                 curPose = obj.measTraj.p_f;
                 % Issue a Pose Correction to Robot Positioning with Fused
                 % Output:
-                t_up = obj.encTraj.t_f; % Time must flow ever forward (don't use historical t_img).
+                t_up = obj.hist_enc.last.t; % Time must flow ever forward (don't use historical t_img).
                 
                 %curPose = obj.measTraj.p_t(t_img); % <<< SHOULD BE DOING
                 %THIS (but not paramount; so, is okay for now).
@@ -311,7 +311,7 @@ classdef P2_Robot < handle
                 [success, p_lid] = obj.localizer.refinePose(curPose, rangePts);
                 if success % Successfully Localized Robot in Map
             
-                                                                            %disp(obj.getTime());
+                                                                            disp(t_up);
                     % Get Pose Vectors:
                     p_lid_vec = p_lid.poseVec;
                     p_last_vec = curPose.poseVec;

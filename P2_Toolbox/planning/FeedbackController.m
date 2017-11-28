@@ -78,7 +78,7 @@ classdef FeedbackController < handle
             %error summing coefficients
             k_x = 1 / obj.correctiveTime;
             k_th = 1 / obj.correctiveTime;
-            if V < 0.03 % V-floor for k_y to prevent it from becoming too large
+            if V < 0.05 % V-floor for k_y to prevent it from becoming too large
                 k_y = 0;
 %                 warning('Low Velocity');
             else

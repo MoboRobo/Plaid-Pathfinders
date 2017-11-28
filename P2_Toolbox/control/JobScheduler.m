@@ -17,7 +17,6 @@ classdef JobScheduler < handle
             obj.jobs = slidingFifo(1000, first);
             for job = jobsToBeScheduled(2:end)
                 obj.jobs.add(job);
-                obj.jobs
             end
         end
        

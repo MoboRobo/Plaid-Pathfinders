@@ -34,14 +34,14 @@ classdef Job
                     obj.props.pose = varargin{1};
                     obj.props.speed = varargin{2};
                     if id == JID.PICK
-                        obj.exec_fcn = @(mrpl) mrpl.pickupObjAt(obj.args);
+                        obj.exec_fcn = @(mrpl) mrpl.pickupObjAt(obj.args{:});
                     else
-                        obj.exec_fcn = @(mrpl) mrpl.dropObjAt(obj.args);
+                        obj.exec_fcn = @(mrpl) mrpl.dropObjAt(obj.args{:});
                     end % id?
                     
                 case JID.WAIT
                     obj.props.duration = varargin{1};
-                    obj.exec_fcn = @(~) pause(obj.args);
+                    obj.exec_fcn = @(~) pause(obj.args{:});
                     
             end % switch id
             

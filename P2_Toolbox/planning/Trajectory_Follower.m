@@ -13,6 +13,7 @@ classdef Trajectory_Follower < handle
                             % Velocity Control Signal (Ffwd w/Fbk-trim)
         
         send_delay = 0.22; % Delay in Command Sending to Robot
+        % ^ - was 0.22
     end % Trajectory_Follower <- properties(public,private)
     
     properties(GetAccess=public, SetAccess=public)

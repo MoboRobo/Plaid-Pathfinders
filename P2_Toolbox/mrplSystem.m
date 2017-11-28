@@ -40,7 +40,8 @@ classdef mrplSystem < handle
         );
     end
     properties(GetAccess=private, SetAccess=private)
-         k_tau = 2;%7.0253;%1.4; A.S.S.: 1.95    % Trajectory Time Multiplier for Corrective Time
+         k_tau = 0.5;%7.0253;%1.4; A.S.S.: 1.95    % Trajectory Time Multiplier for Corrective Time
+         % More speed, less tau (maybe)
          %% 
          %% 
          % ^-6.
@@ -98,14 +99,14 @@ classdef mrplSystem < handle
         forkDistance = 0.055;
         overdrive = 0.01;
         
-        p_acq = obj.acquisitionWorldPose(p_nom);
+        p_acq = obj.acquisitionWorldPose(p_nom, -1, -1, 0.4); % -1 -> default value
         
-        Dth = adel(ri.mrpl.rob.measTraj.p_f.th, p_acq.th);
-        if Dth > pi
+        Dth = adel(obj.rob.measTraj.p_f.th, p_acq.th);
+        if abs(Dth) > pi/2
             % This turn is to resolve the obj behind rob issue (where robot
             % goes around obj to get to it). However, we already have pose 
             % fix for this in the Line Object Detection.
-            obj.turn_stationary(Dth);
+            obj.turn_stationary(-Dth);
             pause(0.25);
         end % Dth>pi/2?
         
@@ -113,13 +114,39 @@ classdef mrplSystem < handle
         
         pause(0.1); % Minimize all run-time pauses.
         
+        secondary_offset = 0.12;
+        
         % Find sail, then turn to face sail, move forward, and pick up the
         % sail, with overdrive.
         p_nlo_r = obj.getNearestLineObject();
-        th = p_nlo_r.th;
-        obj.goTo_th_Small(th); % Turn to Face Line Object
+        p_nlo_w = obj.relToAbs(p_nlo_r);
+        p_acq_nlo = obj.acquisitionWorldPose(p_nlo_w, -1, -1, secondary_offset);
+%         th = p_nlo_r.th;
+%         obj.goTo_th_Small(th); % Turn to Face Line Object
+%         moveDist = p_nlo_r.x;
+%         obj.goTo_X_Small(moveDist + overdrive, speed/2);
+        obj.goTo(p_acq_nlo, speed);
+        
+        p_nlo_r2 = obj.getNearestLineObject();
+        if norm(p_nlo_r2.poseVec(1:2)) < secondary_offset*2 
+            % Sanity check to ensure its detecting the pallet we expect.
+            % (if we're too close, it'll miss this pallet and pick up
+            % another)
+            p_nlo_r = p_nlo_r2;
+            beep;
+        end % else, just use the last pallet position from farther away.
+        
+%         th = p_nlo_r.th;
+        th = atan2(p_nlo_r.y, p_nlo_r.x);
+        obj.goTo_th_Small(0.9*th); % Turn to Face Line Object
+%         obj.goTo_th_Small(adel(0,obj.rob.measTraj.p_f.th));
+%         pause(0.2);
+%         obj.goTo_th_Small(adel(0,obj.rob.measTraj.p_f.th));
+        
         moveDist = p_nlo_r.x;
         obj.goTo_X_Small(moveDist + overdrive, speed/2);
+        
+        save('log_file', 'p_nlo_r', 'th', 'moveDist');
         
         pause(0.2); % Wait for vehicle to stabilze.
         
@@ -128,7 +155,7 @@ classdef mrplSystem < handle
         pause(0.1); % Wait for vehicle to stabilze.
         
         % Perform final backup of exactly one fork length away
-        mrpl.goTo_X_Small(-forkDistance, 0.15);
+        obj.goTo_X_Small(-forkDistance, 0.15);
         
     end % #pickupObjAt
     
@@ -138,9 +165,9 @@ classdef mrplSystem < handle
     function dropObjAt(obj, p_drop, speed)
         forkDistance = 0.055;
         
-        Dth = adel(ri.mrpl.rob.measTraj.p_f.th, p_drop.th);
-        if Dth > pi
-            obj.turn_stationary(Dth);
+        Dth = adel(obj.rob.measTraj.p_f.th, p_drop.th);
+        if abs(Dth) > pi/2
+            obj.turn_stationary(-Dth);
             pause(0.25);
         end % Dth>pi/2?
         
@@ -153,7 +180,7 @@ classdef mrplSystem < handle
         pause(0.1); % Wait for vehicle to stabilze.
         
         % Perform final backup
-        mrpl.goTo_X_Small(-forkDistance, 0.15);
+        obj.goTo_X_Small(-forkDistance, 0.15);
         
     end % #dropObjAt
         
@@ -260,7 +287,7 @@ classdef mrplSystem < handle
             tf.fbk_controller.correctiveTime = obj.k_tau;%* rt.getFinalTime();
             tf.fbk_trim = 0; % Turn off feedback trim for this in-exact motion. %%%%%%% ? ? %%%%%
                
-            obj.time_loop(tf, 0.75); %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% YO, DAWG, I CHANGED THIS (used to be 1).
+            obj.time_loop(tf, 1); %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% YO, DAWG, I CHANGED THIS (used to be 1).
             
             tf.fbk_trim = 1; % Reset
             
@@ -316,7 +343,7 @@ classdef mrplSystem < handle
             tf.fbk_controller.correctiveTime = obj.k_tau;%* rt.getFinalTime();
             tf.fbk_controller.isPureTurn = 1;
                
-            obj.time_loop(tf, 0.75);%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% YO, DAWG, I CHANGED THIS (used to be 1).
+            obj.time_loop(tf, 1);%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% YO, DAWG, I CHANGED THIS (used to be 1).
             
             tf.fbk_controller.isPureTurn = 0; % Reset
             
@@ -404,7 +431,7 @@ classdef mrplSystem < handle
             end
             tf.fbk_controller.correctiveTime = obj.k_tau;%* rt.getFinalTime();
             
-            obj.time_loop(tf, 1);%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% YO, DAWG, I CHANGED THIS (was 1.75).
+            obj.time_loop(tf, 1.75);%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% YO, DAWG, I CHANGED THIS (was 1.75).
             
             %Store completed trajectory
             obj.traj_vec(end+1) = tf.rt;
@@ -642,27 +669,28 @@ classdef mrplSystem < handle
             close(obj.laser_plotting_data.curr_fig);
         end
         
-    end % mrplSystem <- methods
-    
-    methods(Static)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% - POSE MANIPULATION
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+        
         %% TRANSFORM COORDINATE FRAMES:
         % Converts a Robot-Relative Pose to an Absolute World Coordinates
-        function p_w = relToAbs(p_r)
+        function p_w = relToAbs(obj, p_r)
             % Uses Homog. Transform to add Pose-Vec of p_r to Robot Pose in
             % World-Frame, p_f. 
             p_w = addPoses(obj.rob.measTraj.p_f, p_r);
         end % #relToAbs
         % Converts an Absolute World Pose to Robot-Relative Coordinates 
-        function p_r = absToRel(p_w)
+        function p_r = absToRel(obj, p_w)
             xa = p_w.x; ya = p_w.y; tha = p_w.th;
             
             p_r = obj.rob.measTraj.p_f.aToB() * [xa; ya; 1];
             p_r(3) = adel(tha, obj.rob.measTraj.p_f.th);
         end % #absToRel
+        
+    end % mrplSystem <- methods
+    
+    methods(Static)
         
         %% GET ACQUISITION POSE:
         % Determines the Required Acquisition Pose for the Robot to be able
@@ -671,24 +699,24 @@ classdef mrplSystem < handle
                                               objFaceOffset, moreOffset, ...
                                               lateralFudge, angularFudge)
             % Default Values:
-            if nargin<6
+            if nargin<6 || angularFudge == -1
                 angularFudge = 0;
-                if nargin<5
+            end
+                if nargin<5 || lateralFudge == -1
                     lateralFudge = 0;
-                    if nargin<4
+                end
+                    if nargin<4 || moreOffset == -1
                         % Spacing Between Robot Forks and Obj. Face.
-                        moreOffset = 0.08;
-                        if nargin<3
+                        moreOffset = 0.3;
+                    end
+                        if nargin<3 || objFaceOffset == -1
                             % Dist from Obj. Origin to Obj Edge.
                             objFaceOffset = 0.02;
-                            if nargin<2
+                        end
+                            if nargin<2 || robFrontOffset == -1
                                 % Dist from Rob. Origin to Rob. Fork Edge
                                 robFrontOffset = 0.067;
-                            end
-                        end
-                    end
-                end
-            end % nargin?...
+                            end % nargin?...
                                   
             longitudinal_offset = robFrontOffset + objFaceOffset + moreOffset;
             
