@@ -97,7 +97,7 @@ classdef mrplSystem < handle
     % /should/ be found at p_nom at the given speed.
     function pickupObjAt(obj, p_nom, speed)
         forkDistance = 0.055;
-        overdrive = 0.05;
+        overdrive = -0.05;
         
         p_acq = obj.acquisitionWorldPose(p_nom, -1, -1, 0.35); % -1 -> default value
         
@@ -120,11 +120,9 @@ classdef mrplSystem < handle
         % sail, with overdrive.
         th = pi;
         while(th > pi/2)
-            p_nlo_r = obj.getNearestLineObject();
-            th = p_nlo_r.th;
-        end
+       	
         p_nlo_w = obj.relToAbs(p_nlo_r);
-        p_acq_nlo = obj.acquisitionWorldPose(p_nom, -1, -1, secondary_offset); %%%%%%%%% DON'T USE NOM. USE LIDAR.
+        p_acq_nlo = obj.acquisitionWorldPose(p_nlo_w, -1, -1, secondary_offset);
 %         th = p_nlo_r.th;
 %         obj.goTo_th_Small(th); % Turn to Face Line Object
 %         moveDist = p_nlo_r.x;
@@ -132,7 +130,7 @@ classdef mrplSystem < handle
         obj.goTo(p_acq_nlo, speed);
         
         p_nlo_r2 = obj.getNearestLineObject();
-        if 0 && norm(p_nlo_r2.poseVec(1:2)) < secondary_offset*2 
+        if norm(p_nlo_r2.poseVec(1:2)) < secondary_offset*2 
             % Sanity check to ensure its detecting the pallet we expect.
             % (if we're too close, it'll miss this pallet and pick up
             % another)
@@ -141,29 +139,24 @@ classdef mrplSystem < handle
         end % else, just use the last pallet position from farther away.
         
 %         th = p_nlo_r.th;
-%         th = atan2(p_nlo_r.y, p_nlo_r.x);
         th = atan2(p_nlo_r.y, p_nlo_r.x);
-        if th > pi/6
-            th = 0;
-        end
-%         th = th;
-        obj.goTo_th_Small(adel(0.95*th,obj.rob.measTraj.p_f.th)); % Turn to Face Line Object
+        th = th/2 + 0/2;
+        obj.goTo_th_Small(adel(th,obj.rob.measTraj.p_f.th)); % Turn to Face Line Object
         pause(0.2);
-%         obj.goTo_th_Small(adel(0.9*th,obj.rob.measTraj.p_f.th)); % Turn to Face Line Object
+        obj.goTo_th_Small(adel(th,obj.rob.measTraj.p_f.th)); % Turn to Face Line Object
 
 %         obj.goTo_th_Small(adel(0,obj.rob.measTraj.p_f.th));
 %         pause(0.2);
 %         obj.goTo_th_Small(adel(0,obj.rob.measTraj.p_f.th));
         
         moveDist = p_nlo_r.x;
-        
-        obj.goTo_X_Small(0.8*moveDist, speed/2);
-        obj.rob.core.forksUp();
-        obj.goTo_X_Small(overdrive, speed/2);
+        obj.goTo_X_Small(moveDist + overdrive, speed/2);
         
 %         save('log_file', 'p_nlo_r', 'th', 'moveDist');
         
         pause(0.2); % Wait for vehicle to stabilze.
+        
+        obj.rob.core.forksUp();
         
         pause(0.1); % Wait for vehicle to stabilze.
         
@@ -193,7 +186,7 @@ classdef mrplSystem < handle
         pause(0.1); % Wait for vehicle to stabilze.
         
         % Perform final backup
-        obj.goTo_X_Small(-forkDistance*1.25, 0.15);
+        obj.goTo_X_Small(-forkDistance, 0.15);
         
     end % #dropObjAt
         

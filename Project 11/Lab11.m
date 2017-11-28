@@ -1,6 +1,6 @@
 function Lab11(robot_id)
 
-    speed = 0.2;
+    speed = 0.15;
 
     bounds = 2*[-1 0; 0 0; 0 -1]; % 2 Meter L intersecting origin
     wm = WorldMap(bounds);
