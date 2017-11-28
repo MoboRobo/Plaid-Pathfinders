@@ -141,7 +141,7 @@ classdef RangeImage < handle
             initialNumSkippedPoints = 1;
             %minimum number of points allowable in point cloud
             minNumPoints = 2;
-            distanceCoefficient = 1.4;
+            distanceCoefficient = 1.5;
             if nargin>1
                 halfSailLength = l/2;
             else
@@ -204,7 +204,7 @@ classdef RangeImage < handle
                 offset = 1;
                 prevX = midX; prevY = midY;
                 numSkippedPoints = initialNumSkippedPoints;
-                curRadius = getIth(obj.data.ranges, i-offset, len);
+                curRadius = getIth(obj.data.ranges, i, len);
                 while (1)
                     %get current radius to figure maxDist
                     maxDistance = (curRadius*2*pi / 360.0) ...
@@ -229,14 +229,14 @@ classdef RangeImage < handle
                     cloudXs = [curX cloudXs];
                     cloudYs = [curY cloudYs];
                     startI = i - offset;
-                    offset = offset+1;
                     curRadius = getIth(obj.data.ranges, i-(offset), len);
+                    offset = offset+1;
                 end
                 offset = 1;
                 prevX = midX; prevY = midY;
                 %rightSide
                 numSkippedPoints = initialNumSkippedPoints;
-                curRadius = getIth(obj.data.ranges, i+offset, len);
+                curRadius = getIth(obj.data.ranges, i, len);
                 while(1)
                     maxDistance = (curRadius*2*pi / 360.0) ...
                         * distanceCoefficient;
@@ -261,8 +261,8 @@ classdef RangeImage < handle
                     cloudXs(end+1) = curX;
                     cloudYs(end+1) = curY;
                     endI = i + offset;
-                    offset = offset+1;
                     curRadius = getIth(obj.data.ranges, i+(offset), len);
+                    offset = offset+1;
                 end
             end % #getPixelsWithin
             
@@ -313,7 +313,8 @@ classdef RangeImage < handle
                 numPoints = length(cloudXs);
                 if numPoints < minNumPoints
                     %skip to next iteration
-                    pixelIndex =eI+1;
+                    %pixelIndex =pixelIndex +1;
+                    pixelIndex = eI + 1;
                     continue;
                 end
                 
@@ -345,7 +346,7 @@ classdef RangeImage < handle
                 Inert = lambda(1);
 
                 % CONDITIONS FOR VALID LINE CANDIDATE:
-                if( Inert < 3.5 ...
+                if ( Inert < 3.5 ...
                 && (abs(estimatedLength - halfSailLength*2) < marginOfLengthError) ...
                 )
 %                 && origin_shift < halfSailLength/4 )
@@ -369,6 +370,7 @@ classdef RangeImage < handle
                     obj.line_candidates.inertias = [obj.line_candidates.inertias Inert];
                 end
             %pixelIndex = pixelIndex+1;
+            
             
             pixelIndex = eI+1;%max(pixelIndex+1, eI+1);
             end

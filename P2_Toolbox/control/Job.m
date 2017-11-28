@@ -11,11 +11,15 @@ classdef Job
         % Cell Array of Arguments given to this Job.
         args;
         
+    end % Job <- properties(private)
+    
+    properties(Access=public)
+        
         % Anonymous Function Handle for Function(s) to Execute when
         % Performing this Job (must be given a mrplSystem, mrpl).
         exec_fcn;
         
-    end % Job <- properties(private)
+    end % Job <- properties(publioc)
     
     %% METHODS
     methods
@@ -26,7 +30,7 @@ classdef Job
             obj.args = varargin;
             
             switch id
-                case {JID.PICK, JID.DROP}i89io
+                case {JID.PICK, JID.DROP}
                     obj.props.pose = varargin{1};
                     obj.props.speed = varargin{2};
                     if id == JID.PICK
