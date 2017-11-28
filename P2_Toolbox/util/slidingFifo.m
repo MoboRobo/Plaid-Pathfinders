@@ -53,6 +53,15 @@ classdef slidingFifo < GenericDataContainer
             end % nargin>0?
         end 
         
+        % Returns whether queue is empty or not
+        function ans = isEmpty(obj)
+            if (length(obj.que) == 0)
+                ans = 1;
+            else
+                ans = 0;
+            end
+        end
+
         % Adds the given element to the end of the queue.
         function add(obj,element)
         % Add an object at the right of the queue and slide to the left.
