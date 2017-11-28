@@ -66,7 +66,8 @@ classdef RangeImage < handle
         line_candidates = struct( ...
             'poses', pose(0,0,0), ...   % Poses of Lines in Robot Frame
             'lengths', 0, ...           % Lengths of Lines
-            'inertias', 0 ...           % Moments of Inertia of Lines
+            'inertias', 0, ...          % Moments of Inertia of Lines
+            'clouds', [0; 0] ...         % Cloud of X,Y Points for Lines
         );
         
     end % RangeImage<-properties(public,private)
@@ -290,7 +291,7 @@ classdef RangeImage < handle
             end % rejectOutliers
             
             pixelIndex = 1;
-            while ( (pixelIndex <= len) && len >= minNumPoints ) %% Breaks when len~=1
+            while ( (pixelIndex <= len) && len >= minNumPoints ) %% Breaks when len~ =1
                 
                 % *Have search window be larger than w_sail so that larger
                 % widths can be observed and rejected.
@@ -358,6 +359,7 @@ classdef RangeImage < handle
                     obj.line_candidates.poses = [obj.line_candidates.poses new_pose];
                     obj.line_candidates.lengths = [obj.line_candidates.lengths estimatedLength];
                     obj.line_candidates.inertias = [obj.line_candidates.inertias Inert];
+                    obj.line_candidates.clouds = [obj.line_candidates.clouds [cloudXs; cloudYs]];
                 end
             %pixelIndex = pixelIndex+1;
             
@@ -433,14 +435,29 @@ classdef RangeImage < handle
                 
                 if(disp_meta && l~=0)
                     Inert = obj.line_candidates.inertias(i);
+                    cs = obj.line_candidates.clouds(i);
+                    cXs = cs(1);
+                    cYs = cs(2);
                 
-                    xm = (x0+x1) / 2; % Left Edge of Text
-                    ym = (y0+y1) / 2;
-                    xm = 0.9*xm; ym = 0.9*ym;
-                    xm = double(xm); ym = double(ym);
+                    xt = p.X; % Left Edge of Text
+                    yt = p.Y;
+                    xt = double(xt); yt = double(yt);
                     
-                    text(...
-                        ym, xm, strcat('L,I: ', ...
+                    % Highlight Range of Points in Cloud 
+                    scatter(plot_axes, cYs,cXs, [1 1 0], 'filled', 's');
+                    cXs = cXs + p.X;
+                    cYs = cYs + p.Y;
+                    
+                    cX0 = cXs(1); cY0 = cYs(1);
+                    cXf = cXs(end); cYf = cYs(end);
+                    
+                    % Endcaps for Cloud Region:
+                    plot(plot_axes, [0.9*cY0 1.1*cY0], [0.9*cX0 1.1*cX0], 'o');
+                    plot(plot_axes, [0.9*cYf 1.1*cYf], [0.9*cXf 1.1*cXf], 'o');
+                    
+                    % Display Meta Data Values:
+                    text(plot_axes,...
+                        yt, xt, strcat('L,I: ', ...
                         num2str(l), ', ', num2str(Inert)), ...
                         'FontName', 'OCR A Std',...
                         'FontSize', 12,...
