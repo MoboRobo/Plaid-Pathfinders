@@ -519,20 +519,10 @@ classdef RangeImage < handle
         % Returns a copy of the given RangeImage with the given min and max
         % bounds on acceptable ranges and angles for range pixels.
         function img_out = filter(img_in, min_rng,max_rng, min_ang,max_ang)
-            img_out = RangeImage(img_in.raw, min_rng,max_rng, min_ang,max_ang);
-        end % #filter
+            
+        end % #filte
+        
         %% Filter Ranges
-        % Returns a copy of the given RangeImage with the given min and max
-        % bounds on acceptable ranges for range pixels.
-        function img_out = filterRanges(img_in, min_rng,max_rng)
-            img_out = RangeImage(img_in.raw, min_rng,max_rng);
-        end % #filterRanges
-        %% Filter Angles
-        % Returns a copy of the given RangeImage with the given min and max
-        % bounds on acceptable angles for range pixels.
-        function img_out = filterAngles(img_in, min_ang,max_ang)
-            img_out = RangeImage(img_in.raw, RangeImage.MIN_RANGE,RangeImage.MAX_RANGE, min_ang,max_ang);
-        end % #filterRanges
         
         
         %% Clean Image
