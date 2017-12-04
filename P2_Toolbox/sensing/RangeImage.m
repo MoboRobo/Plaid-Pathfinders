@@ -72,6 +72,11 @@ classdef RangeImage < handle
         
     end % RangeImage<-properties(public,private)
     
+    properties(GetAccess=public, SetAccess=public)
+        capture_pose = pose.empty;  % Pose of the Robot in the World-Frame
+                                    % when this Range Image was Taken.
+    end % RangeImage<-properties(public,public)
+    
     %% METHODS
     methods(Access=public)
         %% Constructor:
@@ -158,6 +163,7 @@ classdef RangeImage < handle
             end
         end % #plot
         
+        %% Find Line Candidates
         % Locates Candidates for Valid Contiguous Line Segments of length 
         % approx "length" within the Validated Data Set. Returns the pose 
         % vectors and corresponding lengths of each detected line segment 
@@ -410,6 +416,7 @@ classdef RangeImage < handle
             end % #getIth
         end
         
+        %% Plot Line Candidates
         % Plots Every Line Candidate within the Validated Data Set (in the 
         % Robot Frame).
         % Optional Argument: - cp: clears prev plotting of line
@@ -514,6 +521,61 @@ classdef RangeImage < handle
     %% METHODS - STATICS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     methods (Static)
+        
+        %% Select Position
+        % Returns a copy of the given RangeImage with a filter applied to 
+        % only include range Pixels within a selection window dist units 
+        % across, centered at the given absolute position in the World Frame
+        % (X,Y).
+        %
+        % N.B.: A selection window is defined just by min and max ranges
+        % and angles. While a circular region would be marginally better
+        % for selection, a window is much faster to compute and filter.
+        function img_out = select(img_in, dist, xa,ya)
+            % Find Relative Position:
+            p_r_vec = obj.capture_pose.aToB() * [xa; ya; 1];
+            xr = p_r_vec(1);
+            yr = p_r_vec(2);
+            
+            % Return Selection Window of Dist around Relative Position:
+            img_out = select_Rel(img_in, dist, xr,yr);
+        end % #select
+        
+        %% Select Relative Position
+        % Returns a copy of the given RangeImage with a filter applied to 
+        % only include range Pixels within a selection window dist units 
+        % across, centered at the given relative position (X,Y).
+        %
+        % N.B.: A selection window is defined just by min and max ranges
+        % and angles. While a circular region would be marginally better
+        % for selection, a window is much faster to compute and filter.
+        function img_out = select_Rel(img_in, dist, x,y)
+            % Compute Characteristics of Origin of Selection Window:
+            a = atan2(y,x);
+            s = sin(a);
+            c = cos(a);
+            
+            r = x / c;
+            
+            % Compute Edge Points of Window (along line perpendicular to
+            % the line extending from the robot to (x,y)).
+            y_l = y + dist * c; % Left.
+            x_l = x - dist * s;
+            
+            y_r = y - dist * c; % Right.
+            x_r = x + dist * s;
+            
+            % Compute Bounds of Selection Window:
+            r_min = r - dist;
+            r_max = r + dist;
+            
+            a_min = atan2(y_l,x_l);
+            a_max = atan2(y_r,x_r);
+            
+            % Apply Selection Filter to Create Window:
+            img_out = RangeImage.filter(img_in, r_min,r_max, a_min,a_max);
+            
+        end % #select_Rel
         
         %% Filter
         % Returns a copy of the given RangeImage with the given min and max

@@ -697,8 +697,10 @@ classdef mrplSystem < handle
         function p_r = absToRel(obj, p_w)
             xa = p_w.x; ya = p_w.y; tha = p_w.th;
             
-            p_r = obj.rob.measTraj.p_f.aToB() * [xa; ya; 1];
-            p_r(3) = adel(tha, obj.rob.measTraj.p_f.th);
+            p_r_vec = obj.rob.measTraj.p_f.aToB() * [xa; ya; 1];
+            p_r_vec(3) = adel(tha, obj.rob.measTraj.p_f.th);
+            
+            p_r = pose(p_r_vec);
         end % #absToRel
         
     end % mrplSystem <- methods

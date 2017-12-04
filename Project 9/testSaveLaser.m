@@ -1,4 +1,7 @@
 function testSaveLaser(robot_id, capture)
+global ft;
+units();
+
 % - capture, whether to capture images first or just display them.
     if capture
         mrpl = mrplSystem(robot_id, pose(0,0,0)); 

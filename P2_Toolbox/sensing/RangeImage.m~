@@ -53,6 +53,9 @@ classdef RangeImage < handle
         raw;        % Vector of Raw Sensor Data.
         raw_ang;    % Angles to Each Raw Sensor Data Point.
         
+        capture_pose = pose.empty;  % Pose of the Robot in the World-Frame
+                                    % when this Range Image was Taken.
+        
         % Valid Data:
         data = struct( ...
             'ranges', 0, ...    % Vector of Valid Range Data
@@ -515,14 +518,54 @@ classdef RangeImage < handle
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     methods (Static)
         
+        %% Select Relative Position
+        % Returns a copy of the given RangeImage with a filter applied to 
+        % only include range Pixels within a selection window dist units 
+        % across, centered at the given relative position (X,Y).
+        function img_out = select_Rel(img_in, dist, x,y)
+             [xs, ys] = arToXy(rs,angs)
+            xs = rs .* cos(angs);
+            ys = rs .* sin(angs);
+            
+            % Compute Characteristics of Centr
+            ang = atan2(y,x);
+            s = sin(a);
+            c = cos(a);
+            
+            r = x / c;
+            
+            % Compute Ed
+            y_l = y + dist * c;
+            x_l = x - dist * s;
+            
+            x_r = 
+            
+            x_
+            r_min = r - dist;
+            r_max = r + dist;
+            
+            a_min = ang - dist
+            
+        end % #select_Rel
+        
         %% Filter
         % Returns a copy of the given RangeImage with the given min and max
         % bounds on acceptable ranges and angles for range pixels.
         function img_out = filter(img_in, min_rng,max_rng, min_ang,max_ang)
-            
-        end % #filte
-        
+            img_out = RangeImage(img_in.raw, min_rng,max_rng, min_ang,max_ang);
+        end % #filter
         %% Filter Ranges
+        % Returns a copy of the given RangeImage with the given min and max
+        % bounds on acceptable ranges for range pixels.
+        function img_out = filterRanges(img_in, min_rng,max_rng)
+            img_out = RangeImage(img_in.raw, min_rng,max_rng);
+        end % #filterRanges
+        %% Filter Angles
+        % Returns a copy of the given RangeImage with the given min and max
+        % bounds on acceptable angles for range pixels.
+        function img_out = filterAngles(img_in, min_ang,max_ang)
+            img_out = RangeImage(img_in.raw, RangeImage.MIN_RANGE,RangeImage.MAX_RANGE, min_ang,max_ang);
+        end % #filterRanges
         
         
         %% Clean Image

@@ -269,7 +269,11 @@ classdef P2_Robot < handle
         
         %% SENSING
         function processNewLaserData(obj, ~, event)
+            p_capture = obj.measTraj.p_f;
+            
             r_img = RangeImage(event.Ranges);
+            r_img.capture_pose = p_capture;
+            
             t_img = event.Header.Stamp.Sec + event.Header.Stamp.Nsec/1e9;
             
             obj.hist_laser.add(r_img);
