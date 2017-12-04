@@ -16,7 +16,7 @@ classdef RangeImage < handle
     %% STATIC & CONSTANT PROPERTIES
     properties(Constant)
         MIN_RANGE = 0.07;   % m, Minimum Range for Sensible Data
-        MAX_RANGE = 1.75;   % m, Maximum Range for Sensible Data
+        MAX_RANGE = 2.5;   % m, Maximum Range for Sensible Data
     end
     % Must be handled as persistent variables wrapped in an accessor which
     % returns the value and sets the value if given an argument.
@@ -94,8 +94,8 @@ classdef RangeImage < handle
             
             r_min = RangeImage.MIN_RANGE;% Default values
             r_max = RangeImage.MAX_RANGE;
-            a_min = pi;
-            a_max = -pi;
+            a_min = -pi;
+            a_max = 2*pi;
             if nargin>2
                 r_min = min_rng;
                 r_max = max_rng;
@@ -533,12 +533,12 @@ classdef RangeImage < handle
         % for selection, a window is much faster to compute and filter.
         function img_out = select(img_in, dist, xa,ya)
             % Find Relative Position:
-            p_r_vec = obj.capture_pose.aToB() * [xa; ya; 1];
+            p_r_vec = img_in.capture_pose.aToB() * [xa; ya; 1];
             xr = p_r_vec(1);
             yr = p_r_vec(2);
             
             % Return Selection Window of Dist around Relative Position:
-            img_out = select_Rel(img_in, dist, xr,yr);
+            img_out = RangeImage.select_Rel(img_in, dist, xr,yr);
         end % #select
         
         %% Select Relative Position
@@ -555,7 +555,7 @@ classdef RangeImage < handle
             s = sin(a);
             c = cos(a);
             
-            r = x / c;
+            r = x / c; % Already had to compute cos anyway.
             
             % Compute Edge Points of Window (along line perpendicular to
             % the line extending from the robot to (x,y)).
@@ -569,8 +569,9 @@ classdef RangeImage < handle
             r_min = r - dist;
             r_max = r + dist;
             
-            a_min = atan2(y_l,x_l);
-            a_max = atan2(y_r,x_r);
+            a_bounds = [atan2(y_l,x_l) atan2(y_r,x_r)];
+            a_min = min(a_bounds);
+            a_max = max(a_bounds);
             
             % Apply Selection Filter to Create Window:
             img_out = RangeImage.filter(img_in, r_min,r_max, a_min,a_max);
@@ -604,8 +605,8 @@ classdef RangeImage < handle
         function [r_clean,ang] = cleanImage(r_in, min_rng,max_rng, min_ang,max_ang)
             r_min = RangeImage.MIN_RANGE;% Default values
             r_max = RangeImage.MAX_RANGE;
-            a_min = pi;
-            a_max = -pi;
+            a_min = -pi;
+            a_max = 2*pi;
             if nargin>2
                 r_min = min_rng;
                 r_max = max_rng;

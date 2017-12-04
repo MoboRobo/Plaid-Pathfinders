@@ -94,33 +94,18 @@ classdef mrplSystem < handle
     %% LOOK FOR PALLET NEAR
     % Determines whether a pallet is present near the position in the
     % World-Frame (xa,ya).
-    % Returns whether or not a pallet was found and, if found, its real 
-    % world pose.
+    % Returns whether or not a pallet was found and its real world pose if
+    % it was fo
     function [present, p_w] = lookForPalletNear(obj, xa,ya)
         pallet_width = 0.07; %m
         buffer = 0.03; % m, Amount of space on each side of the pallet to include in selection window
-        max_tries = 3; % Maximum number of times to try to find pallet. %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        r_img = RangeImage.select(obj.rob.hist_laser.last, (pallet_width + 2*buffer), xa,ya);
         
-        % Ensure Lidar is On:
-        if(~obj.rob.laser_state) % If lasers are off
-            obj.rob.laserOn(); % Turn Lasers on
-            pause(1); % Wait for Lasers to generate RangeImages.
-        end
-
-        p_w = pose(0,0,0); % Default (no success) value.
-        
-        % Plot RangeImages until Object is Acquired:
-        obj.init_lidar_staticPlotting();
-        
-        % Try three times to find valid line candidate:
-        r_img = obj.rob.hist_laser.last;
+        % Try three times to find valid line candidate
         tries = 1;
         while(length(r_img.line_candidates.lengths) == 1 ...
            && r_img.line_candidates.lengths(1) == 0)
-            
-            % Created Range Image Copy Limited to Selection Window Around
-            % (xa,ya):
-            r_img = RangeImage.select(obj.rob.hist_laser.last, (pallet_width + 2*buffer), xa,ya);
+            r_img = obj.rob.hist_laser.last(); % Get Latest Image.
 
             obj.update_lidar_staticPlotting(); % Update Plot before Parsing RangeImage.
 
@@ -130,15 +115,7 @@ classdef mrplSystem < handle
             pause(0.01); % Relief for Callback to Update
         end
         
-        obj.close_lidar_staticPlotting(); % Search Complete. Turn off Plotting.
-        
         present = 1; %%%%%%%%%%%%
-        if(present)
-            p_w 
-        end % present?
-
-        p_los = r_img.line_candidates.poses; % Poses of all Valid Line Objects
-        % Get Nearest Line Object Pose to Robot in Robot Frame:
         
     end % #lookForPalletAt
     %% PICK UP OBJECT AT
