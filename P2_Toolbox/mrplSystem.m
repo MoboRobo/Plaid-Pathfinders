@@ -97,9 +97,9 @@ classdef mrplSystem < handle
     % Returns whether or not a pallet was found and, if found, its real 
     % world pose.
     function [present, p_w] = lookForPalletNear(obj, xa,ya)
-        pallet_width = 0.07; %m
-        buffer = 0.03; % m, Amount of space on each side of the pallet to include in selection window
-        max_tries = 3; % Maximum number of times to try to find pallet. %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        pallet_width = 0.067; %m
+        buffer = pallet_width*4; % m, Amount of space on each side of the pallet to include in selection window
+        max_tries = 6; % Maximum number of times to try to find pallet before declaring it absent.
         
         % Ensure Lidar is On:
         if(~obj.rob.laser_state) % If lasers are off
@@ -113,14 +113,15 @@ classdef mrplSystem < handle
         obj.init_lidar_staticPlotting();
         
         % Try three times to find valid line candidate:
-        r_img = obj.rob.hist_laser.last;
-        tries = 1;
+        r_img = obj.rob.hist_laser.last.copy();
+        tries = 0;
         while(length(r_img.line_candidates.lengths) == 1 ...
-           && r_img.line_candidates.lengths(1) == 0)
+           && r_img.line_candidates.lengths(1) == 0 && tries < max_tries)
             
             % Created Range Image Copy Limited to Selection Window Around
             % (xa,ya):
-            r_img = RangeImage.select(obj.rob.hist_laser.last, (pallet_width + 2*buffer), xa,ya);
+            last_img = obj.rob.hist_laser.last;
+            r_img = RangeImage.select(last_img, (pallet_width/2 + buffer), xa,ya);
 
             obj.update_lidar_staticPlotting(); % Update Plot before Parsing RangeImage.
 
@@ -132,13 +133,13 @@ classdef mrplSystem < handle
         
         obj.close_lidar_staticPlotting(); % Search Complete. Turn off Plotting.
         
-        present = 1; %%%%%%%%%%%%
+        present = length(r_img.line_candidates.lengths) > 1 || r_img.line_candidates.lengths(1) ~= 0;
         if(present)
-            p_w 
+            % Get Nearest Line Object Pose to Robot in Robot Frame:
+            p_r = r_img.line_candidates.poses(1);
+            % Transform to World Frame:
+            p_w = obj.relToAbs(p_r);
         end % present?
-
-        p_los = r_img.line_candidates.poses; % Poses of all Valid Line Objects
-        % Get Nearest Line Object Pose to Robot in Robot Frame:
         
     end % #lookForPalletAt
     %% PICK UP OBJECT AT

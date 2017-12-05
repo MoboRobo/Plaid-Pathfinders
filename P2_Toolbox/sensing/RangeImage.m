@@ -94,8 +94,8 @@ classdef RangeImage < handle
             
             r_min = RangeImage.MIN_RANGE;% Default values
             r_max = RangeImage.MAX_RANGE;
-            a_min = -pi;
-            a_max = 2*pi;
+            a_min = -5*pi/180; % -5deg
+            a_max = 2*pi - a_min; % wrap around
             if nargin>2
                 r_min = min_rng;
                 r_max = max_rng;
@@ -227,6 +227,7 @@ classdef RangeImage < handle
             %Gets a Segment of Continuous Pixels
             function [cloudXs, cloudYs, startI, endI] = getContinuousPixels(i)
                 startI = i; endI = i;
+                numIterations = 0;
                 rawLen = length(obj.raw);
                 midX = getIth(obj.data.xs, i, len);
                 midY = getIth(obj.data.ys, i, len);
@@ -238,7 +239,7 @@ classdef RangeImage < handle
                 prevX = midX; prevY = midY;
                 numSkippedPoints = initialNumSkippedPoints;
                 curRadius = getIth(obj.data.ranges, i, len);
-                while (1)
+                while (numIterations <= len)
                     %get current radius to figure maxDist
                     maxDistance = (curRadius*2*pi / 360.0) ...
                         * distanceCoefficient;
@@ -264,13 +265,16 @@ classdef RangeImage < handle
                     startI = i - offset;
                     curRadius = getIth(obj.data.ranges, i-(offset), len);
                     offset = offset+1;
+                    numIterations = numIterations + 1;
                 end
                 offset = 1;
                 prevX = midX; prevY = midY;
                 %rightSide
                 numSkippedPoints = initialNumSkippedPoints;
                 curRadius = getIth(obj.data.ranges, i, len);
-                while(1)
+                
+                numIterations = 0;
+                while(numIterations <= len)
                     maxDistance = (curRadius*2*pi / 360.0) ...
                         * distanceCoefficient;
                     curX = getIth(obj.data.xs, i + offset, len);
@@ -296,6 +300,7 @@ classdef RangeImage < handle
                     endI = i + offset;
                     curRadius = getIth(obj.data.ranges, i+(offset), len);
                     offset = offset+1;
+                    numIterations = numIterations + 1;
                 end
             end % #getPixelsWithin
             
@@ -569,12 +574,11 @@ classdef RangeImage < handle
             r_min = r - dist;
             r_max = r + dist;
             
-            a_bounds = [atan2(y_l,x_l) atan2(y_r,x_r)];
-            a_min = min(a_bounds);
-            a_max = max(a_bounds);
+            a_ccw = atan2(y_l,x_l); % Counter-Clockwise-Most Angular Edge
+            a_cw = atan2(y_r,x_r); % Clockwise-Most Angular Edge
             
             % Apply Selection Filter to Create Window:
-            img_out = RangeImage.filter(img_in, r_min,r_max, a_min,a_max);
+            img_out = RangeImage.filter(img_in, r_min,r_max, a_ccw,a_cw);
             
         end % #select_Rel
         
@@ -605,8 +609,8 @@ classdef RangeImage < handle
         function [r_clean,ang] = cleanImage(r_in, min_rng,max_rng, min_ang,max_ang)
             r_min = RangeImage.MIN_RANGE;% Default values
             r_max = RangeImage.MAX_RANGE;
-            a_min = -pi;
-            a_max = 2*pi;
+            a_min = -5*pi/180; % -5deg
+            a_max = 2*pi - a_min; % wrap around
             if nargin>2
                 r_min = min_rng;
                 r_max = max_rng;
@@ -634,7 +638,15 @@ classdef RangeImage < handle
             ang = RangeImage.IndicesToRads(idx);
             
             % Filter out Invalid/Undesired Angles:
-            valid_angles = ang>=a_min & ang<=a_max; % Could actually be == for integer muliples of deg.
+            a_width = abs(adel(a_min, a_max));
+            % Assert: a_width needs to be less than 2_pi (can't create
+            % window wider than that b/c duh).
+            if a_width > 2*pi
+                warning('Min and Max Angles Must Subtend Less Than 2*pi rad In RangeImage Constructor');
+            end
+            valid_angles = (abs(adel(ang, a_max)) <= a_width) & (sign(adel(ang, a_max)) == sign(adel(a_min, a_max))); % Really think before changing this.
+            valid_angles = valid_angles | adel(a_min, a_max) < 1e-6; % catch zero-width window -> include all points (eps must be >> 3e-16).
+%             valid_angles = ang>=a_min & ang<=a_max; % Could actually be == for integer muliples of deg.
             r_clean = r_clean(valid_angles);
             ang = ang(valid_angles);
             

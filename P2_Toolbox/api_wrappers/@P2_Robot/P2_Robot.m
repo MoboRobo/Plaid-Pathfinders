@@ -315,7 +315,7 @@ classdef P2_Robot < handle
                 [success, p_lid] = obj.localizer.refinePose(curPose, rangePts);
                 if success % Successfully Localized Robot in Map
             
-                                                                            disp(t_up);
+%                                                                             disp(t_up);
                     % Get Pose Vectors:
                     p_lid_vec = p_lid.poseVec;
                     p_last_vec = curPose.poseVec;
