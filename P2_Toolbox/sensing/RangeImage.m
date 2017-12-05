@@ -121,9 +121,10 @@ classdef RangeImage < handle
             close_img = RangeImage.filterRanges(obj, 0.05,RangeImage.MAX_RANGE);
             thresholdDist = 0.1;
             sum = 0;
-            for i = -5:5
+            n=10;
+            for i = 1:n
                 sum = sum + close_img.data.ranges(i);
-            avg = sum/10;
+            avg = sum/n;
             end
             
             if(avg < thresholdDist)
