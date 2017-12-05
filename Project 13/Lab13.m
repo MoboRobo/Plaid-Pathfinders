@@ -34,6 +34,8 @@ function Lab13(robot_id, spd)
     
     pause(3); % Ensure Robot Has Stable Localization before Beginnning
     
+    mrpl.rob.core.play('FCd.wav');
+    
     while (length(dropOffs) > 0)
         nextPickup = pickups(1);
         nextPickup.poseVec
