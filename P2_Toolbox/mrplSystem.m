@@ -94,12 +94,17 @@ classdef mrplSystem < handle
     %% LOOK FOR PALLET NEAR
     % Determines whether a pallet is present near the position in the
     % World-Frame (xa,ya).
+    % Optionally supply buffer to use around pallet, buff.
     % Returns whether or not a pallet was found and, if found, its real 
     % world pose.
-    function [present, p_w] = lookForPalletNear(obj, xa,ya)
+    function [present, p_w, p_nlo_r] = lookForPalletNear(obj, xa,ya, buff)
         pallet_width = 0.067; %m
         buffer = pallet_width/1.5; % m, Amount of space on each side of the pallet to include in selection window
         max_tries = 6; % Maximum number of times to try to find pallet before declaring it absent.
+        
+        if nargin>3
+            buffer = buff;
+        end % nargin?
         
         % Ensure Lidar is On:
         if(~obj.rob.laser_state) % If lasers are off
@@ -108,12 +113,13 @@ classdef mrplSystem < handle
         end
 
         p_w = pose(0,0,0); % Default (no success) value.
+        p_nlo_r = pose(0,0,0);
         
         % Plot RangeImages until Object is Acquired:
         obj.init_lidar_staticPlotting();
         
         % Try three times to find valid line candidate:
-        r_img = obj.rob.hist_laser.last.copy();
+        r_img = obj.rob.hist_laser.last.copy(); % Make raw copy to ignore off any prior line candidates
         tries = 0;
         while(length(r_img.line_candidates.lengths) == 1 ...
            && r_img.line_candidates.lengths(1) == 0 && tries < max_tries)
@@ -135,10 +141,29 @@ classdef mrplSystem < handle
         
         present = length(r_img.line_candidates.lengths) > 1 || r_img.line_candidates.lengths(1) ~= 0;
         if(present)
+            % Find Line Candidate Closest to Nominal Position (if multiple
+            % identified):
+            
+            p_los = r_img.line_candidates.poses; % Poses of all Valid Line Objects
             % Get Nearest Line Object Pose to Robot in Robot Frame:
-            p_r = r_img.line_candidates.poses(1);
+            
+            i = 1;
+            n = length(p_los);
+            min_s = Inf; % Current Minimum Pose Distance
+            while i<=n
+            % Loop through all p_los to id which has least distance in
+            % robot frame.
+                p = p_los(i); % Pose being tested
+                s = norm([(p.X-xa) (p.Y-ya)]);
+                if s < min_s && s~=0
+                    p_nlo_r = p;
+                    min_s = s;
+                end
+            i = i+1;
+            end
+            
             % Transform to World Frame:
-            p_w = obj.relToAbs(p_r);
+            p_w = addPoses(r_img.capture_pose, p_nlo_r);
         end % present?
         
     end % #lookForPalletAt
@@ -171,57 +196,67 @@ classdef mrplSystem < handle
         % Find sail, then turn to face sail, move forward, and pick up the
         % sail, with overdrive.
         th = pi;
-        while(th > pi/2)
-            p_nlo_r = obj.getNearestLineObject();
-            th = p_nlo_r.th;
-        end
-        p_nlo_w = obj.relToAbs(p_nlo_r);
-        p_acq_nlo = obj.acquisitionWorldPose(p_nom, -1, -1, secondary_offset); %%%%%%%%% DON'T USE NOM. USE LIDAR. (still?)
-%         th = p_nlo_r.th;
-%         obj.goTo_th_Small(th); % Turn to Face Line Object
-%         moveDist = p_nlo_r.x;
-%         obj.goTo_X_Small(moveDist + overdrive, speed/2);
-        obj.goTo(p_acq_nlo, speed);
-        
-        p_nlo_r2 = obj.getNearestLineObject();
-        if 0 && norm(p_nlo_r2.poseVec(1:2)) < secondary_offset*2 
-            % Sanity check to ensure its detecting the pallet we expect.
-            % (if we're too close, it'll miss this pallet and pick up
-            % another)
-            p_nlo_r = p_nlo_r2;
-            beep;
-        end % else, just use the last pallet position from farther away.
-        
-%         th = p_nlo_r.th;
-%         th = atan2(p_nlo_r.y, p_nlo_r.x);
-        th = atan2(p_nlo_r.y, p_nlo_r.x);
-        if abs(adel(th,p_acq.th)) > pi/6
-            th = p_acq.th;
-        end
-%         th = th;
-        obj.goTo_th_Small(adel(0.95*th,obj.rob.measTraj.p_f.th),0); % Turn to Face Line Object (no feedback)
-        pause(0.2);
-%         obj.goTo_th_Small(adel(0.9*th,obj.rob.measTraj.p_f.th)); % Turn to Face Line Object
+%         while(th > pi/2)
+%             p_nlo_r = obj.getNearestLineObject();
+%             th = p_nlo_r.th;
+%         end
+%         p_nlo_w = obj.relToAbs(p_nlo_r);
+        [present, p_nlo_w, p_nlo_r] = obj.lookForPalletNear(p_nom.X,p_nom.Y, 0.15);
+        if(present)
+    %             p_nlo_w = p_nom;
+    %             p_nlo_r = obj.absToRel(p_nom);
 
-%         obj.goTo_th_Small(adel(0,obj.rob.measTraj.p_f.th));
-%         pause(0.2);
-%         obj.goTo_th_Small(adel(0,obj.rob.measTraj.p_f.th));
-        
-        moveDist = p_nlo_r.x;
-        
-        obj.goTo_X_Small(0.8*moveDist, speed/4);
-        obj.rob.core.forksUp();
-        obj.goTo_X_Small(overdrive, speed/4);
-        
-%         save('log_file', 'p_nlo_r', 'th', 'moveDist');
-        
-        pause(0.2); % Wait for vehicle to stabilze.
-        
-        pause(0.1); % Wait for vehicle to stabilze.
-        
-        % Perform final backup of exactly one fork length away
-        obj.goTo_X_Small(-forkDistance, 0.15);
-        
+            p_acq_nlo = obj.acquisitionWorldPose(p_nlo_w, -1, -1, secondary_offset); %%%%%%%%% DON'T USE NOM. USE LIDAR. (still?)
+    %         th = p_nlo_r.th;
+    %         obj.goTo_th_Small(th); % Turn to Face Line Object
+    %         moveDist = p_nlo_r.x;
+    %         obj.goTo_X_Small(moveDist + overdrive, speed/2);
+            obj.goTo(p_acq_nlo, speed*0.75);
+
+            p_nlo_r2 = obj.getNearestLineObject();
+            if 0 && norm(p_nlo_r2.poseVec(1:2)) < secondary_offset*2 
+                % Sanity check to ensure its detecting the pallet we expect.
+                % (if we're too close, it'll miss this pallet and pick up
+                % another)
+                p_nlo_r = p_nlo_r2;
+                beep;
+            end % else, just use the last pallet position from farther away.
+
+    %         th = p_nlo_r.th;
+    %         th = atan2(p_nlo_r.y, p_nlo_r.x);
+            th = atan2(p_nlo_r.y, p_nlo_r.x);
+            if abs(adel(th,p_acq.th)) > pi/6
+                th = p_acq.th;
+            end
+    %         th = th;
+            th_fudge = 1.2*pi/180;
+            obj.goTo_th_Small(adel(th,obj.rob.measTraj.p_f.th)+th_fudge,0.5); % Turn to Face Line Object (no feedback)
+            pause(0.2);
+%             obj.goTo_th_Small(adel(th,obj.rob.measTraj.p_f.th)+th_fudge,0); % Turn to Face Line Object
+
+    %         obj.goTo_th_Small(adel(0,obj.rob.measTraj.p_f.th));
+    %         pause(0.2);
+    %         obj.goTo_th_Small(adel(0,obj.rob.measTraj.p_f.th));
+
+            moveDist = p_nlo_r.x;
+
+            obj.goTo_X_Small(0.75*moveDist, 0.15/4);
+            obj.rob.core.forksUp();
+            pause(0.15); %Wait for forks to start to lift
+            obj.goTo_X_Small(overdrive, 0.15/4);
+
+    %         save('log_file', 'p_nlo_r', 'th', 'moveDist');
+
+            pause(0.2); % Wait for vehicle to stabilze.
+
+            pause(0.1); % Wait for vehicle to stabilze.
+
+            % Perform final backup of exactly one fork length away
+            obj.goTo_X_Small(-forkDistance, 0.15);
+
+        else
+            obj.goTo_X_Small(-0.1, 0.3); % Extra back-up
+        end % present?
     end % #pickupObjAt
     
     %% DROP OBJECT AT
@@ -391,9 +426,9 @@ classdef mrplSystem < handle
             end
             
             %Anonymous function handle for velocity profile:
-            omref = @(~,t)u_ref_trap(t,3*obj.rob.MAX_ALPHA/4,0.4*obj.rob.MAX_OMEGA,th_rel,0,0);
+            omref = @(~,t)u_ref_trap(t,2*obj.rob.MAX_ALPHA/4,0.3*obj.rob.MAX_OMEGA,th_rel,0,0);
             vref = @(~,t)0;
-            t_f = u_ref_trap(0,3*obj.rob.MAX_ALPHA/4,0.4*obj.rob.MAX_OMEGA,th_rel,0,1);
+            t_f = u_ref_trap(0,2*obj.rob.MAX_ALPHA/4,0.3*obj.rob.MAX_OMEGA,th_rel,0,1);
             
             ttc = Trajectory_TimeCurve(vref,omref, 0, t_f, obj.traj_samples);
             
@@ -473,51 +508,57 @@ classdef mrplSystem < handle
             x = rel_pose.x;
             y = rel_pose.y;
             th = rel_pose.th;
-            
-            % Specify speed if speed given
-            if nargin>2
-                rt = Trajectory_CubicSpiral.planTrajectory( ...
-                    x, y, th, 1, ...
-                    obj.traj_samples, obj.tcs_scale, ...
-                    spd ...
-                );
+
+            if x<-0.01 % if sufficiently behind robot
+                p_w = obj.relToAbs(rel_pose);
+                obj.goTo_th_Small(pi);
+                obj.goTo(p_w);
             else
-                rt = Trajectory_CubicSpiral.planTrajectory( ...
-                    x, y, th, 1, ...
-                    obj.traj_samples, obj.tcs_scale, ...
-                    0.42*obj.rob.MAX_SPEED ... % Default speed.
-                );
-            end % nargin>2
-            
-            initpose = obj.getTrajectoryStart();
-            rt.init_pose = initpose;%obj.traj_vec(end).getFinalPose();
-            % if you don't call offsetInitPose, Trajectory automatically
-                %transforms each reference pose before handing it to mrpl
-            rt.offsetInitPose();
-            
-            if isempty(obj.feedback_controller)
-                tf = Trajectory_Follower(obj.rob, rt);
-                obj.feedback_controller = tf.fbk_controller;
-            else
-                tf = Trajectory_Follower(obj.rob, rt);
-%                 tf = Trajectory_Follower(obj.rob, rt, obj.feedback_controller);
-%                 obj.feedback_controller.rt = rt; % Super important to update this
-            end
-            tf.fbk_controller.correctiveTime = obj.k_tau;%* rt.getFinalTime();
-            
-            obj.time_loop(tf, 1.75);%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% YO, DAWG, I CHANGED THIS (was 1.75).
-            
-            %Store completed trajectory
-            obj.traj_vec(end+1) = tf.rt;
-            if (isempty(obj.start_poses))
-                obj.start_poses = rel_pose;
-            else
-                obj.start_poses(end+1) = Trajectory.poseToWorld(rel_pose, obj.start_poses(end));
-            end
-            %Update plot after completed trajectory
-            if(obj.plotting_enabled)
-               obj.update_plot(tf);
-            end
+                % Specify speed if speed given
+                if nargin>2
+                    rt = Trajectory_CubicSpiral.planTrajectory( ...
+                        x, y, th, 1, ...
+                        obj.traj_samples, obj.tcs_scale, ...
+                        spd ...
+                    );
+                else
+                    rt = Trajectory_CubicSpiral.planTrajectory( ...
+                        x, y, th, 1, ...
+                        obj.traj_samples, obj.tcs_scale, ...
+                        0.42*obj.rob.MAX_SPEED ... % Default speed.
+                    );
+                end % nargin>2
+
+                initpose = obj.getTrajectoryStart();
+                rt.init_pose = initpose;%obj.traj_vec(end).getFinalPose();
+                % if you don't call offsetInitPose, Trajectory automatically
+                    %transforms each reference pose before handing it to mrpl
+                rt.offsetInitPose();
+
+                if isempty(obj.feedback_controller)
+                    tf = Trajectory_Follower(obj.rob, rt);
+                    obj.feedback_controller = tf.fbk_controller;
+                else
+                    tf = Trajectory_Follower(obj.rob, rt);
+    %                 tf = Trajectory_Follower(obj.rob, rt, obj.feedback_controller);
+    %                 obj.feedback_controller.rt = rt; % Super important to update this
+                end
+                tf.fbk_controller.correctiveTime = obj.k_tau;%* rt.getFinalTime();
+
+                obj.time_loop(tf, 1.75);%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% YO, DAWG, I CHANGED THIS (was 1.75).
+
+                %Store completed trajectory
+                obj.traj_vec(end+1) = tf.rt;
+                if (isempty(obj.start_poses))
+                    obj.start_poses = rel_pose;
+                else
+                    obj.start_poses(end+1) = Trajectory.poseToWorld(rel_pose, obj.start_poses(end));
+                end
+                %Update plot after completed trajectory
+                if(obj.plotting_enabled)
+                   obj.update_plot(tf);
+                end
+            end % x sufficiently behind robot
             
         end % #goTo_Rel
         % Helper Function Executing a loop commanding the robot to follow

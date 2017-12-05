@@ -121,11 +121,11 @@ classdef RangeImage < handle
             close_img = RangeImage.filterRanges(obj, 0.05,RangeImage.MAX_RANGE);
             thresholdDist = 0.1;
             sum = 0;
-            n = min(10,length(close_img.data.ranges));
+            n=min(10,
             for i = 1:n
                 sum = sum + close_img.data.ranges(i);
-            end
             avg = sum/n;
+            end
             
             if(avg < thresholdDist)
                 isObscured = 1;
@@ -139,7 +139,6 @@ classdef RangeImage < handle
         % Returns a Copy of this RangeImage (separate handle)
         function cpy = copy(obj)
             cpy = RangeImage(obj.raw);
-            cpy.capture_pose = obj.capture_pose;
         end % #copy
         
         %% Plot:
@@ -606,21 +605,18 @@ classdef RangeImage < handle
         % bounds on acceptable ranges and angles for range pixels.
         function img_out = filter(img_in, min_rng,max_rng, min_ang,max_ang)
             img_out = RangeImage(img_in.raw, min_rng,max_rng, min_ang,max_ang);
-            img_out.capture_pose = img_in.capture_pose;
         end % #filter
         %% Filter Ranges
         % Returns a copy of the given RangeImage with the given min and max
         % bounds on acceptable ranges for range pixels.
         function img_out = filterRanges(img_in, min_rng,max_rng)
             img_out = RangeImage(img_in.raw, min_rng,max_rng);
-            img_out.capture_pose = img_in.capture_pose;
         end % #filterRanges
         %% Filter Angles
         % Returns a copy of the given RangeImage with the given min and max
         % bounds on acceptable angles for range pixels.
         function img_out = filterAngles(img_in, min_ang,max_ang)
             img_out = RangeImage(img_in.raw, RangeImage.MIN_RANGE,RangeImage.MAX_RANGE, min_ang,max_ang);
-            img_out.capture_pose = img_in.capture_pose;
         end % #filterRanges
         
         
