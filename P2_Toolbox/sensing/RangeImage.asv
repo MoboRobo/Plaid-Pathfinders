@@ -16,7 +16,7 @@ classdef RangeImage < handle
     %% STATIC & CONSTANT PROPERTIES
     properties(Constant)
         MIN_RANGE = 0.07;   % m, Minimum Range for Sensible Data
-        MAX_RANGE = 2.5;   % m, Maximum Range for Sensible Data
+        MAX_RANGE = 1.75;   % m, Maximum Range for Sensible Data
     end
     % Must be handled as persistent variables wrapped in an accessor which
     % returns the value and sets the value if given an argument.
@@ -94,8 +94,8 @@ classdef RangeImage < handle
             
             r_min = RangeImage.MIN_RANGE;% Default values
             r_max = RangeImage.MAX_RANGE;
-            a_min = -5*pi/180; % -5deg
-            a_max = 2*pi - a_min; % wrap around
+            a_min = pi;
+            a_max = -pi;
             if nargin>2
                 r_min = min_rng;
                 r_max = max_rng;
@@ -118,20 +118,19 @@ classdef RangeImage < handle
         end % Constructor
         
         function isObscured = isObscured(obj)
-            close_img = RangeImage.filterRanges(obj, 0.05,RangeImage.MAX_RANGE);
             thresholdDist = 0.1;
             sum = 0;
-            for i = -5:5
-                sum = sum + close_img.data.ranges(i);
+            for i = 1:10
+                sum = sum + obj.raw(i);
             avg = sum/10;
-            end
             
             if(avg < thresholdDist)
-                isObscured = 1;
+                return True
             else
-                isObscured = 0;
-            end
-               
+                return
+                
+                
+           
         end
         
         %% Copy
@@ -244,7 +243,6 @@ classdef RangeImage < handle
             %Gets a Segment of Continuous Pixels
             function [cloudXs, cloudYs, startI, endI] = getContinuousPixels(i)
                 startI = i; endI = i;
-                numIterations = 0;
                 rawLen = length(obj.raw);
                 midX = getIth(obj.data.xs, i, len);
                 midY = getIth(obj.data.ys, i, len);
@@ -256,7 +254,7 @@ classdef RangeImage < handle
                 prevX = midX; prevY = midY;
                 numSkippedPoints = initialNumSkippedPoints;
                 curRadius = getIth(obj.data.ranges, i, len);
-                while (numIterations <= len)
+                while (1)
                     %get current radius to figure maxDist
                     maxDistance = (curRadius*2*pi / 360.0) ...
                         * distanceCoefficient;
@@ -282,16 +280,13 @@ classdef RangeImage < handle
                     startI = i - offset;
                     curRadius = getIth(obj.data.ranges, i-(offset), len);
                     offset = offset+1;
-                    numIterations = numIterations + 1;
                 end
                 offset = 1;
                 prevX = midX; prevY = midY;
                 %rightSide
                 numSkippedPoints = initialNumSkippedPoints;
                 curRadius = getIth(obj.data.ranges, i, len);
-                
-                numIterations = 0;
-                while(numIterations <= len)
+                while(1)
                     maxDistance = (curRadius*2*pi / 360.0) ...
                         * distanceCoefficient;
                     curX = getIth(obj.data.xs, i + offset, len);
@@ -317,7 +312,6 @@ classdef RangeImage < handle
                     endI = i + offset;
                     curRadius = getIth(obj.data.ranges, i+(offset), len);
                     offset = offset+1;
-                    numIterations = numIterations + 1;
                 end
             end % #getPixelsWithin
             
@@ -555,12 +549,12 @@ classdef RangeImage < handle
         % for selection, a window is much faster to compute and filter.
         function img_out = select(img_in, dist, xa,ya)
             % Find Relative Position:
-            p_r_vec = img_in.capture_pose.aToB() * [xa; ya; 1];
+            p_r_vec = obj.capture_pose.aToB() * [xa; ya; 1];
             xr = p_r_vec(1);
             yr = p_r_vec(2);
             
             % Return Selection Window of Dist around Relative Position:
-            img_out = RangeImage.select_Rel(img_in, dist, xr,yr);
+            img_out = select_Rel(img_in, dist, xr,yr);
         end % #select
         
         %% Select Relative Position
@@ -577,7 +571,7 @@ classdef RangeImage < handle
             s = sin(a);
             c = cos(a);
             
-            r = x / c; % Already had to compute cos anyway.
+            r = x / c;
             
             % Compute Edge Points of Window (along line perpendicular to
             % the line extending from the robot to (x,y)).
@@ -591,11 +585,11 @@ classdef RangeImage < handle
             r_min = r - dist;
             r_max = r + dist;
             
-            a_ccw = atan2(y_l,x_l); % Counter-Clockwise-Most Angular Edge
-            a_cw = atan2(y_r,x_r); % Clockwise-Most Angular Edge
+            a_min = atan2(y_l,x_l);
+            a_max = atan2(y_r,x_r);
             
             % Apply Selection Filter to Create Window:
-            img_out = RangeImage.filter(img_in, r_min,r_max, a_ccw,a_cw);
+            img_out = RangeImage.filter(img_in, r_min,r_max, a_min,a_max);
             
         end % #select_Rel
         
@@ -626,8 +620,8 @@ classdef RangeImage < handle
         function [r_clean,ang] = cleanImage(r_in, min_rng,max_rng, min_ang,max_ang)
             r_min = RangeImage.MIN_RANGE;% Default values
             r_max = RangeImage.MAX_RANGE;
-            a_min = -5*pi/180; % -5deg
-            a_max = 2*pi - a_min; % wrap around
+            a_min = pi;
+            a_max = -pi;
             if nargin>2
                 r_min = min_rng;
                 r_max = max_rng;
@@ -655,15 +649,7 @@ classdef RangeImage < handle
             ang = RangeImage.IndicesToRads(idx);
             
             % Filter out Invalid/Undesired Angles:
-            a_width = abs(adel(a_min, a_max));
-            % Assert: a_width needs to be less than 2_pi (can't create
-            % window wider than that b/c duh).
-            if a_width > 2*pi
-                warning('Min and Max Angles Must Subtend Less Than 2*pi rad In RangeImage Constructor');
-            end
-            valid_angles = (abs(adel(ang, a_max)) <= a_width) & (sign(adel(ang, a_max)) == sign(adel(a_min, a_max))); % Really think before changing this.
-            valid_angles = valid_angles | adel(a_min, a_max) < 1e-6; % catch zero-width window -> include all points (eps must be >> 3e-16).
-%             valid_angles = ang>=a_min & ang<=a_max; % Could actually be == for integer muliples of deg.
+            valid_angles = ang>=a_min & ang<=a_max; % Could actually be == for integer muliples of deg.
             r_clean = r_clean(valid_angles);
             ang = ang(valid_angles);
             
