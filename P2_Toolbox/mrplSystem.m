@@ -98,7 +98,7 @@ classdef mrplSystem < handle
     % world pose.
     function [present, p_w] = lookForPalletNear(obj, xa,ya)
         pallet_width = 0.067; %m
-        buffer = pallet_width*4; % m, Amount of space on each side of the pallet to include in selection window
+        buffer = pallet_width/1.5; % m, Amount of space on each side of the pallet to include in selection window
         max_tries = 6; % Maximum number of times to try to find pallet before declaring it absent.
         
         % Ensure Lidar is On:
