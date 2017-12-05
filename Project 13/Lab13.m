@@ -36,13 +36,17 @@ function Lab13(robot_id, spd)
     
     while (length(dropOffs) > 0)
         nextPickup = pickups(1);
+        nextPickup.poseVec
         ri.mrpl.pickupObjAt(nextPickup, speed)
         if (ri.mrpl.rob.hist_laser.last.isObscured()) % is holding pallet?
             nextDropoff = dropOffs(1);
             ri.mrpl.dropObjAt(nextDropoff, speed);
             dropOffs = dropOffs(2:end);
         else
-            ri.mrpl.goTo_X_Small(-0.25, 0.4); %Back up in shame after failure.
+            Dx = abs(ri.mrpl.rob.measTraj.p_f.X - nextPickup.X) + 0.5;
+            ri.mrpl.goTo_X_Small(-Dx, 0.4); %Back up in shame after failure.
+            ri.mrpl.rob.core.say('I have failed my masters. :(');
+            pause(0.75); % Relocalize.
         end
         pickups = pickups(2:end);
     end

@@ -24,7 +24,7 @@ classdef mrplSystem < handle
         interface = RobotInterface.empty; % Interface Controller for this System
         
         debugging = struct(...
-            'delay_plots', 1, ...   % Whether Transient Velocity Plots for Determining should be Made.
+            'delay_plots', 0, ...   % Whether Transient Velocity Plots for Determining should be Made.
             'error_plots', 0, ...    % Whether Transient Error Plots (from FeedbackController) should be Made.
             'comm_plots', 0 ...     % Whether Transient Comm plots should be made
         );
@@ -147,9 +147,11 @@ classdef mrplSystem < handle
     % /should/ be found at p_nom at the given speed.
     function pickupObjAt(obj, p_nom, speed)
         forkDistance = 0.055;
-        overdrive = 0.05;
+        overdrive = 0.02;
         
         p_acq = obj.acquisitionWorldPose(p_nom, -1, -1, 0.35); % -1 -> default value
+        
+        obj.rob.core.forksDown(); % Ensure forks are down
         
         Dth = adel(obj.rob.measTraj.p_f.th, p_acq.th);
         if abs(Dth) > pi/2
@@ -174,7 +176,7 @@ classdef mrplSystem < handle
             th = p_nlo_r.th;
         end
         p_nlo_w = obj.relToAbs(p_nlo_r);
-        p_acq_nlo = obj.acquisitionWorldPose(p_nom, -1, -1, secondary_offset); %%%%%%%%% DON'T USE NOM. USE LIDAR.
+        p_acq_nlo = obj.acquisitionWorldPose(p_nom, -1, -1, secondary_offset); %%%%%%%%% DON'T USE NOM. USE LIDAR. (still?)
 %         th = p_nlo_r.th;
 %         obj.goTo_th_Small(th); % Turn to Face Line Object
 %         moveDist = p_nlo_r.x;
@@ -197,7 +199,7 @@ classdef mrplSystem < handle
             th = p_acq.th;
         end
 %         th = th;
-        obj.goTo_th_Small(adel(0.95*th,obj.rob.measTraj.p_f.th)); % Turn to Face Line Object
+        obj.goTo_th_Small(adel(0.95*th,obj.rob.measTraj.p_f.th),0); % Turn to Face Line Object (no feedback)
         pause(0.2);
 %         obj.goTo_th_Small(adel(0.9*th,obj.rob.measTraj.p_f.th)); % Turn to Face Line Object
 
@@ -207,9 +209,9 @@ classdef mrplSystem < handle
         
         moveDist = p_nlo_r.x;
         
-        obj.goTo_X_Small(0.8*moveDist, speed/2);
+        obj.goTo_X_Small(0.8*moveDist, speed/4);
         obj.rob.core.forksUp();
-        obj.goTo_X_Small(overdrive, speed/2);
+        obj.goTo_X_Small(overdrive, speed/4);
         
 %         save('log_file', 'p_nlo_r', 'th', 'moveDist');
         
@@ -381,11 +383,17 @@ classdef mrplSystem < handle
         end % #goTo_X_Small
         
         %% Go To Th (small)
-        function goTo_th_Small(obj, th_rel)
+        function goTo_th_Small(obj, th_rel, use_fbk)
+            if nargin>2
+                use_feedback = use_fbk;
+            else
+                use_feedback = 1;
+            end
+            
             %Anonymous function handle for velocity profile:
-            omref = @(~,t)u_ref_trap(t,3*obj.rob.MAX_ALPHA/4,0.5*obj.rob.MAX_OMEGA,th_rel,0,0);
+            omref = @(~,t)u_ref_trap(t,3*obj.rob.MAX_ALPHA/4,0.4*obj.rob.MAX_OMEGA,th_rel,0,0);
             vref = @(~,t)0;
-            t_f = u_ref_trap(0,3*obj.rob.MAX_ALPHA/4,0.5*obj.rob.MAX_OMEGA,th_rel,0,1);
+            t_f = u_ref_trap(0,3*obj.rob.MAX_ALPHA/4,0.4*obj.rob.MAX_OMEGA,th_rel,0,1);
             
             ttc = Trajectory_TimeCurve(vref,omref, 0, t_f, obj.traj_samples);
             
@@ -403,12 +411,15 @@ classdef mrplSystem < handle
 %                 obj.feedback_controller.rt = ttc; % Super important to update this
             end
             
-            tf.fbk_controller.correctiveTime = obj.k_tau;%* rt.getFinalTime();
+            tf.fbk_controller.correctiveTime = obj.k_tau*2;%* rt.getFinalTime();
             tf.fbk_controller.isPureTurn = 1;
+            
+%             tf.fbk_trim = use_feedback;
                
-            obj.time_loop(tf, 1);%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% YO, DAWG, I CHANGED THIS (used to be 1).
+            obj.time_loop(tf, 0.5);%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% YO, DAWG, I CHANGED THIS (used to be 1).
             
             tf.fbk_controller.isPureTurn = 0; % Reset
+            tf.fbk_trim = 1;
             
             % Until Mix-Ins are implemented for Trajectory Class Hierarchy,
             % Set traj_vec terminal TTC to equivalent TCS (to preserve
