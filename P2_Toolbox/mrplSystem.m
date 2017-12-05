@@ -24,7 +24,7 @@ classdef mrplSystem < handle
         interface = RobotInterface.empty; % Interface Controller for this System
         
         debugging = struct(...
-            'delay_plots', 0, ...   % Whether Transient Velocity Plots for Determining should be Made.
+            'delay_plots', 1, ...   % Whether Transient Velocity Plots for Determining should be Made.
             'error_plots', 0, ...    % Whether Transient Error Plots (from FeedbackController) should be Made.
             'comm_plots', 0 ...     % Whether Transient Comm plots should be made
         );
@@ -229,8 +229,8 @@ classdef mrplSystem < handle
                 th = p_acq.th;
             end
     %         th = th;
-            th_fudge = 1.2*pi/180;
-            obj.goTo_th_Small(adel(th,obj.rob.measTraj.p_f.th)+th_fudge,0.5); % Turn to Face Line Object (no feedback)
+            th_fudge = 0;%0.25*pi/180;
+            obj.goTo_th_Small(0.7*adel(th,obj.rob.measTraj.p_f.th)+th_fudge,0.5); % Turn to Face Line Object (no feedback)
             pause(0.2);
 %             obj.goTo_th_Small(adel(th,obj.rob.measTraj.p_f.th)+th_fudge,0); % Turn to Face Line Object
 
@@ -240,7 +240,7 @@ classdef mrplSystem < handle
 
             moveDist = p_nlo_r.x;
 
-            obj.goTo_X_Small(0.75*moveDist, 0.15/4);
+            obj.goTo_X_Small(0.65*moveDist, 0.15/4);
             obj.rob.core.forksUp();
             pause(0.15); %Wait for forks to start to lift
             obj.goTo_X_Small(overdrive, 0.15/4);
