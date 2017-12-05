@@ -193,8 +193,8 @@ classdef mrplSystem < handle
 %         th = p_nlo_r.th;
 %         th = atan2(p_nlo_r.y, p_nlo_r.x);
         th = atan2(p_nlo_r.y, p_nlo_r.x);
-        if th > pi/6
-            th = 0;
+        if abs(adel(th,p_acq.th)) > pi/6
+            th = p_acq.th;
         end
 %         th = th;
         obj.goTo_th_Small(adel(0.95*th,obj.rob.measTraj.p_f.th)); % Turn to Face Line Object

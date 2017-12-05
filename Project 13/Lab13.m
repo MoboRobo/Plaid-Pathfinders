@@ -11,26 +11,26 @@ function Lab13(robot_id, spd)
     ri = struct('mrpl',mrplSystem.empty);
     ri.mrpl = mrplSystem(robot_id, robot_starting_pose, wm);
    % ri = RobotInterface(robot_id, robot_starting_pose, wm);
-    startDropY = -1.5*ft; dropYincrement = -.75*ft;
+    startDropY = -1.5*ft; dropYIncrement = -.75*ft;
     pickups = [
         pose(6*ft, -1*ft, 0), pose(6*ft, -2*ft, 0),...
         pose(6*ft, -3*ft, 0), pose(6*ft, -4*ft, 0), ...
         pose(6*ft, -5*ft, 0), pose(6*ft, -6*ft, 0),...
         pose(6*ft, -7*ft, 0), pose(4*ft, -7*ft, -pi/2),...
-        pose(3*ft, -7*ft, -pi/2), pose(2*ft, -7*ft, -pi/2)]
+        pose(3*ft, -7*ft, -pi/2), pose(2*ft, -7*ft, -pi/2)];
         
     
     
     
     
     dropOffs = [
-        pose(1*ft+0.06, startDropY, pi), speed ), 
-        pose(1*ft+0.06, startDropY +dropYIncrement, pi), 
+        pose(1*ft+0.06, startDropY, pi), ... 
+        pose(1*ft+0.06, startDropY +dropYIncrement, pi), ...
         pose(1*ft+0.06, startDropY+2*dropYIncrement, pi),...
         pose(1*ft+0.06, startDropY+3*dropYIncrement, pi),...
         pose(1*ft+0.06, startDropY+4*dropYIncrement, pi),...
         pose(1*ft+0.06, startDropY +5*dropYIncrement, pi),...
-        pose(1*ft+0.06, startDropY+6*dropYIncrement, pi)]
+        pose(1*ft+0.06, startDropY+6*dropYIncrement, pi)];
     
     pause(3); % Ensure Robot Has Stable Localization before Beginnning
     
@@ -41,8 +41,12 @@ function Lab13(robot_id, spd)
             nextDropoff = dropOffs(1);
             ri.mrpl.dropObjAt(nextDropoff, speed);
             dropOffs = dropOffs(2:end);
+        else
+            ri.mrpl.goTo_X_Small(-0.25, 0.4); %Back up in shame after failure.
         end
-        nextPickup = pickups(2:end);
+        pickups = pickups(2:end);
     end
+    
+    pause; % Avoid GC.
     
 end % #Lab13
