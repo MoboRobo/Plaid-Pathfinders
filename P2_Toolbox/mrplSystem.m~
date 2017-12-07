@@ -154,7 +154,8 @@ classdef mrplSystem < handle
             % Loop through all p_los to id which has least distance in
             % robot frame.
                 p = p_los(i); % Pose being tested
-                s = norm([(p.X-xa) (p.Y-ya)]);
+                p_w = addPoses(r_img.capture_pose, p);
+                s = norm([(p_w.X-xa) (p_w.Y-ya)]);
                 if s < min_s && s~=0
                     p_nlo_r = p;
                     min_s = s;
@@ -221,16 +222,9 @@ classdef mrplSystem < handle
                 p_nlo_r = p_nlo_r2;
                 beep;
             end % else, just use the last pallet position from farther away.
-
-    %         th = p_nlo_r.th;
-    %         th = atan2(p_nlo_r.y, p_nlo_r.x);
-            th = atan2(p_nlo_r.y, p_nlo_r.x);
-            if abs(adel(th,p_acq.th)) > pi/6
-                th = p_acq.th;
-            end
-    %         th = th;
-            th_fudge = 0;%0.25*pi/180;
-            obj.goTo_th_Small(0.7*adel(th,obj.rob.measTraj.p_f.th)+th_fudge,0.5); % Turn to Face Line Object (no feedback)
+            
+            obj.face(p_nlo_w, 1.2);
+            
             pause(0.2);
 %             obj.goTo_th_Small(adel(th,obj.rob.measTraj.p_f.th)+th_fudge,0); % Turn to Face Line Object
 
@@ -240,10 +234,11 @@ classdef mrplSystem < handle
 
             moveDist = p_nlo_r.x;
 
+%             obj.goTo(p_nlo_w, 0.15/4);
             obj.goTo_X_Small(0.65*moveDist, 0.15/4);
             obj.rob.core.forksUp();
-            pause(0.15); %Wait for forks to start to lift
-            obj.goTo_X_Small(overdrive, 0.15/4);
+%             pause(0.15); %Wait for forks to start to lift
+%             obj.goTo_X_Small(overdrive, 0.15/4); 
 
     %         save('log_file', 'p_nlo_r', 'th', 'moveDist');
 
@@ -451,7 +446,7 @@ classdef mrplSystem < handle
             
 %             tf.fbk_trim = use_feedback;
                
-            obj.time_loop(tf, 0.5);%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% YO, DAWG, I CHANGED THIS (used to be 1).
+            obj.time_loop(tf, 0.75);%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% YO, DAWG, I CHANGED THIS (used to be 1).
             
             tf.fbk_controller.isPureTurn = 0; % Reset
             tf.fbk_trim = 1;
@@ -490,10 +485,12 @@ classdef mrplSystem < handle
             obj.goTo_th_Small(adel(tha,obj.rob.measTraj.p_f.th));
         end % #turnto
         
-        % Turn to Face Position pa in the Wold:
-        function face(obj, pa)
-            obj.goTo_th_Small(adel(tha,obj.rob.measTraj.p_f.th));
-        end % #turnto
+        % Turn to Face Position pa in the World Frame:
+        function face(obj, pa,)
+            pr = obj.absToRel(pa);
+            th = atan2(pr.Y, pr.X);
+            obj.goTo_th_Small(th);
+        end % #face
         
         %% Go To Absolute Position
         % Optionally, specify peak transit speed, spd.

@@ -119,7 +119,7 @@ classdef RangeImage < handle
         
         function isObscured = isObscured(obj)
             close_img = RangeImage.filterRanges(obj, 0.05,RangeImage.MAX_RANGE);
-            thresholdDist = 0.1;
+            thresholdDist = 0.19;
             sum = 0;
             n = min(10,length(close_img.data.ranges));
             for i = 1:n

@@ -24,7 +24,7 @@ classdef mrplSystem < handle
         interface = RobotInterface.empty; % Interface Controller for this System
         
         debugging = struct(...
-            'delay_plots', 1, ...   % Whether Transient Velocity Plots for Determining should be Made.
+            'delay_plots', 0, ...   % Whether Transient Velocity Plots for Determining should be Made.
             'error_plots', 0, ...    % Whether Transient Error Plots (from FeedbackController) should be Made.
             'comm_plots', 0 ...     % Whether Transient Comm plots should be made
         );
@@ -212,18 +212,26 @@ classdef mrplSystem < handle
     %         obj.goTo_th_Small(th); % Turn to Face Line Object
     %         moveDist = p_nlo_r.x;
     %         obj.goTo_X_Small(moveDist + overdrive, speed/2);
-            obj.goTo(p_acq_nlo, speed*0.75);
+            obj.goTo(p_acq_nlo, speed);
 
-            p_nlo_r2 = obj.getNearestLineObject();
-            if 0 && norm(p_nlo_r2.poseVec(1:2)) < secondary_offset*2 
-                % Sanity check to ensure its detecting the pallet we expect.
-                % (if we're too close, it'll miss this pallet and pick up
-                % another)
-                p_nlo_r = p_nlo_r2;
-                beep;
-            end % else, just use the last pallet position from farther away.
             
+        [present, p_nlo_w2, p_nlo_r2] = obj.lookForPalletNear(p_nom.X,p_nom.Y, 0.15);
+        if present
+            p_nlo_w = p_nlo_w2;
+            p_nlo_r = p_nlo_r2;
+        end % present?
+%             p_nlo_r2 = obj.getNearestLineObject();
+%             if 0 && norm(p_nlo_r2.poseVec(1:2)) < secondary_offset*2 
+%                 % Sanity check to ensure its detecting the pallet we expect.
+%                 % (if we're too close, it'll miss this pallet and pick up
+%                 % another)
+%                 p_nlo_r = p_nlo_r2;
+%                 beep;
+%             end % else, just use the last pallet position from farther away.
+            
+            obj.face(p_nlo_w, 1.2);
             obj.face(p_nlo_w);
+            
             pause(0.2);
 %             obj.goTo_th_Small(adel(th,obj.rob.measTraj.p_f.th)+th_fudge,0); % Turn to Face Line Object
 
@@ -233,10 +241,11 @@ classdef mrplSystem < handle
 
             moveDist = p_nlo_r.x;
 
+%             obj.goTo(p_nlo_w, 0.15/4);
             obj.goTo_X_Small(0.65*moveDist, 0.15/4);
             obj.rob.core.forksUp();
-            pause(0.15); %Wait for forks to start to lift
-            obj.goTo_X_Small(overdrive, 0.15/4);
+%             pause(0.15); %Wait for forks to start to lift
+%             obj.goTo_X_Small(overdrive, 0.15/4); 
 
     %         save('log_file', 'p_nlo_r', 'th', 'moveDist');
 
@@ -484,10 +493,14 @@ classdef mrplSystem < handle
         end % #turnto
         
         % Turn to Face Position pa in the World Frame:
-        function face(obj, pa)
+        function face(obj, pa, mult)
+            m = 1;
+            if nargin > 2
+                m = mult;
+            end
             pr = obj.absToRel(pa);
             th = atan2(pr.Y, pr.X);
-            obj.goTo_th_Small(th);
+            obj.goTo_th_Small(m*th);
         end % #face
         
         %% Go To Absolute Position
