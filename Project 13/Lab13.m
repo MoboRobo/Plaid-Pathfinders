@@ -3,7 +3,7 @@ function Lab13(robot_id, spd)
     global ft
     
     speed = spd;
-    bounds = [7*ft 0; 0 0; 0 -8*ft; 7*ft -8*ft]; % U with bottom left corner at origin
+    bounds = [8*ft 0; 0 0; 0 -8*ft; 8*ft -8*ft; 8*ft 0]; % Box with bottom left corner at origin
     wm = WorldMap(bounds);
     
     robot_starting_pose = pose(1*ft, -1*ft, -pi);
