@@ -3,16 +3,16 @@ function Lab13(robot_id, spd)
     global ft
     
     speed = spd;
-    bounds = [8*ft 0; 0 0; 0 -8*ft; 8*ft -8*ft; 8*ft 0]; % Box with bottom left corner at origin
+    bounds = [12*ft 0; 0 0; 0 -8*ft; 12*ft -8*ft; 12*ft 0]; % Box with bottom left corner at origin
     wm = WorldMap(bounds);
     
-    robot_starting_pose = pose(1*ft, -1*ft, -pi);
+    robot_starting_pose = pose(0.75*ft, -0.75*ft, -pi);
     
     ri = struct('mrpl',mrplSystem.empty);
     ri.mrpl = mrplSystem(robot_id, robot_starting_pose, wm);
    % ri = RobotInterface(robot_id, robot_starting_pose, wm);
    
-   [pickups, dropOffs] = generateSites(0); % 0 -> Test, 1-> Real %%%%%%%%%%%%% * $*$**$(*%(Q#*$(#*$ *()@#&%)$*( #
+   [pickups, dropOffs] = generateSites(1); % 0 -> Test, 1-> Real %%%%%%%%%%%%% * $*$**$(*%(Q#*$(#*$ *()@#&%)$*( #
 
 %     startDropY = -1.5*ft; dropYIncrement = -.75*ft;
 %     pickups = [

@@ -212,7 +212,7 @@ classdef mrplSystem < handle
     %         obj.goTo_th_Small(th); % Turn to Face Line Object
     %         moveDist = p_nlo_r.x;
     %         obj.goTo_X_Small(moveDist + overdrive, speed/2);
-            obj.goTo(p_acq_nlo, speed);
+            obj.goTo(p_acq_nlo, speed/2);
 
             
         [present, p_nlo_w2, p_nlo_r2] = obj.lookForPalletNear(p_nom.X,p_nom.Y, 0.15);
@@ -230,7 +230,8 @@ classdef mrplSystem < handle
 %             end % else, just use the last pallet position from farther away.
             
             obj.face(p_nlo_w, 1.2);
-            obj.face(p_nlo_w);
+            obj.face(p_nlo_w, 1.1);
+            obj.turn_stationary(1.0*pi/180);%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             
             pause(0.2);
 %             obj.goTo_th_Small(adel(th,obj.rob.measTraj.p_f.th)+th_fudge,0); % Turn to Face Line Object
@@ -242,7 +243,7 @@ classdef mrplSystem < handle
             moveDist = p_nlo_r.x;
 
 %             obj.goTo(p_nlo_w, 0.15/4);
-            obj.goTo_X_Small(0.65*moveDist, 0.15/4);
+            obj.goTo_X_Small(0.8*moveDist, 0.15/4);
             obj.rob.core.forksUp();
 %             pause(0.15); %Wait for forks to start to lift
 %             obj.goTo_X_Small(overdrive, 0.15/4); 
