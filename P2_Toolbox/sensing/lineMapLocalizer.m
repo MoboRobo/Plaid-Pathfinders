@@ -4,7 +4,7 @@ classdef LineMapLocalizer < handle
      % the map.
 
      properties(Constant)
-        maxErr = 0.08; % 8 cm
+        maxErr = 0.12; % 12 cm (used to be 8)
         minPts = 5; % min # of points that must match
         
         maxIterations = 40; % Maximum Number of Gradient Descent Iterations

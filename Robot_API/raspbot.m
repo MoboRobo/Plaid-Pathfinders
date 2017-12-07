@@ -11,10 +11,10 @@ classdef raspbot < handle
 		laser;
 		sim_robot;
 		map;
-        camera;
-        speech_pub;
+%         camera;
+%         speech_pub;
 %        fileWrite_pub;
-        playFile_pub;
+%         playFile_pub; 
     end
     
     properties (Hidden, GetAccess='private', SetAccess='private')
@@ -148,8 +148,8 @@ classdef raspbot < handle
                 r.fork_pub=rospublisher('/forks',rostype.std_msgs_Int8);
                 r.encoders=rossubscriber('/enc');
                 r.laser=rossubscriber('/scan');
-                r.camera=rossubscriber('/camera/image/compressed');
-                r.speech_pub=rospublisher('/textToSpeech', rostype.std_msgs_String);
+%                 r.camera=rossubscriber('/camera/image/compressed');
+%                 r.speech_pub=rospublisher('/textToSpeech', rostype.std_msgs_String);
 %                r.fileWrite_pub=rospublisher('/fileWrite', 'audio_receiver/audioFile');
 %                 r.playFile_pub=rospublisher('/playFile', rostype.std_msgs_String);
             end
@@ -319,15 +319,15 @@ classdef raspbot < handle
         end
         
         function say(r, str)
-             if (r.sim)
-                 warning('No speakers in simulation');
-             elseif ischar(str)
-                 msg = rosmessage(r.speech_pub);
-                 msg.Data = str;
-                 send(r.speech_pub,msg);
-             else
-                 warning('Function input must be a character array, delim by prime');
-             end
+%              if (r.sim)
+%                  warning('No speakers in simulation');
+%              elseif ischar(str)
+%                  msg = rosmessage(r.speech_pub);
+%                  msg.Data = str;
+%                  send(r.speech_pub,msg);
+%              else
+%                  warning('Function input must be a character array, delim by prime');
+%              end
          end
          
 %          function play(r, str)
@@ -361,10 +361,10 @@ classdef raspbot < handle
 %          end
          
          function image = captureImage(r)
-             img = r.camera.LatestMessage;
-             img.Format = 'bgr8; jpeg compressed bgr8';
-             image = readImage(img);
-             imshow(image)
+%              img = r.camera.LatestMessage;
+%              img.Format = 'bgr8; jpeg compressed bgr8';
+%              image = readImage(img);
+%              imshow(image)
          end
         
         % Add a map for use in laser simulation
