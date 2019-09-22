@@ -28,7 +28,7 @@ function ret = u_ref_trap(t, a_max, v_max, dist, ~, give_Tfinal)
     elseif(t <= t_ramp)
         u = a_max*t;
     elseif( (t_f-t) <= t_ramp && (t_f-t) > 0)
-        u = a_max*(t_f-t);
+        u = a_max*(t_f-t); 
     elseif(t_ramp<t && t<=(t_f-t_ramp))
         u = v_max;
     end
